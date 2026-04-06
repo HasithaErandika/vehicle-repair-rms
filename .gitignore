@@ -17,4 +17,6 @@ desktop.ini
 .env.*
 !.env.example
 
-docs/
+CLAUDE.md
+prompt.md
+TASK.md
