@@ -1,7 +1,10 @@
-const jwt = require('jsonwebtoken');
-const jwksClient = require('jwks-rsa');
+'use strict';
 
-// Configure JWKS client to fetch public keys from Asgardeo
+const jwt        = require('jsonwebtoken');
+const jwksClient = require('jwks-rsa');
+const User       = require('../models/User');
+
+// Configure JWKS client — caches signing keys to avoid repeated JWKS fetches
 const client = jwksClient({
   jwksUri: process.env.ASGARDEO_JWKS_URL,
   cache: true,
@@ -9,59 +12,66 @@ const client = jwksClient({
   jwksRequestsPerMinute: 5,
 });
 
-// Helper function to get the signing key
 function getKey(header, callback) {
-  client.getSigningKey(header.kid, function (err, key) {
-    if (err) {
-      return callback(err);
-    }
-    const signingKey = key.getPublicKey();
-    callback(null, signingKey);
+  client.getSigningKey(header.kid, (err, key) => {
+    if (err) return callback(err);
+    callback(null, key.getPublicKey());
   });
 }
 
 /**
- * Middleware to protect routes that require Asgardeo Authentication
+ * protect — validates the Bearer JWT via Asgardeo JWKS, then looks up the
+ * corresponding MongoDB User document and attaches it to req.user.
+ *
+ * Controllers MUST use req.user._id (ObjectId), req.user.role, etc.
+ * Raw JWT claims are available on req.jwtClaims if needed.
  */
-const requireAuth = (req, res, next) => {
+const protect = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({
-      success: false,
-      message: 'Unauthorized: Missing or invalid authorization header',
-    });
+    return res.status(401).json({ error: 'No token provided' });
   }
 
   const token = authHeader.split(' ')[1];
 
-  // Options for verification
   const options = {
     algorithms: ['RS256'],
     issuer: process.env.ASGARDEO_ISSUER,
   };
-  
-  // Optional: audience validation if client id is configured securely
+
   if (process.env.ASGARDEO_AUDIENCE) {
     options.audience = process.env.ASGARDEO_AUDIENCE;
   }
 
-  jwt.verify(token, getKey, options, (err, decoded) => {
+  jwt.verify(token, getKey, options, async (err, decoded) => {
     if (err) {
-      console.error('JWT Verification Error:', err.message);
-      return res.status(401).json({
-        success: false,
-        message: 'Unauthorized: Invalid token',
-        error: err.message,
-      });
+      console.error('[auth] JWT verification failed:', err.message);
+      return res.status(401).json({ error: 'Invalid or expired token' });
     }
 
-    // Attach decoded user claims to request for downstream controllers
-    req.user = decoded;
-    next();
+    try {
+      const user = await User.findOne({ asgardeoSub: decoded.sub });
+      if (!user) {
+        return res.status(401).json({
+          error: 'User not registered — call /api/v1/auth/sync-profile first',
+        });
+      }
+      if (!user.active) {
+        return res.status(403).json({ error: 'Account deactivated' });
+      }
+      req.jwtClaims = decoded; // raw claims for sync-profile use
+      req.user      = user;    // Mongoose User document
+      next();
+    } catch (dbErr) {
+      next(dbErr);
+    }
   });
 };
 
-module.exports = {
-  requireAuth,
-};
+/**
+ * requireAuth — alias kept for backward compatibility with existing server.js references.
+ */
+const requireAuth = protect;
+
+module.exports = { protect, requireAuth };

@@ -1,17 +1,24 @@
+'use strict';
+
 const mongoose = require('mongoose');
 
 const connectDB = async () => {
+  let retries = 5;
+  while (retries) {
     try {
-        const conn = await mongoose.connect(process.env.MONGODB_URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
-
-        console.log(`MongoDB Connected: ${conn.connection.host}`);
+      await mongoose.connect(process.env.MONGODB_URI, {
+        maxPoolSize: 10,
+        serverSelectionTimeoutMS: 5000,
+      });
+      console.log(`✅  MongoDB connected: ${mongoose.connection.host}`);
+      return;
     } catch (err) {
-        console.error(`Error: ${err.message}`);
-        process.exit(1);
+      retries--;
+      console.error(`❌  MongoDB connection failed. Retries left: ${retries}. Error: ${err.message}`);
+      if (!retries) throw err;
+      await new Promise((r) => setTimeout(r, 3000));
     }
+  }
 };
 
 module.exports = connectDB;
