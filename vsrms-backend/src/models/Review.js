@@ -2,6 +2,8 @@
 
 const mongoose = require('mongoose');
 
+const jsonFormatter = require('./plugins/jsonFormatter');
+
 const reviewSchema = new mongoose.Schema(
   {
     workshopId:    { type: mongoose.Schema.Types.ObjectId, ref: 'Workshop',    required: true },
@@ -18,6 +20,8 @@ const reviewSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
+reviewSchema.plugin(jsonFormatter);
 
 reviewSchema.index({ workshopId: 1 });
 reviewSchema.index({ userId: 1 });

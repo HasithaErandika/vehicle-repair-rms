@@ -15,21 +15,24 @@ import {
 import { useRouter } from 'expo-router';
 import { Colors, Spacing, CustomBorders, Shadows } from '../../constants/theme';
 import { ShieldCheck, Eye, EyeOff, User, Mail, Phone, Lock, Check } from 'lucide-react-native';
+import { useAuth } from '../../providers/AuthProvider';
+import { register as registerApi } from '../../features/auth/api/auth.api';
 
-type Role = 'Vehicle Owner' | 'Garage Owner' | 'Technician' | 'Platform Admin';
+type Role = 'customer' | 'workshop_owner' | 'workshop_staff' | 'admin';
 
 const ROLES: { key: Role; label: string }[] = [
-  { key: 'Vehicle Owner', label: 'Vehicle Owner' },
-  { key: 'Garage Owner',  label: 'Garage Owner' },
-  { key: 'Technician',    label: 'Technician' },
-  { key: 'Platform Admin', label: 'Platform Admin' },
+  { key: 'customer',       label: 'Vehicle Owner' },
+  { key: 'workshop_owner', label: 'Garage Owner' },
+  { key: 'workshop_staff', label: 'Technician' },
+  { key: 'admin',          label: 'Platform Admin' },
 ];
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { signIn } = useAuth();
 
   const [step, setStep]               = useState<1 | 2>(1);
-  const [role, setRole]               = useState<Role>('Vehicle Owner');
+  const [role, setRole]               = useState<Role>('customer');
   const [firstName, setFirstName]     = useState('');
   const [lastName, setLastName]       = useState('');
   const [email, setEmail]             = useState('');
@@ -57,22 +60,28 @@ export default function RegisterScreen() {
     if (step1Valid) setStep(2);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!step2Valid) return;
     setLoading(true);
-    // Simulation: redirect based on role
-    setTimeout(() => {
+    try {
+      await registerApi({
+        firstName,
+        lastName,
+        email,
+        phone,
+        password,
+        role,
+      });
+
+      // After successful registration, usually redirect to login or auto-login
+      // For now, let's redirect to login with a success message (mobile often uses toast)
+      router.replace('/auth/login' as any);
+    } catch (error) {
+      console.error('Registration failed', error);
+      // In a real app, show error toast
+    } finally {
       setLoading(false);
-      if (role === 'Vehicle Owner') {
-        router.replace('/tabs' as any);
-      } else if (role === 'Platform Admin') {
-        router.replace('/admin' as any);
-      } else if (role === 'Technician') {
-        router.replace('/staff' as any);
-      } else {
-        router.replace('/garage' as any);
-      }
-    }, 1500);
+    }
   };
 
   const PasswordStrength = () => {

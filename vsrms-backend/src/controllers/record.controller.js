@@ -16,7 +16,11 @@ const paginate = (query) => {
 const assertVehicleOwnership = async (vehicleId, userId, role) => {
   const vehicle = await Vehicle.findOne({ _id: vehicleId, deletedAt: null });
   if (!vehicle) throw new AppError('Vehicle not found', 404);
-  if (role === 'owner' && vehicle.ownerId.toString() !== userId.toString()) {
+
+  // Visibility:
+  // 1. Customer can only see their own vehicles
+  // 2. Staff/Owner/Admin can see any (to manage records)
+  if (role === 'customer' && vehicle.ownerId.toString() !== userId.toString()) {
     throw new AppError('Forbidden — you do not own this vehicle', 403);
   }
   return vehicle;

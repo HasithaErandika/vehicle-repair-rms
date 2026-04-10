@@ -27,7 +27,7 @@ router.get('/mine',   getMyAppointments);
 router.post('/',      validateCreateAppointment, createAppointment);
 router.get('/:id',    getAppointment);
 router.put('/:id',    validateUpdateAppointment, updateAppointment);
-router.put('/:id/status', requireRole('staff', 'admin'), validateUpdateStatus, updateAppointmentStatus);
+router.put('/:id/status', requireRole('workshop_staff', 'workshop_owner', 'admin'), validateUpdateStatus, updateAppointmentStatus);
 router.delete('/:id', deleteAppointment);
 
 module.exports = router;

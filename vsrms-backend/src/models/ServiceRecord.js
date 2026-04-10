@@ -2,6 +2,8 @@
 
 const mongoose = require('mongoose');
 
+const jsonFormatter = require('./plugins/jsonFormatter');
+
 const serviceRecordSchema = new mongoose.Schema(
   {
     appointmentId:    { type: mongoose.Schema.Types.ObjectId, ref: 'Appointment' },
@@ -15,6 +17,8 @@ const serviceRecordSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
+serviceRecordSchema.plugin(jsonFormatter);
 
 serviceRecordSchema.index({ vehicleId: 1 });
 serviceRecordSchema.index({ appointmentId: 1 });

@@ -90,6 +90,15 @@ const register = async (req, res, next) => {
     );
     const mgmtToken = ccRes.data.access_token;
 
+    // Map user-friendly labels to internal roles
+    const roleMapping = {
+      'Vehicle Owner':  'customer',
+      'Garage Owner':   'workshop_owner',
+      'Technician':     'workshop_staff',
+      'Platform Admin': 'admin',
+    };
+    const internalRole = roleMapping[role] || 'customer';
+
     const scimUser = {
       schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
       userName: email,
@@ -97,7 +106,7 @@ const register = async (req, res, next) => {
       name: { givenName: firstName, familyName: lastName },
       emails: [{ primary: true, value: email }],
       ...(phone && { phoneNumbers: [{ type: 'mobile', value: phone }] }),
-      'urn:scim:wso2:schema': { appRole: role ?? 'Vehicle Owner' },
+      'urn:scim:wso2:schema': { appRole: internalRole },
     };
 
     await axios.post(`${ASGARDEO_BASE}/scim2/Users`, scimUser, {
@@ -132,10 +141,15 @@ const syncProfile = async (req, res, next) => {
     const user = await User.findOneAndUpdate(
       { asgardeoSub: decoded.sub },
       {
+        $set: {
+          email:    decoded.email ?? '',
+          fullName: decoded.name  ?? decoded.email ?? 'Unknown',
+          // If Asgardeo sends the role in a claim, we sync it
+          ...(decoded.role && { role: decoded.role }),
+        },
         $setOnInsert: {
           asgardeoSub: decoded.sub,
-          email:       decoded.email ?? '',
-          fullName:    decoded.name  ?? decoded.email ?? 'Unknown',
+          role:        decoded.role ?? 'customer',
         },
       },
       { upsert: true, new: true, runValidators: true },

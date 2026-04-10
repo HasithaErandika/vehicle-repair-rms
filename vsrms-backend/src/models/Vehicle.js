@@ -2,6 +2,8 @@
 
 const mongoose = require('mongoose');
 
+const jsonFormatter = require('./plugins/jsonFormatter');
+
 const vehicleSchema = new mongoose.Schema(
   {
     ownerId:        { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -16,6 +18,8 @@ const vehicleSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
+vehicleSchema.plugin(jsonFormatter);
 
 vehicleSchema.index({ ownerId: 1 });
 vehicleSchema.index({ registrationNo: 1 }, { unique: true });

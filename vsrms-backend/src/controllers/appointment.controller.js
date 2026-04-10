@@ -17,8 +17,9 @@ const paginate = (query) => {
 // ─────────────────────────────────────────────────────────────────────────────
 const getMyAppointments = async (req, res, next) => {
   try {
-    const { page, limit, skip } = paginate(req.query);
+    const { page, limit, skip, status } = paginate(req.query);
     const filter = { userId: req.user._id };
+    if (status) filter.status = status;
 
     const [data, total] = await Promise.all([
       Appointment.find(filter).skip(skip).limit(limit).sort({ createdAt: -1 }),
@@ -38,10 +39,19 @@ const getAppointment = async (req, res, next) => {
     const appt = await Appointment.findById(req.params.id);
     if (!appt) throw new AppError('Appointment not found', 404);
 
-    // Owners can only view their own; staff/admin can view any
-    if (req.user.role === 'owner' && appt.userId.toString() !== req.user._id.toString()) {
-      throw new AppError('Forbidden — you do not own this appointment', 403);
+    // Visibility rules:
+    // 1. Admin sees everything.
+    // 2. Customer sees their own.
+    // 3. Workshop Owner/Staff sees appointments for their workshop.
+    const isOwner     = req.user.role === 'customer' && appt.userId.toString() === req.user._id.toString();
+    const isWorkshop  = ['workshop_owner', 'workshop_staff'].includes(req.user.role) &&
+                        appt.workshopId.toString() === req.user.workshopId?.toString();
+    const isAdmin     = req.user.role === 'admin';
+
+    if (!isOwner && !isWorkshop && !isAdmin) {
+      throw new AppError('Forbidden — you do not have permission to view this appointment', 403);
     }
+
     res.json({ appointment: appt });
   } catch (err) {
     next(err);
@@ -55,6 +65,12 @@ const createAppointment = async (req, res, next) => {
   try {
     const { vehicleId, workshopId, serviceType, scheduledDate, notes } = req.body;
 
+    // Past date check (enforced in controller as requested)
+    const date = new Date(scheduledDate);
+    if (date < new Date()) {
+      throw new AppError('Scheduled date cannot be in the past', 400);
+    }
+
     // Verify the vehicle belongs to the requester
     const vehicle = await Vehicle.findOne({ _id: vehicleId, deletedAt: null });
     if (!vehicle) throw new AppError('Vehicle not found', 404);
@@ -63,7 +79,6 @@ const createAppointment = async (req, res, next) => {
     }
 
     // Double booking check — same workshop, same calendar day, active status
-    const date     = new Date(scheduledDate);
     const dayStart = new Date(date); dayStart.setHours(0, 0, 0, 0);
     const dayEnd   = new Date(dayStart); dayEnd.setDate(dayEnd.getDate() + 1);
 

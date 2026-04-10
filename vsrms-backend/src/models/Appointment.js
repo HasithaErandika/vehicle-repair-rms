@@ -11,6 +11,8 @@ const VALID_TRANSITIONS = {
   cancelled:   [],
 };
 
+const jsonFormatter = require('./plugins/jsonFormatter');
+
 const appointmentSchema = new mongoose.Schema(
   {
     userId:        { type: mongoose.Schema.Types.ObjectId, ref: 'User',     required: true },
@@ -27,6 +29,8 @@ const appointmentSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
+appointmentSchema.plugin(jsonFormatter);
 
 // Static helper for controllers — avoids importing VALID_TRANSITIONS separately
 appointmentSchema.statics.isValidTransition = (from, to) =>

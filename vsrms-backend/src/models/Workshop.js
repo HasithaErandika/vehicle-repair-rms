@@ -2,6 +2,8 @@
 
 const mongoose = require('mongoose');
 
+const jsonFormatter = require('./plugins/jsonFormatter');
+
 const workshopSchema = new mongoose.Schema(
   {
     name:   { type: String, required: true, trim: true },
@@ -19,6 +21,8 @@ const workshopSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
+workshopSchema.plugin(jsonFormatter);
 
 workshopSchema.index({ location: '2dsphere' });
 workshopSchema.index({ district: 1 });

@@ -59,18 +59,24 @@ const getNearbyWorkshops = async (req, res, next) => {
     if (isNaN(lat) || isNaN(lng)) {
       throw new AppError('lat and lng query params are required', 400);
     }
-    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-      throw new AppError('Invalid coordinates', 400);
-    }
 
-    const workshops = await Workshop.find({
-      location: {
-        $near: {
-          $geometry: { type: 'Point', coordinates: [lng, lat] }, // GeoJSON: longitude first
-          $maxDistance: maxKm * 1000, // convert km → metres
+    const workshops = await Workshop.aggregate([
+      {
+        $geoNear: {
+          near: { type: 'Point', coordinates: [lng, lat] },
+          distanceField: 'distance',
+          maxDistance: maxKm * 1000,
+          spherical: true,
         },
       },
-    }).limit(20);
+      {
+        $addFields: {
+          // Convert meters to kilometers and round to 1 decimal place
+          distance: { $divide: [{ $round: [{ $multiply: ['$distance', 0.01] }, 0] }, 10] },
+        },
+      },
+      { $limit: 20 },
+    ]);
 
     res.json({ data: workshops });
   } catch (err) {

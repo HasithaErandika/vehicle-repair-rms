@@ -22,9 +22,9 @@ const {
 router.use(protect);
 
 router.get('/vehicle/:vehicleId', getRecordsByVehicle);
-router.post('/',     requireRole('staff', 'admin'), validateCreateRecord, createRecord);
+router.post('/',     requireRole('workshop_staff', 'workshop_owner', 'admin'), validateCreateRecord, createRecord);
 router.get('/:id',   getRecord);
-router.put('/:id',   requireRole('staff', 'admin'), validateUpdateRecord, updateRecord);
+router.put('/:id',   requireRole('workshop_staff', 'workshop_owner', 'admin'), validateUpdateRecord, updateRecord);
 router.delete('/:id', requireRole('admin'), deleteRecord);
 
 module.exports = router;
