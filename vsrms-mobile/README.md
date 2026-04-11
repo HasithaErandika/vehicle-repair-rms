@@ -1,33 +1,51 @@
-# VSRMS Mobile Application
+# VSRMS — Mobile Application
 
-## Vehicle Service & Repair Management System Frontend
+This is the React Native (Expo) frontend for the Vehicle Service & Repair Management System.
 
-This is the React Native (Expo) frontend for the VSRMS application.
+---
 
-## Getting Started
+## 🏗️ Architecture
 
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
+The app is built using **Feature-Sliced Design (FSD)** patterns to ensure high maintainability and scalability across the six core modules.
 
-2. Start the Expo development server:
-   ```bash
-   npx expo start
-   ```
+- **Routing Layer (`src/app`)**: Role-based routing for `customer`, `owner`, `technician`, and `admin`.
+- **Feature Layer (`src/features`)**: Contains self-contained domains (Auth, Vehicles, etc.) each with its own API, screens, components, and state logic.
+- **Service Layer (`src/services`)**: Global infrastructure for HTTP, Storage, and Geo-location.
 
-3. Open the app:
-   - Press `a` in the terminal to open in Android Emulator
-   - Press `i` to open in iOS Simulator
-   - Scan the QR code with the Expo Go app on your physical device
+---
 
-## Project Structure
+## 🛠️ Technology Stack
 
-- `src/api` - Axios network configuration
-- `src/components` - Reusable UI components
-- `src/navigation` - React Navigation navigators
-- `src/screens` - Application screens grouped by feature domain (auth, vehicles, workshops, etc.)
+- **Navigation**: Expo Router (File-based)
+- **Styling**: React Native Unistyles v2
+- **Data Fetching**: TanStack Query
+- **Icons**: Lucide React Native
+- **List Rendering**: Shopify FlashList
 
-## Configuration
+---
 
-The API connection is configured in `src/api/axios.js`. According to project requirements, no environment variables are used on the frontend — the `BASE_URL` is configured directly in the Axios utility.
+## 🚀 Getting Started
+
+### 1. Installation
+```bash
+npm install
+```
+
+### 2. Environment Configuration
+Create a `.env` file from the example:
+```bash
+cp .env.example .env
+```
+Ensure `EXPO_PUBLIC_API_URL` points to your running backend (e.g., `http://localhost:5000/api/v1`).
+
+### 3. Execution
+```bash
+npx expo start
+```
+Use the Expo Go app on your physical device or an emulator to test.
+
+---
+
+## 📚 Technical Reference
+
+For a deep dive into the frontend architecture, theme tokens, and role-based navigation, see the **[Frontend Architecture Guide](../docs/frontend-architecture.md)**.
