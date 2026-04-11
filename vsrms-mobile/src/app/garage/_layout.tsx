@@ -1,16 +1,13 @@
 import React, { useEffect } from 'react';
 import { Tabs } from 'expo-router';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   withSpring,
   useSharedValue,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-
-const BRAND = '#F56E0F'; // Maintain branding consistency
-const WHITE = '#FFFFFF';
-const MUTED = '#6B7280';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 function AnimatedTabIcon({
   iconName,
@@ -21,6 +18,7 @@ function AnimatedTabIcon({
   focused: boolean;
   label: string;
 }) {
+  const { theme } = useUnistyles();
   const scale = useSharedValue(focused ? 1.1 : 1);
   const pillOpacity = useSharedValue(focused ? 1 : 0);
 
@@ -45,11 +43,11 @@ function AnimatedTabIcon({
         <Ionicons
           name={focused ? iconName.active : iconName.inactive}
           size={22}
-          color={focused ? BRAND : MUTED}
+          color={focused ? theme.colors.brand : theme.colors.muted}
         />
         <Text style={[
           styles.label,
-          { color: focused ? BRAND : MUTED, fontWeight: focused ? '800' : '600' }
+          { color: focused ? theme.colors.brand : theme.colors.muted, fontWeight: focused ? '800' : '600' }
         ]}>
           {label}
         </Text>
@@ -59,31 +57,16 @@ function AnimatedTabIcon({
 }
 
 export default function GarageLayout() {
+  const { theme } = useUnistyles();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
-        tabBarActiveTintColor: BRAND,
-        tabBarInactiveTintColor: MUTED,
-        tabBarStyle: {
-          backgroundColor: WHITE,
-          borderTopWidth: 0,
-          height: 85,
-          paddingBottom: 20,
-          paddingTop: 10,
-          borderTopLeftRadius: 24,
-          borderTopRightRadius: 24,
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          elevation: 25,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -8 },
-          shadowOpacity: 0.12,
-          shadowRadius: 16,
-        },
+        tabBarActiveTintColor: theme.colors.brand,
+        tabBarInactiveTintColor: theme.colors.muted,
+        tabBarStyle: styles.tabBar,
       }}
     >
       <Tabs.Screen
@@ -138,7 +121,25 @@ export default function GarageLayout() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create((theme) => ({
+  tabBar: {
+    backgroundColor: theme.colors.surface,
+    borderTopWidth: 0,
+    height: 85,
+    paddingBottom: 20,
+    paddingTop: 10,
+    borderTopLeftRadius: theme.radii.xxl,
+    borderTopRightRadius: theme.radii.xxl,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    elevation: 25,
+    shadowColor: theme.colors.black,
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+  },
   tabItemContainer: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -149,8 +150,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 60,
     height: 48,
-    borderRadius: 16,
-    backgroundColor: 'rgba(245, 110, 15, 0.08)',
+    borderRadius: theme.radii.xl,
+    backgroundColor: theme.colors.brandSoft,
   },
   iconWrapper: {
     alignItems: 'center',
@@ -162,4 +163,4 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-});
+}));

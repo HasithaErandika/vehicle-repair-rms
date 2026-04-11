@@ -1,13 +1,12 @@
 import React from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   StatusBar,
-  SafeAreaView,
-  ScrollView,
-} from 'react-native';
+  ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Car, Wrench, ShieldCheck, MapPin } from 'lucide-react-native';
 import { Colors, Spacing, CustomBorders, Shadows } from '../constants/theme';
@@ -98,12 +97,10 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: Colors.light.background,
-  },
+    backgroundColor: Colors.light.background },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: Spacing.five,
-  },
+    paddingBottom: Spacing.five },
 
   /* Hero SVG Graphic */
   heroContainer: {
@@ -112,16 +109,14 @@ const styles = StyleSheet.create({
     marginTop: Spacing.six,
     marginBottom: Spacing.three,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   heroCircleLarger: {
     width: 220,
     height: 220,
     borderRadius: 110,
     backgroundColor: Colors.light.primaryMuted,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   heroCircleSmaller: {
     width: 140,
     height: 140,
@@ -129,8 +124,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    ...Shadows.md,
-  },
+    ...Shadows.md },
   wrenchBadge: {
     position: 'absolute',
     bottom: 20,
@@ -139,14 +133,12 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: CustomBorders.radius.full,
     borderWidth: 3,
-    borderColor: Colors.light.surface,
-  },
+    borderColor: Colors.light.surface },
 
   /* Content */
   contentContainer: {
     flex: 1,
-    justifyContent: 'flex-start',
-  },
+    justifyContent: 'flex-start' },
 
   /* Badge */
   badge: {
@@ -161,48 +153,41 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.four,
     borderWidth: 1,
     borderColor: 'rgba(249, 115, 22, 0.1)',
-    gap: Spacing.one,
-  },
+    gap: Spacing.one },
   badgeDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: Colors.light.primary,
-  },
+    backgroundColor: Colors.light.primary },
   badgeText: {
     color: Colors.light.primary,
     fontSize: 12,
     fontWeight: '800',
-    letterSpacing: 0.5,
-  },
+    letterSpacing: 0.5 },
 
   /* Headline */
   headlineBlock: {
     marginBottom: Spacing.four,
-    paddingHorizontal: Spacing.four,
-  },
+    paddingHorizontal: Spacing.four },
   h1: {
     fontSize: 42,
     fontWeight: '900',
     color: Colors.light.text,
     letterSpacing: -1,
-    lineHeight: 48,
-  },
+    lineHeight: 48 },
   h1Orange: {
     fontSize: 42,
     fontWeight: '900',
     color: Colors.light.primary,
     letterSpacing: -1,
     lineHeight: 48,
-    marginBottom: Spacing.two,
-  },
+    marginBottom: Spacing.two },
   sub: {
     fontSize: 15,
     color: Colors.light.textMuted,
     lineHeight: 24,
     fontWeight: '500',
-    paddingRight: Spacing.three,
-  },
+    paddingRight: Spacing.three },
 
   /* Stats */
   statsRow: {
@@ -214,64 +199,53 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.four,
     borderWidth: 1,
     borderColor: Colors.light.border,
-    ...Shadows.md,
-  },
+    ...Shadows.md },
   statCell: {
     flex: 1,
     alignItems: 'center',
-    paddingHorizontal: Spacing.one,
-  },
+    paddingHorizontal: Spacing.one },
   statValue: {
     fontSize: 18,
     fontWeight: '800',
     color: Colors.light.text,
-    letterSpacing: -0.5,
-  },
+    letterSpacing: -0.5 },
   statLabel: {
     fontSize: 11,
     color: Colors.light.textMuted,
     fontWeight: '700',
     marginTop: 2,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
+    letterSpacing: 0.5 },
   statSep: {
     width: 1,
     marginVertical: Spacing.two,
-    backgroundColor: Colors.light.border,
-  },
+    backgroundColor: Colors.light.border },
 
   /* Buttons */
   btnGroup: {
     gap: Spacing.two,
-    paddingHorizontal: Spacing.four,
-  },
+    paddingHorizontal: Spacing.four },
   btnPrimary: {
     backgroundColor: Colors.light.primary,
     paddingVertical: 18,
     borderRadius: CustomBorders.radius.lg,
     alignItems: 'center',
     ...Shadows.lg,
-    shadowColor: Colors.light.primary,
-  },
+    shadowColor: Colors.light.primary },
   btnPrimaryText: {
     color: Colors.light.surface,
     fontSize: 16,
     fontWeight: '800',
-    letterSpacing: 0.5,
-  },
+    letterSpacing: 0.5 },
   btnSecondary: {
     backgroundColor: Colors.light.surface,
     paddingVertical: 18,
     borderRadius: CustomBorders.radius.lg,
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: Colors.light.border,
-  },
+    borderColor: Colors.light.border },
   btnSecondaryText: {
     color: Colors.light.text,
     fontSize: 16,
     fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-});
+    letterSpacing: 0.5 } });

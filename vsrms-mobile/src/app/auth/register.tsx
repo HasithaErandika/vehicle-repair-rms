@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   View,
   Text,
@@ -6,12 +7,10 @@ import {
   TouchableOpacity,
   StyleSheet,
   StatusBar,
-  SafeAreaView,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
-} from 'react-native';
+  ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors, Spacing, CustomBorders, Shadows } from '../../constants/theme';
 import { ShieldCheck, Eye, EyeOff, User, Mail, Phone, Lock, Check } from 'lucide-react-native';
@@ -70,8 +69,7 @@ export default function RegisterScreen() {
         email,
         phone,
         password,
-        role,
-      });
+        role });
 
       // After successful registration, usually redirect to login or auto-login
       // For now, let's redirect to login with a success message (mobile often uses toast)
@@ -355,8 +353,7 @@ export default function RegisterScreen() {
 const pStyles = StyleSheet.create({
   row:   { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 },
   bar:   { flex: 1, height: 4, borderRadius: 2 },
-  label: { fontSize: 11, fontWeight: '700', width: 48, textAlign: 'right' },
-});
+  label: { fontSize: 11, fontWeight: '700', width: 48, textAlign: 'right' } });
 
 const styles = StyleSheet.create({
   safe:  { flex: 1, backgroundColor: Colors.light.background },
@@ -365,22 +362,19 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.five,
-  },
+    paddingVertical: Spacing.five },
 
   card: {
     backgroundColor: Colors.light.surface,
     borderRadius: CustomBorders.radius.lg,
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.five,
-    ...Shadows.lg,
-  },
+    ...Shadows.lg },
 
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: Spacing.three },
   logoBox: {
     width: 48, height: 48, borderRadius: CustomBorders.radius.md,
-    backgroundColor: Colors.light.primary, alignItems: 'center', justifyContent: 'center',
-  },
+    backgroundColor: Colors.light.primary, alignItems: 'center', justifyContent: 'center' },
   appName:    { fontSize: 20, fontWeight: '800', color: Colors.light.text, letterSpacing: 0.5 },
   appTagline: { fontSize: 12, color: Colors.light.textMuted, fontWeight: '500', marginTop: 2 },
 
@@ -402,8 +396,7 @@ const styles = StyleSheet.create({
   roleRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginTop: 4 },
   roleChip: {
     minWidth: '45%', flex: 1, paddingHorizontal: 14, paddingVertical: 12, borderRadius: CustomBorders.radius.sm,
-    borderWidth: 1.5, borderColor: Colors.light.border, backgroundColor: Colors.light.surface, alignItems: 'center',
-  },
+    borderWidth: 1.5, borderColor: Colors.light.border, backgroundColor: Colors.light.surface, alignItems: 'center' },
   roleChipActive: { borderColor: Colors.light.primary, backgroundColor: Colors.light.primaryMuted },
   roleText: { fontSize: 13, fontWeight: '700', color: Colors.light.textMuted },
   roleTextActive: { color: Colors.light.primary },
@@ -412,8 +405,7 @@ const styles = StyleSheet.create({
 
   input: {
     height: 52, borderWidth: 1.5, borderColor: Colors.light.border,
-    borderRadius: CustomBorders.radius.md, paddingHorizontal: 14, fontSize: 15, color: Colors.light.text, backgroundColor: Colors.light.surface,
-  },
+    borderRadius: CustomBorders.radius.md, paddingHorizontal: 14, fontSize: 15, color: Colors.light.text, backgroundColor: Colors.light.surface },
   inputFocused: { borderColor: Colors.light.primary },
   inputSuccess: { borderColor: Colors.light.success },
   inputError:   { borderColor: Colors.light.error },
@@ -421,8 +413,7 @@ const styles = StyleSheet.create({
   inputRow: {
     height: 52, flexDirection: 'row', alignItems: 'center',
     borderWidth: 1.5, borderColor: Colors.light.border, borderRadius: CustomBorders.radius.md,
-    paddingHorizontal: 14, backgroundColor: Colors.light.surface,
-  },
+    paddingHorizontal: 14, backgroundColor: Colors.light.surface },
   inputIcon: { marginLeft: 2, marginRight: 8 },
   inputFlat: { flex: 1, fontSize: 15, color: Colors.light.text, height: '100%' },
   eyeBtn: { paddingHorizontal: 8 },
@@ -433,23 +424,20 @@ const styles = StyleSheet.create({
   termsRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: Spacing.four, marginTop: 8 },
   checkbox: {
     width: 22, height: 22, borderRadius: 6, borderWidth: 2,
-    borderColor: Colors.light.border, alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1,
-  },
+    borderColor: Colors.light.border, alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 },
   checkboxOn: { backgroundColor: Colors.light.primary, borderColor: Colors.light.primary },
   termsText: { flex: 1, fontSize: 13, color: Colors.light.textMuted, lineHeight: 22 },
   termsLink: { color: Colors.light.primary, fontWeight: '700' },
 
   btnPrimary: {
     height: 54, backgroundColor: Colors.light.primary, borderRadius: CustomBorders.radius.md,
-    alignItems: 'center', justifyContent: 'center', ...Shadows.md, shadowColor: Colors.light.primary,
-  },
+    alignItems: 'center', justifyContent: 'center', ...Shadows.md, shadowColor: Colors.light.primary },
   btnMuted: { opacity: 0.6 },
   btnText:  { color: Colors.light.surface, fontSize: 16, fontWeight: '700', letterSpacing: 0.2 },
 
   btnSecondary: {
     height: 54, borderRadius: CustomBorders.radius.md, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1.5, borderColor: Colors.light.border, paddingHorizontal: 24,
-  },
+    borderWidth: 1.5, borderColor: Colors.light.border, paddingHorizontal: 24 },
   btnSecondaryText: { fontSize: 15, fontWeight: '700', color: Colors.light.text },
 
   footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: Spacing.four },
@@ -458,5 +446,4 @@ const styles = StyleSheet.create({
 
   poweredRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: Spacing.four },
   poweredText:  { fontSize: 12, color: Colors.light.textMuted },
-  poweredBrand: { fontSize: 12, color: Colors.light.primary, fontWeight: '700' },
-});
+  poweredBrand: { fontSize: 12, color: Colors.light.primary, fontWeight: '700' } });

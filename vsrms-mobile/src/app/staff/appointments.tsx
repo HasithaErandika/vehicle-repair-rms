@@ -2,20 +2,13 @@ import React from 'react';
 import {
   View,
   Text,
-  StyleSheet,
-  SafeAreaView,
   ScrollView,
   StatusBar,
-  TouchableOpacity,
+  TouchableOpacity
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
-const BRAND = '#F56E0F';
-const WHITE = '#FFFFFF';
-const BG = '#F9FAFB';
-const TEXT = '#111827';
-const MUTED = '#6B7280';
-const BORDER = '#E5E7EB';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
+import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 
 const APPOINTMENTS = [
   { id: 1, vehicle: 'Honda Insight', owner: 'Amila Perera', time: '10:30 AM', service: 'Hybrid System Check', status: 'New' },
@@ -24,9 +17,11 @@ const APPOINTMENTS = [
 ];
 
 export default function StaffAppointmentsScreen() {
+  const { theme } = useUnistyles();
+
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor={WHITE} />
+    <ScreenWrapper>
+      <StatusBar barStyle="dark-content" backgroundColor={theme.colors.surface} />
       
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Incoming Appts</Text>
@@ -64,54 +59,57 @@ export default function StaffAppointmentsScreen() {
           </View>
         ))}
       </ScrollView>
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: BG },
+const styles = StyleSheet.create((theme) => ({
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 20,
-    backgroundColor: WHITE,
+    paddingHorizontal: theme.spacing.md,
+    paddingTop: theme.spacing.md,
+    paddingBottom: theme.spacing.lg,
+    backgroundColor: theme.colors.surface,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'baseline',
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border
   },
-  headerTitle: { fontSize: 24, fontWeight: '900', color: TEXT, letterSpacing: -0.5 },
-  apptsCount: { fontSize: 13, color: MUTED, fontWeight: '700' },
+  headerTitle: { fontSize: 24, fontWeight: '900', color: theme.colors.text, letterSpacing: -0.5 },
+  apptsCount: { fontSize: 13, color: theme.colors.muted, fontWeight: '700' },
 
-  scroll: { padding: 20, paddingBottom: 120 },
+  scroll: { padding: theme.spacing.md, paddingBottom: 120 },
   card: {
-    backgroundColor: WHITE,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radii.lg,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.md,
     borderWidth: 1,
-    borderColor: BORDER,
+    borderColor: theme.colors.border,
+    elevation: 2,
+    shadowColor: theme.colors.black, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8
   },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  timeBox: { backgroundColor: '#F3F4F6', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
-  timeText: { fontSize: 12, fontWeight: '800', color: TEXT },
+  timeBox: { backgroundColor: theme.colors.background, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
+  timeText: { fontSize: 12, fontWeight: '800', color: theme.colors.text },
   badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  badgeNew: { backgroundColor: '#EEF2FF' },
-  badgeConfirmed: { backgroundColor: '#F0FDF4' },
+  badgeNew: { backgroundColor: theme.colors.brandSoft },
+  badgeConfirmed: { backgroundColor: theme.colors.successBackground },
   badgeText: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase' },
-  textNew: { color: '#4F46E5' },
-  textConfirmed: { color: '#16A34A' },
+  textNew: { color: theme.colors.brand },
+  textConfirmed: { color: theme.colors.successText },
 
-  vehicleName: { fontSize: 18, fontWeight: '800', color: TEXT, marginBottom: 4 },
-  serviceName: { fontSize: 14, color: MUTED, fontWeight: '600', marginBottom: 16 },
+  vehicleName: { fontSize: 18, fontWeight: '800', color: theme.colors.text, marginBottom: 4 },
+  serviceName: { fontSize: 14, color: theme.colors.muted, fontWeight: '600', marginBottom: 16 },
   
-  divider: { height: 1, backgroundColor: '#F3F4F6', marginBottom: 16 },
+  divider: { height: 1, backgroundColor: theme.colors.border, marginBottom: 16 },
   
   footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   ownerInfo: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  avatarMini: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' },
-  avatarMiniText: { fontSize: 12, fontWeight: '800', color: TEXT },
-  ownerName: { fontSize: 14, fontWeight: '700', color: TEXT },
+  avatarMini: { width: 28, height: 28, borderRadius: 14, backgroundColor: theme.colors.border, alignItems: 'center', justifyContent: 'center' },
+  avatarMiniText: { fontSize: 12, fontWeight: '800', color: theme.colors.text },
+  ownerName: { fontSize: 14, fontWeight: '700', color: theme.colors.text },
   
-  acceptBtn: { backgroundColor: BRAND, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
-  acceptBtnText: { color: WHITE, fontSize: 13, fontWeight: '800' },
-});
+  acceptBtn: { backgroundColor: theme.colors.brand, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
+  acceptBtnText: { color: theme.colors.surface, fontSize: 13, fontWeight: '800' }
+}));

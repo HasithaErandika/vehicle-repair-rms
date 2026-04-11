@@ -1,10 +1,10 @@
 import { version } from 'expo/package.json';
 import { Image } from 'expo-image';
 import React from 'react';
-import { useColorScheme, StyleSheet } from 'react-native';
+import { useColorScheme, StyleSheet, Text, View } from 'react-native';
 
-import { ThemedText } from './themed-text';
-import { ThemedView } from './themed-view';
+const ThemedText = ({ children, style, type, themeColor }: any) => <Text style={style}>{children}</Text>;
+const ThemedView = ({ children, style, type }: any) => <View style={style}>{children}</View>;
 
 import { Spacing } from '@/constants/theme';
 
@@ -19,8 +19,8 @@ export function WebBadge() {
       <Image
         source={
           scheme === 'dark'
-            ? require('@/assets/images/expo-badge-white.png')
-            : require('@/assets/images/expo-badge.png')
+            ? require('../../../assets/images/expo-badge-white.png')
+            : require('../../../assets/images/expo-badge.png')
         }
         style={styles.badgeImage}
       />

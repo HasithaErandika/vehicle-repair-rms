@@ -4,55 +4,63 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
+  Dimensions,
 } from 'react-native';
 import { useRouter, Href } from 'expo-router';
 import { Car, ChevronRight, Calendar, Settings } from 'lucide-react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
-
+import { useAuth } from '@/providers/AuthProvider';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
+import { Ionicons } from '@expo/vector-icons';
+import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 
 export default function DashboardScreen() {
+  const { user, mockSignIn } = useAuth();
   const router = useRouter();
   const { theme } = useUnistyles();
 
-  const handleLogout = () => {
-    router.replace('/auth/login' as Href<string>);
+  // Get initials for avatar
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase();
   };
 
+  const displayName = user?.fullName || 'Guest User';
+  const initials = getInitials(displayName);
+
   return (
-    <ScreenWrapper>
+    <ScreenWrapper bg="#F9FAFB">
       {/* HEADER */}
       <View style={styles.header}>
         <View style={styles.headerTextContainer}>
           <Text style={styles.greeting}>Good Morning,</Text>
-          <Text style={styles.userName}>Seneja Thehansi</Text>
+          <Text style={styles.userName}>{displayName}</Text>
         </View>
-        <TouchableOpacity style={styles.avatarBox} onPress={handleLogout} activeOpacity={0.7}>
-          <Text style={styles.avatarText}>ST</Text>
+        <TouchableOpacity style={styles.avatarBox} activeOpacity={0.7}>
+          <Text style={styles.avatarText}>{initials}</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        
         {/* STATS ROW */}
         <View style={styles.statsGrid}>
           <View style={styles.statCard}>
-            <View style={styles.statIconBox}>
-                <Car size={18} color={theme.colors.brand} />
-            </View>
             <Text style={styles.statValue}>2</Text>
-            <Text style={styles.statLabel}>Vehicles</Text>
+            <Text style={styles.statLabel}>VEHICLES</Text>
           </View>
           <View style={styles.statCard}>
-            <View style={[styles.statIconBox, styles.statIconBoxSuccess]}>
-                <Calendar size={18} color={theme.colors.successText} />
-            </View>
             <Text style={styles.statValue}>1</Text>
-            <Text style={styles.statLabel}>Active Appt.</Text>
+            <Text style={styles.statLabel}>ACTIVE APPT.</Text>
           </View>
         </View>
 
-        {/* RECENT VEHICLES */}
-        <View style={styles.section}>
+        {/* MY VEHICLES */}
+        <Animated.View entering={FadeInUp.delay(100)} style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>My Vehicles</Text>
             <TouchableOpacity onPress={() => router.push('/tabs/vehicles' as Href<string>)}>
@@ -61,25 +69,23 @@ export default function DashboardScreen() {
           </View>
 
           <TouchableOpacity
-            style={styles.card}
-            activeOpacity={0.7}
+            style={styles.vehicleCard}
+            activeOpacity={0.8}
             onPress={() => router.push('/tabs/vehicles' as Href<string>)}
           >
-            <View style={styles.cardRow}>
-              <View style={styles.iconBox}>
-                <Car size={24} color={theme.colors.text} />
-              </View>
-              <View style={styles.cardInfo}>
-                <Text style={styles.cardTitle}>Honda Civic 2020</Text>
-                <Text style={styles.cardSubtitle}>CBA-1234 • Last Serviced: Oct 12, 2024</Text>
-              </View>
-              <ChevronRight size={20} color={theme.colors.muted} />
+            <View style={styles.vehicleIconBox}>
+              <Ionicons name="car-outline" size={24} color="#1A1A2E" />
             </View>
+            <View style={styles.vehicleInfo}>
+              <Text style={styles.vehicleTitle}>Honda Civic 2020</Text>
+              <Text style={styles.vehicleSubtitle}>CBA-1234 • Last Serviced: Oct 12, 2024</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#E5E7EB" />
           </TouchableOpacity>
-        </View>
+        </Animated.View>
 
-        {/* ACTIVE APPOINTMENTS */}
-        <View style={styles.section}>
+        {/* UPCOMING APPOINTMENTS */}
+        <Animated.View entering={FadeInUp.delay(200)} style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Upcoming Appointments</Text>
             <TouchableOpacity onPress={() => router.push('/tabs/schedule' as Href<string>)}>
@@ -95,18 +101,20 @@ export default function DashboardScreen() {
               </View>
               <Text style={styles.apptDate}>Tomorrow, 10:00 AM</Text>
             </View>
-            <View style={styles.divider} />
-            <Text style={styles.apptTitle}>Full Service & Oil Change</Text>
-            <Text style={styles.apptSub}>For Honda Civic (CBA-1234)</Text>
-            <View style={styles.garageBox}>
-              <Settings size={16} color={theme.colors.muted} style={styles.garageIcon} />
-              <View>
+            
+            <View style={styles.apptBody}>
+              <Text style={styles.apptTitle}>Full Service & Oil Change</Text>
+              <Text style={styles.apptSubTitle}>For Honda Civic (CBA-1234)</Text>
+              
+              <View style={styles.garageBox}>
                 <Text style={styles.garageName}>AutoCare Garage Colombo</Text>
                 <Text style={styles.garageAddress}>123 Main St, Colombo 03</Text>
               </View>
             </View>
           </View>
-        </View>
+        </Animated.View>
+
+        <View style={styles.bottomSpacer} />
       </ScrollView>
     </ScreenWrapper>
   );
@@ -117,212 +125,109 @@ const styles = StyleSheet.create((theme) => ({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: theme.colors.surface,
-    paddingHorizontal: theme.spacing.md,
-    paddingTop: theme.spacing.xl,
-    paddingBottom: theme.spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    paddingBottom: 24,
+    backgroundColor: '#FFFFFF',
   },
   headerTextContainer: { flex: 1 },
-  greeting: { 
-    fontSize: theme.fonts.sizes.xs, 
-    color: theme.colors.muted, 
-    fontWeight: '600', 
-    marginBottom: 2 
-  },
-  userName: { 
-    fontSize: theme.fonts.sizes.xl, 
-    color: theme.colors.text, 
-    fontWeight: '800', 
-    letterSpacing: -0.3 
-  },
+  greeting: { fontSize: 13, color: '#9CA3AF', fontWeight: '600' },
+  userName: { fontSize: 24, color: '#1A1A2E', fontWeight: '900', letterSpacing: -0.5, marginTop: 2 },
   avatarBox: {
-    width: 44,
-    height: 44,
-    borderRadius: theme.radii.md,
-    backgroundColor: theme.colors.brandSoft,
-    borderWidth: 1,
-    borderColor: 'rgba(245, 110, 15, 0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: { 
-    fontSize: theme.fonts.sizes.md, 
-    fontWeight: '800', 
-    color: theme.colors.brand 
-  },
-  scroll: {
-    padding: theme.spacing.md,
-    paddingBottom: 100,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    gap: theme.spacing.md,
-    marginBottom: theme.spacing.xl,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radii.lg,
-    padding: theme.spacing.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    elevation: 2,
-  },
-  statIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: theme.radii.sm,
-    backgroundColor: theme.colors.brandSoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: theme.spacing.sm,
-  },
-  statIconBoxSuccess: {
-    backgroundColor: theme.colors.successBackground,
-  },
-  statValue: { 
-    fontSize: theme.fonts.sizes.xxxl, 
-    fontWeight: '900', 
-    color: theme.colors.text, 
-    marginBottom: 4 
-  },
-  statLabel: { 
-    fontSize: theme.fonts.sizes.xs, 
-    color: theme.colors.muted, 
-    fontWeight: '600', 
-    textTransform: 'uppercase' 
-  },
-  section: { 
-    marginBottom: theme.spacing.xl 
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: theme.spacing.sm,
-  },
-  sectionTitle: { 
-    fontSize: theme.fonts.sizes.lg, 
-    fontWeight: '800', 
-    color: theme.colors.text 
-  },
-  linkText: { 
-    fontSize: theme.fonts.sizes.sm, 
-    fontWeight: '700', 
-    color: theme.colors.brand 
-  },
-  card: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radii.lg,
-    padding: theme.spacing.sm,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    elevation: 2,
-  },
-  cardRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  iconBox: {
     width: 48,
     height: 48,
-    borderRadius: theme.radii.sm,
-    backgroundColor: theme.colors.background,
+    borderRadius: 12,
+    backgroundColor: '#FFF7ED',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: theme.spacing.sm,
+    borderWidth: 1.5,
+    borderColor: '#F56E0F',
   },
-  cardInfo: { flex: 1 },
-  cardTitle: { 
-    fontSize: theme.fonts.sizes.md, 
-    fontWeight: '700', 
-    color: theme.colors.text, 
-    marginBottom: 4 
+  avatarText: { fontSize: 16, fontWeight: '900', color: '#F56E0F' },
+  
+  scroll: { padding: 24 },
+  
+  statsGrid: { flexDirection: 'row', gap: 16, marginBottom: 32 },
+  statCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 3,
   },
-  cardSubtitle: { 
-    fontSize: theme.fonts.sizes.sm, 
-    color: theme.colors.muted, 
-    fontWeight: '500' 
-  },
-  apptCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radii.lg,
-    padding: theme.spacing.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderLeftWidth: 4,
-    borderLeftColor: theme.colors.brand,
-    elevation: 2,
-  },
-  apptHeader: {
+  statValue: { fontSize: 36, fontWeight: '900', color: '#1A1A2E' },
+  statLabel: { fontSize: 10, color: '#9CA3AF', fontWeight: '800', marginTop: 4, letterSpacing: 0.5 },
+
+  section: { marginBottom: 32 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  sectionTitle: { fontSize: 18, fontWeight: '900', color: '#1A1A2E' },
+  linkText: { fontSize: 14, fontWeight: '800', color: '#F56E0F', letterSpacing: -0.2 },
+
+  vehicleCard: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#F3F4F6',
   },
+  vehicleIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  vehicleInfo: { flex: 1 },
+  vehicleTitle: { fontSize: 16, fontWeight: '800', color: '#1A1A2E' },
+  vehicleSubtitle: { fontSize: 12, color: '#9CA3AF', fontWeight: '600', marginTop: 2 },
+
+  apptCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderLeftWidth: 6,
+    borderLeftColor: '#F56E0F',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 3,
+    padding: 20,
+  },
+  apptHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.successBackground,
+    backgroundColor: '#ECFDF5',
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: theme.radii.full,
+    borderRadius: 20,
     gap: 6,
   },
-  statusDot: { 
-    width: 6, 
-    height: 6, 
-    borderRadius: theme.radii.full, 
-    backgroundColor: theme.colors.successText 
-  },
-  statusText: { 
-    fontSize: theme.fonts.sizes.xs, 
-    fontWeight: '700', 
-    color: theme.colors.successText 
-  },
-  apptDate: { 
-    fontSize: theme.fonts.sizes.sm, 
-    fontWeight: '700', 
-    color: theme.colors.text 
-  },
-  divider: { 
-    height: 1, 
-    backgroundColor: theme.colors.border, 
-    marginVertical: theme.spacing.sm 
-  },
-  apptTitle: { 
-    fontSize: theme.fonts.sizes.md, 
-    fontWeight: '800', 
-    color: theme.colors.text, 
-    marginBottom: 4 
-  },
-  apptSub: { 
-    fontSize: theme.fonts.sizes.sm, 
-    color: theme.colors.muted, 
-    fontWeight: '500', 
-    marginBottom: theme.spacing.sm 
-  },
+  statusDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#10B981' },
+  statusText: { fontSize: 12, fontWeight: '800', color: '#10B981' },
+  apptDate: { fontSize: 13, fontWeight: '800', color: '#1A1A2E' },
+  
+  apptBody: { },
+  apptTitle: { fontSize: 18, fontWeight: '900', color: '#1A1A2E', marginBottom: 4 },
+  apptSubTitle: { fontSize: 13, color: '#9CA3AF', fontWeight: '600', marginBottom: 16 },
+  
   garageBox: {
-    flexDirection: 'row',
-    backgroundColor: theme.colors.background,
-    borderRadius: theme.radii.md,
-    padding: theme.spacing.sm,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    padding: 16,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: '#F3F4F6',
   },
-  garageIcon: {
-    marginRight: theme.spacing.sm,
-    marginTop: 2,
-  },
-  garageName: { 
-    fontSize: theme.fonts.sizes.sm, 
-    fontWeight: '700', 
-    color: theme.colors.text, 
-    marginBottom: 2 
-  },
-  garageAddress: { 
-    fontSize: theme.fonts.sizes.sm, 
-    color: theme.colors.muted 
-  },
+  garageName: { fontSize: 14, fontWeight: '800', color: '#1A1A2E' },
+  garageAddress: { fontSize: 12, color: '#9CA3AF', fontWeight: '500', marginTop: 2 },
+  
+  bottomSpacer: { height: 100 }
 }));

@@ -1,14 +1,12 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated';
-
-const BRAND = '#F56E0F';
-const TEXT = '#111827';
-const MUTED = '#9CA3AF';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 function AnimatedTabIcon({ name, focused, label }: { name: string; focused: boolean; label: string }) {
+  const { theme } = useUnistyles();
   const animatedStyle = useAnimatedStyle(() => {
     return {
       transform: [{ scale: withSpring(focused ? 1.15 : 1) }],
@@ -18,10 +16,10 @@ function AnimatedTabIcon({ name, focused, label }: { name: string; focused: bool
   return (
     <Animated.View style={[styles.iconContainer, animatedStyle]}>
       <View style={[styles.iconWrapper, focused && styles.activeIconWrapper]}>
-        <Ionicons 
-          name={focused ? (name as any) : (`${name}-outline` as any)} 
-          size={22} 
-          color={focused ? BRAND : MUTED} 
+        <Ionicons
+          name={focused ? (name as any) : (`${name}-outline` as any)}
+          size={22}
+          color={focused ? theme.colors.brand : theme.colors.muted}
         />
       </View>
       <Text style={[styles.label, focused && styles.activeLabel]}>{label}</Text>
@@ -30,6 +28,8 @@ function AnimatedTabIcon({ name, focused, label }: { name: string; focused: bool
 }
 
 export default function StaffLayout() {
+  const { theme } = useUnistyles();
+  
   return (
     <Tabs
       screenOptions={{
@@ -74,21 +74,23 @@ export default function StaffLayout() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create((theme) => ({
   tabBar: {
     position: 'absolute',
     bottom: 25,
     left: 20,
     right: 20,
     height: 72,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radii.xxl,
     borderTopWidth: 0,
+    boxShadow: [{
+      offsetX: 0,
+      offsetY: 10,
+      blurRadius: 20,
+      color: 'rgba(0,0,0,0.12)',
+    }],
     elevation: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.12,
-    shadowRadius: 20,
     paddingBottom: 0,
   },
   iconContainer: {
@@ -100,21 +102,21 @@ const styles = StyleSheet.create({
   iconWrapper: {
     width: 40,
     height: 40,
-    borderRadius: 12,
+    borderRadius: theme.radii.md,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
   },
   activeIconWrapper: {
-    backgroundColor: '#FFF4EC',
+    backgroundColor: theme.colors.brandSoft,
   },
   label: {
     fontSize: 10,
     fontWeight: '600',
-    color: MUTED,
+    color: theme.colors.muted,
   },
   activeLabel: {
-    color: BRAND,
+    color: theme.colors.brand,
     fontWeight: '800',
   },
-});
+}));

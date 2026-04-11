@@ -1,43 +1,123 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { Calendar, ChevronRight } from 'lucide-react-native';
-import { createStyleSheet, useStyles } from 'react-native-unistyles';
+import { MapPin } from 'lucide-react-native';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { useRouter } from 'expo-router';
-import { Appointment } from '../types/appointments.types';
 
-export function AppointmentCard({ appointment }: { appointment: Appointment }) {
-  const { styles, theme } = useStyles(stylesheet);
+export function AppointmentCard({ appointment }: { appointment: any }) {
+  const { theme } = useUnistyles();
   const router = useRouter();
 
   return (
-    <TouchableOpacity
-      style={styles.card}
-      activeOpacity={0.7}
-      onPress={() => router.push(`/tabs/appointments/${appointment._id}` as any)}
-    >
-      <View style={styles.cardRow}>
-        <View style={styles.iconBox}>
-          <Calendar size={24} color={theme.colors.brand} />
+    <View style={styles.card}>
+      <View style={styles.cardHeader}>
+        <View style={styles.dateTimeBox}>
+          <Text style={styles.dateText}>{appointment.date || 'Tomorrow, Oct 25'}</Text>
+          <Text style={styles.timeText}>{appointment.time || '10:00 AM'}</Text>
         </View>
-        <View style={styles.cardInfo}>
-          <Text style={styles.cardTitle}>{appointment.serviceType}</Text>
-          <Text style={styles.cardSubtitle}>{appointment.date} at {appointment.time}</Text>
-          <Text style={[styles.status, { color: appointment.status === 'CONFIRMED' ? theme.colors.success : theme.colors.warning }]}>
-            {appointment.status}
-          </Text>
+        <View style={styles.statusBadge}>
+          <Text style={styles.statusText}>{appointment.status || 'Confirmed'}</Text>
         </View>
-        <ChevronRight size={20} color={theme.colors.muted} />
       </View>
-    </TouchableOpacity>
+
+      <View style={styles.content}>
+        <Text style={styles.title}>{appointment.serviceType}</Text>
+        <Text style={styles.subtitle}>{appointment.vehicleInfo || (appointment.vehicleId?._id ? `${appointment.vehicleId.make} ${appointment.vehicleId.model}` : 'Honda Civic (CBA-1234)')}</Text>
+
+        <View style={styles.garageBox}>
+          <MapPin size={14} color="#1A1A2E" />
+          <Text style={styles.garageName}>{appointment.workshopId?.name || 'AutoCare Garage Colombo'}</Text>
+        </View>
+      </View>
+
+      <View style={styles.footer}>
+        <TouchableOpacity style={styles.rescheduleBtn}>
+          <Text style={styles.rescheduleText}>Reschedule</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.directionsBtn}>
+          <Text style={styles.directionsText}>Get Directions</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
 
-const stylesheet = createStyleSheet((theme) => ({
-  card: { backgroundColor: theme.colors.surface, borderRadius: theme.radii.lg, padding: theme.spacing.sm, borderWidth: 1, borderColor: theme.colors.border, marginBottom: theme.spacing.sm },
-  cardRow: { flexDirection: 'row', alignItems: 'center' },
-  iconBox: { width: 48, height: 48, borderRadius: theme.radii.sm, backgroundColor: theme.colors.brandSoft, alignItems: 'center', justifyContent: 'center', marginRight: theme.spacing.sm },
-  cardInfo: { flex: 1 },
-  cardTitle: { fontSize: theme.fonts.sizes.md, fontWeight: '700', color: theme.colors.text, marginBottom: 2 },
-  cardSubtitle: { fontSize: theme.fonts.sizes.sm, color: theme.colors.muted, fontWeight: '500', marginBottom: 4 },
-  status: { fontSize: theme.fonts.sizes.xs, fontWeight: '700' },
+const styles = StyleSheet.create((theme) => ({
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 20,
+    borderWidth: 1.5,
+    borderColor: '#F3F4F6',
+    boxShadow: [{
+      offsetX: 0,
+      offsetY: 4,
+      blurRadius: 10,
+      color: 'rgba(0,0,0,0.03)',
+    }],
+    elevation: 2
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 20
+  },
+  dateTimeBox: {
+    backgroundColor: '#F9FAFB',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#F3F4F6'
+  },
+  dateText: { fontSize: 13, fontWeight: '800', color: '#1A1A2E' },
+  timeText: { fontSize: 13, fontWeight: '800', color: '#F56E0F', marginTop: 2 },
+  
+  statusBadge: {
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8
+  },
+  statusText: { fontSize: 11, fontWeight: '800', color: '#10B981' },
+  
+  content: { marginBottom: 20 },
+  title: { fontSize: 19, fontWeight: '900', color: '#1A1A2E', marginBottom: 4 },
+  subtitle: { fontSize: 14, color: '#9CA3AF', fontWeight: '600', marginBottom: 16 },
+  
+  garageBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#F9FAFB',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    alignSelf: 'flex-start'
+  },
+  garageName: { fontSize: 13, fontWeight: '800', color: '#1A1A2E' },
+  
+  footer: { flexDirection: 'row', gap: 12 },
+  rescheduleBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF'
+  },
+  rescheduleText: { fontSize: 14, fontWeight: '800', color: '#1A1A2E' },
+  directionsBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#F56E0F',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  directionsText: { fontSize: 14, fontWeight: '800', color: '#FFFFFF' }
 }));

@@ -37,24 +37,30 @@ export const CustomBorders = {
 
 export const Shadows = {
   sm: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.18,
-    shadowRadius: 1.0,
+    boxShadow: [{
+      offsetX: 0,
+      offsetY: 1,
+      blurRadius: 1.0,
+      color: 'rgba(0,0,0,0.18)',
+    }],
     elevation: 1,
   },
   md: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.23,
-    shadowRadius: 2.62,
+    boxShadow: [{
+      offsetX: 0,
+      offsetY: 2,
+      blurRadius: 2.62,
+      color: 'rgba(0,0,0,0.23)',
+    }],
     elevation: 4,
   },
   lg: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.30,
-    shadowRadius: 4.65,
+    boxShadow: [{
+      offsetX: 0,
+      offsetY: 4,
+      blurRadius: 4.65,
+      color: 'rgba(0,0,0,0.30)',
+    }],
     elevation: 8,
   },
 };

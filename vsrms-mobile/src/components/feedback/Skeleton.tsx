@@ -1,16 +1,17 @@
+import { View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
 export function VehicleSkeleton() {
 
   return (
     <View style={styles.container}>
-      {[1,2,3,4].map(idx => (
+      {[1, 2, 3, 4].map(idx => (
         <View key={idx} style={styles.card}>
-           <View style={styles.avatar} />
-           <View style={styles.textGroup}>
-             <View style={styles.title} />
-             <View style={styles.subtitle} />
-           </View>
+          <View style={styles.avatar} />
+          <View style={styles.textGroup}>
+            <View style={styles.title} />
+            <View style={styles.subtitle} />
+          </View>
         </View>
       ))}
     </View>

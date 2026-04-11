@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { createStyleSheet, useStyles } from 'react-native-unistyles';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { ChevronLeft, Bell } from 'lucide-react-native';
 
 interface CustomHeaderProps {
@@ -20,7 +20,7 @@ export function CustomHeader({
   onRightPress,
   role = 'user',
 }: CustomHeaderProps) {
-  const { styles, theme } = useStyles(stylesheet);
+  const { theme } = useUnistyles();
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
@@ -62,7 +62,7 @@ export function CustomHeader({
   );
 }
 
-const stylesheet = createStyleSheet((theme) => ({
+const styles = StyleSheet.create((theme) => ({
   headerContainer: (topInset: number) => ({
     paddingTop: topInset,
     height: topInset + 60, // Fixed physical height after safe area
@@ -77,11 +77,13 @@ const stylesheet = createStyleSheet((theme) => ({
   }),
   elevated: {
     borderBottomWidth: 0,
+    boxShadow: [{
+      offsetX: 0,
+      offsetY: 2,
+      blurRadius: 8,
+      color: 'rgba(0,0,0,0.05)',
+    }],
     elevation: 4,
-    shadowColor: theme.colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
   },
   leftContainer: {
     flex: 1,

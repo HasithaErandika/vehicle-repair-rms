@@ -9,8 +9,9 @@ import { RatingStars } from '../components/RatingStars';
 import { WorkshopMap } from '../components/WorkshopMap';
 import { handleApiError } from '@/services/error.handler';
 
-export function WorkshopDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+export function WorkshopDetailScreen({ id: propId }: { id?: string }) {
+  const params = useLocalSearchParams<{ id: string }>();
+  const id = propId || params.id;
   const router = useRouter();
   const { theme } = useUnistyles();
   const { data: workshop, isLoading, isError, error } = useWorkshop(id!);

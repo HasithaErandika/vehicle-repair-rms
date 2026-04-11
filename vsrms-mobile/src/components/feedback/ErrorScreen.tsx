@@ -1,3 +1,6 @@
+import React from 'react';
+import { View, Text, TouchableOpacity } from 'react-native';
+import { AlertCircle } from 'lucide-react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 export function ErrorScreen({ onRetry, message = "Failed to load data" }: { onRetry: () => void, message?: string }) {

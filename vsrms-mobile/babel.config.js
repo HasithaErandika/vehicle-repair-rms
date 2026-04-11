@@ -7,6 +7,8 @@ module.exports = function (api) {
         'module-resolver',
         {
           alias: {
+            'react-native-unistyles': './src/lib/unistyles-compat',
+            '@/assets': './assets',
             '@': './src',
           },
         },

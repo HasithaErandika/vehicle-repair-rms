@@ -1,10 +1,10 @@
 import { SymbolView } from 'expo-symbols';
 import { PropsWithChildren, useState } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+const ThemedText = ({ children, style, type, themeColor }: any) => <Text style={style}>{children}</Text>;
+const ThemedView = ({ children, style, type }: any) => <View style={style}>{children}</View>;
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 

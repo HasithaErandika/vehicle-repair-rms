@@ -6,6 +6,7 @@ import { User } from '@/features/auth/types/auth.types';
 interface AuthContextType {
   signIn: (token: string) => Promise<void>;
   signOut: () => Promise<void>;
+  mockSignIn: (role: 'customer' | 'workshop_owner' | 'workshop_staff' | 'admin') => void;
   user: User | null;
   isLoading: boolean;
 }
@@ -59,6 +60,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const mockSignIn = (role: 'customer' | 'workshop_owner' | 'workshop_staff' | 'admin') => {
+    const mockUser: User = {
+      id: 'mock-id-' + role,
+      email: `${role}@mock.com`,
+      fullName: `Mock ${role.replace('_', ' ')}`,
+      role: role,
+    };
+    setUser(mockUser);
+  };
+
   const signOut = async () => {
     try {
       await StorageService.removeToken();
@@ -69,7 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ signIn, signOut, user, isLoading }}>
+    <AuthContext.Provider value={{ signIn, signOut, mockSignIn, user, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

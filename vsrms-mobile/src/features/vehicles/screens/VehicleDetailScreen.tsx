@@ -2,19 +2,17 @@ import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Car, ChevronLeft, Download } from 'lucide-react-native';
-import { createStyleSheet, useStyles } from 'react-native-unistyles';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
-import { useVehicles } from '../api/queries';
+import { useVehicle } from '../queries/queries';
 
 export function VehicleDetailScreen({ id }: { id: string }) {
   const router = useRouter();
-  const { styles, theme } = useStyles(stylesheet);
+  const { theme } = useUnistyles();
 
-  // In a real app we would use a query for a single vehicle, e.g. useVehicle(id).
-  // For now, we will just find it from the list or fallback to mock if not found.
-  const { data: vehicles } = useVehicles();
-  const vehicleData = vehicles?.find(v => v._id === id);
+  // Fetch single vehicle data
+  const { data: vehicleData } = useVehicle(id);
 
   const vehicle = vehicleData || {
     make: 'Honda',
@@ -129,7 +127,7 @@ export function VehicleDetailScreen({ id }: { id: string }) {
   );
 }
 
-const stylesheet = createStyleSheet((theme) => ({
+const styles = StyleSheet.create((theme) => ({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -158,10 +156,12 @@ const stylesheet = createStyleSheet((theme) => ({
     borderWidth: 1,
     borderColor: theme.colors.border,
     marginBottom: theme.spacing.xl,
-    shadowColor: theme.colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
+    boxShadow: [{
+      offsetX: 0,
+      offsetY: 2,
+      blurRadius: 8,
+      color: 'rgba(0, 0, 0, 0.04)',
+    }],
     elevation: 2,
   },
   infoRow: { flexDirection: 'row', alignItems: 'center' },

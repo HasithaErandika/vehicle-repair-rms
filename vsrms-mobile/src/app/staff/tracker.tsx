@@ -2,20 +2,13 @@ import React from 'react';
 import {
   View,
   Text,
-  StyleSheet,
-  SafeAreaView,
   ScrollView,
   StatusBar,
-  TouchableOpacity,
+  TouchableOpacity
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
-const BRAND = '#F56E0F';
-const WHITE = '#FFFFFF';
-const BG = '#F9FAFB';
-const TEXT = '#111827';
-const MUTED = '#6B7280';
-const BORDER = '#E5E7EB';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
+import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 
 const JOBS = [
   { id: 1, vehicle: 'Toyota Prius', license: 'CAA-9876', status: 'Washing', progress: 0.8, steps: ['Inspection', 'Drain Oil', 'Filter Change', 'Refill', 'Washing'] },
@@ -23,9 +16,11 @@ const JOBS = [
 ];
 
 export default function StaffTrackerScreen() {
+  const { theme } = useUnistyles();
+
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor={WHITE} />
+    <ScreenWrapper>
+      <StatusBar barStyle="dark-content" backgroundColor={theme.colors.surface} />
       
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Job Status Tracker</Text>
@@ -52,7 +47,7 @@ export default function StaffTrackerScreen() {
                   <View key={step} style={styles.stepRow}>
                     <View style={styles.lineCol}>
                       <View style={[styles.dot, isDone && styles.dotDone, isCurrent && styles.dotCurrent]}>
-                        {isDone && !isCurrent && <Ionicons name="checkmark" size={12} color={WHITE} />}
+                        {isDone && !isCurrent && <Ionicons name="checkmark" size={12} color={theme.colors.surface} />}
                       </View>
                       {i < j.steps.length - 1 && <View style={[styles.line, isDone && styles.lineDone]} />}
                     </View>
@@ -65,49 +60,62 @@ export default function StaffTrackerScreen() {
             </View>
 
             <TouchableOpacity style={styles.updateBtn}>
-              <Text style={styles.updateBtnText}>Next Step: Finish Washing</Text>
+              <Text style={styles.updateBtnText}>Next Step: Finish {j.status}</Text>
             </TouchableOpacity>
           </View>
         ))}
       </ScrollView>
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: BG },
-  header: { padding: 20, backgroundColor: WHITE, borderBottomWidth: 1, borderBottomColor: BORDER },
-  headerTitle: { fontSize: 24, fontWeight: '900', color: TEXT, letterSpacing: -0.5 },
+const styles = StyleSheet.create((theme) => ({
+  header: { 
+    padding: theme.spacing.md, 
+    backgroundColor: theme.colors.surface, 
+    borderBottomWidth: 1, 
+    borderBottomColor: theme.colors.border 
+  },
+  headerTitle: { fontSize: 24, fontWeight: '900', color: theme.colors.text, letterSpacing: -0.5 },
 
-  scroll: { padding: 20, paddingBottom: 120 },
+  scroll: { padding: theme.spacing.md, paddingBottom: 120 },
   card: {
-    backgroundColor: WHITE,
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 20,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radii.lg,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.md,
     borderWidth: 1,
-    borderColor: BORDER,
+    borderColor: theme.colors.border,
     elevation: 4,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10,
+    shadowColor: theme.colors.black, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10 
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
-  vehicleName: { fontSize: 19, fontWeight: '800', color: TEXT, marginBottom: 4 },
-  license: { fontSize: 13, color: MUTED, fontWeight: '700', letterSpacing: 1 },
-  progressCircle: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFF4EC', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: BRAND },
-  progressText: { fontSize: 13, fontWeight: '800', color: BRAND },
+  vehicleName: { fontSize: 19, fontWeight: '800', color: theme.colors.text, marginBottom: 4 },
+  license: { fontSize: 13, color: theme.colors.muted, fontWeight: '700', letterSpacing: 1 },
+  progressCircle: { 
+    width: 48, height: 48, borderRadius: 24, 
+    backgroundColor: theme.colors.brandSoft, 
+    alignItems: 'center', justifyContent: 'center', 
+    borderWidth: 2, borderColor: theme.colors.brand 
+  },
+  progressText: { fontSize: 13, fontWeight: '800', color: theme.colors.brand },
 
   trackContainer: { marginBottom: 24, paddingLeft: 10 },
   stepRow: { flexDirection: 'row', gap: 16, height: 45, alignItems: 'flex-start' },
   lineCol: { alignItems: 'center', width: 24 },
-  dot: { width: 24, height: 24, borderRadius: 12, backgroundColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center', zIndex: 2 },
+  dot: { width: 24, height: 24, borderRadius: 12, backgroundColor: theme.colors.border, alignItems: 'center', justifyContent: 'center', zIndex: 2 },
   dotDone: { backgroundColor: '#10B981' },
-  dotCurrent: { backgroundColor: BRAND, borderWidth: 4, borderColor: '#FFF4EC' },
-  line: { width: 2, height: 45, backgroundColor: '#E5E7EB', position: 'absolute', top: 12, zIndex: 1 },
+  dotCurrent: {
+    backgroundColor: theme.colors.brand,
+    borderWidth: 4,
+    borderColor: theme.colors.brandSoft
+  },
+  line: { width: 2, height: 45, backgroundColor: theme.colors.border, position: 'absolute', top: 12, zIndex: 1 },
   lineDone: { backgroundColor: '#10B981' },
-  stepText: { fontSize: 15, fontWeight: '600', color: MUTED, marginTop: 2 },
-  stepTextDone: { color: TEXT, fontWeight: '700' },
-  stepTextCurrent: { color: BRAND, fontWeight: '900' },
+  stepText: { fontSize: 15, fontWeight: '600', color: theme.colors.muted, marginTop: 2 },
+  stepTextDone: { color: theme.colors.text, fontWeight: '700' },
+  stepTextCurrent: { color: theme.colors.brand, fontWeight: '900' },
 
-  updateBtn: { backgroundColor: '#111827', height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  updateBtnText: { color: WHITE, fontSize: 14, fontWeight: '800' },
-});
+  updateBtn: { backgroundColor: theme.colors.text, height: 48, borderRadius: theme.radii.md, alignItems: 'center', justifyContent: 'center' },
+  updateBtnText: { color: theme.colors.surface, fontSize: 14, fontWeight: '800' }
+}));

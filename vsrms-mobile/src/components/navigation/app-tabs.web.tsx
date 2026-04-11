@@ -8,11 +8,12 @@ import {
 } from 'expo-router/ui';
 import { SymbolView } from 'expo-symbols';
 import React from 'react';
-import { Pressable, useColorScheme, View, StyleSheet } from 'react-native';
+import { Pressable, useColorScheme, View, StyleSheet, Text } from 'react-native';
 
 import { ExternalLink } from './external-link';
-import { ThemedText } from './themed-text';
-import { ThemedView } from './themed-view';
+
+const ThemedText = ({ children, style, type, themeColor }: any) => <Text style={style}>{children}</Text>;
+const ThemedView = ({ children, style, type }: any) => <View style={style}>{children}</View>;
 
 import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
 

@@ -1,11 +1,11 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { FileText, ChevronRight } from 'lucide-react-native';
-import { createStyleSheet, useStyles } from 'react-native-unistyles';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { ServiceRecord } from '../types/records.types';
 
 export function RecordCard({ record }: { record: ServiceRecord }) {
-  const { styles, theme } = useStyles(stylesheet);
+  const { theme } = useUnistyles();
 
   return (
     <View style={styles.card}>
@@ -26,7 +26,7 @@ export function RecordCard({ record }: { record: ServiceRecord }) {
   );
 }
 
-const stylesheet = createStyleSheet((theme) => ({
+const styles = StyleSheet.create((theme) => ({
   card: { backgroundColor: theme.colors.surface, borderRadius: theme.radii.lg, padding: theme.spacing.sm, borderWidth: 1, borderColor: theme.colors.border, marginBottom: theme.spacing.sm },
   cardRow: { flexDirection: 'row', alignItems: 'center' },
   iconBox: { width: 48, height: 48, borderRadius: theme.radii.sm, backgroundColor: theme.colors.brandSoft, alignItems: 'center', justifyContent: 'center', marginRight: theme.spacing.sm },

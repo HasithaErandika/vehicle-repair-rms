@@ -127,6 +127,7 @@ export default function TabsLayout() {
           ),
         }}
       />
+
     </Tabs>
   );
 }
@@ -144,11 +145,13 @@ const styles = StyleSheet.create((theme) => ({
     bottom: 0,
     left: 0,
     right: 0,
+    boxShadow: [{
+      offsetX: 0,
+      offsetY: -8,
+      blurRadius: 16,
+      color: 'rgba(0,0,0,0.12)',
+    }],
     elevation: 25,
-    shadowColor: theme.colors.black,
-    shadowOffset: { width: 0, height: -8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
   },
   tabItemContainer: {
     alignItems: 'center',
