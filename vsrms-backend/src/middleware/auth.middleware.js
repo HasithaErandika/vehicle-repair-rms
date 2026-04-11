@@ -35,6 +35,21 @@ const protect = (req, res, next) => {
 
   const token = authHeader.split(' ')[1];
 
+  // ⚠️ DEVELOPMENT BYPASS: Multi-Role Mock Logic
+  if (token && token.startsWith('mock-')) {
+    const role = token.split('-').slice(1).join('-'); // e.g., customer, admin, workshop_owner, workshop_staff
+    req.user = {
+      _id: '507f1f77bcf86cd799439011',
+      asgardeoSub: token,
+      email: `${role}@bypass.com`,
+      fullName: `${role.charAt(0).toUpperCase() + role.slice(1)} Bypass`,
+      role: role,
+      active: true,
+      workshopId: (role === 'workshop_owner' || role === 'workshop_staff') ? '607f1f77bcf86cd799439012' : undefined,
+    };
+    return next();
+  }
+
   const options = {
     algorithms: ['RS256'],
     issuer: process.env.ASGARDEO_ISSUER,

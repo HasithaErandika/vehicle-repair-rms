@@ -56,9 +56,9 @@ function AnimatedTabIcon({
   );
 }
 
-export default function AdminLayout() {
+export default function StaffLayout() {
   const { theme } = useUnistyles();
-
+  
   return (
     <Tabs
       screenOptions={{
@@ -71,23 +71,31 @@ export default function AdminLayout() {
         name="index"
         options={{
           tabBarIcon: ({ focused }) => (
-            <AnimatedTabIcon iconName={{ active: 'stats-chart', inactive: 'stats-chart-outline' }} focused={focused} label="Analytics" />
+            <AnimatedTabIcon iconName={{ active: 'home', inactive: 'home-outline' }} focused={focused} label="Tasks" />
           ),
         }}
       />
       <Tabs.Screen
-        name="garages"
+        name="appointments"
         options={{
           tabBarIcon: ({ focused }) => (
-            <AnimatedTabIcon iconName={{ active: 'business', inactive: 'business-outline' }} focused={focused} label="Garages" />
+            <AnimatedTabIcon iconName={{ active: 'calendar', inactive: 'calendar-outline' }} focused={focused} label="Appts" />
           ),
         }}
       />
       <Tabs.Screen
-        name="users"
+        name="tracker"
         options={{
           tabBarIcon: ({ focused }) => (
-            <AnimatedTabIcon iconName={{ active: 'people', inactive: 'people-outline' }} focused={focused} label="Users" />
+            <AnimatedTabIcon iconName={{ active: 'hammer', inactive: 'hammer-outline' }} focused={focused} label="Jobs" />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="record"
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <AnimatedTabIcon iconName={{ active: 'document-text', inactive: 'document-text-outline' }} focused={focused} label="Records" />
           ),
         }}
       />

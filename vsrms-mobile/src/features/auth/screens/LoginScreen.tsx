@@ -21,7 +21,7 @@ import { AppLogo } from '@/components/ui/AppLogo';
 const { height: SCREEN_H } = Dimensions.get('window');
 
 export function LoginScreen() {
-  const { login } = useAuth();
+  const { login, bypassLogin } = useAuth();
   const router = useRouter();
   
   const [email, setEmail] = useState('');
@@ -187,6 +187,27 @@ export function LoginScreen() {
             >
               <Text style={styles.secondaryBtnText}>Create a new account</Text>
             </TouchableOpacity>
+
+            {/* DEVELOPMENT MOCKS */}
+            <View style={styles.devMockContainer}>
+               <Text style={styles.devMockLabel}>Development Bypasses</Text>
+               <View style={styles.devMockGrid}>
+                  <TouchableOpacity style={styles.devMockBtn} onPress={() => bypassLogin('admin')} activeOpacity={0.8}>
+                     <Text style={styles.devMockBtnText}>Admin</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.devMockBtn} onPress={() => bypassLogin('customer')} activeOpacity={0.8}>
+                     <Text style={styles.devMockBtnText}>Customer</Text>
+                  </TouchableOpacity>
+               </View>
+               <View style={styles.devMockGrid}>
+                  <TouchableOpacity style={styles.devMockBtn} onPress={() => bypassLogin('workshop_owner')} activeOpacity={0.8}>
+                     <Text style={styles.devMockBtnText}>Owner</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.devMockBtn} onPress={() => bypassLogin('workshop_staff')} activeOpacity={0.8}>
+                     <Text style={styles.devMockBtnText}>Technician</Text>
+                  </TouchableOpacity>
+               </View>
+            </View>
           </View>
 
           {/* ── FOOTER ── */}
@@ -305,6 +326,12 @@ const styles = StyleSheet.create((theme) => ({
     backgroundColor: '#F9FAFB',
   },
   secondaryBtnText: { fontSize: 15, fontWeight: '700', color: '#1A1A2E' },
+
+  devMockContainer: { marginTop: 32, alignItems: 'center' },
+  devMockLabel: { fontSize: 10, fontWeight: '800', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 },
+  devMockGrid: { flexDirection: 'row', gap: 10, width: '100%', marginBottom: 10 },
+  devMockBtn: { flex: 1, backgroundColor: '#FAFAFA', borderWidth: 1.5, borderColor: '#F3F4F6', borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
+  devMockBtnText: { fontSize: 13, fontWeight: '800', color: '#6B7280' },
 
   footer: {
     flexDirection: 'row', justifyContent: 'center', alignItems: 'center',

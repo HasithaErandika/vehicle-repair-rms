@@ -19,6 +19,7 @@ export function ScreenWrapper({ children, scroll = false, bg }: ScreenWrapperPro
       style={[
         styles.container,
         {
+          paddingTop: insets.top,
           paddingBottom: insets.bottom,
           backgroundColor: bg ?? theme.colors.background,
         },

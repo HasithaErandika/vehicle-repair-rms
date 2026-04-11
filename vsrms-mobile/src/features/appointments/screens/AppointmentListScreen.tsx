@@ -38,7 +38,7 @@ export function AppointmentListScreen() {
         </View>
         <TouchableOpacity
           style={styles.bookBtn}
-          onPress={() => router.push('/tabs/schedule/book' as any)}
+          onPress={() => router.push('/customer/schedule/book' as any)}
           activeOpacity={0.8}
         >
           <Ionicons name="add" size={20} color="white" />
@@ -66,7 +66,7 @@ export function AppointmentListScreen() {
       <FlashList<Appointment>
         data={data ?? []}
         renderItem={({ item }) => <AppointmentCard appointment={item} />}
-        estimatedItemSize={200}
+        estimatedItemSize={120}
         keyExtractor={(a) => a._id}
         onRefresh={refetch}
         refreshing={isLoading}

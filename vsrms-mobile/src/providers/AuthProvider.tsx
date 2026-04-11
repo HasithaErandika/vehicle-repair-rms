@@ -10,6 +10,7 @@ interface AuthContextType {
   signIn: (token: string) => Promise<void>;
   signOut: () => Promise<void>;
   login: (payload: LoginPayload) => Promise<void>;
+  bypassLogin: (role: 'admin' | 'workshop_owner' | 'workshop_staff' | 'customer') => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -67,8 +68,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   };
 
+  const bypassLogin = async (role: 'admin' | 'workshop_owner' | 'workshop_staff' | 'customer') => {
+    setIsLoading(true);
+    await StorageService.setToken(`mock-${role}`);
+    setUser({
+      id: `mock-${role}`,
+      asgardeoId: `mock-${role}`,
+      email: `${role}@bypass.com`,
+      firstName: role.charAt(0).toUpperCase() + role.slice(1),
+      lastName: 'Bypass',
+      fullName: `${role.charAt(0).toUpperCase() + role.slice(1)} Bypass`,
+      role: role,
+      status: 'active',
+      isEmailVerified: true,
+      lastLogin: new Date().toISOString(),
+      workshopId: ['workshop_owner', 'workshop_staff'].includes(role) ? '607f1f77bcf86cd799439012' : undefined,
+    } as any);
+    setIsLoading(false);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, signIn, signOut, login }}>
+    <AuthContext.Provider value={{ user, isLoading, signIn, signOut, login, bypassLogin }}>
       {children}
     </AuthContext.Provider>
   );

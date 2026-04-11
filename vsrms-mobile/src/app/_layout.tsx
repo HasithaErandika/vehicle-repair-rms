@@ -19,14 +19,14 @@ function InitialLayout() {
     if (isLoading) return;
 
     const inAuthGroup = segments[0] === 'auth';
-    const isRoot = segments.length === 0;
+    const isRoot = (segments as string[]).length === 0;
 
     if (!user && !inAuthGroup && !isRoot) {
       // Not logged in and not on a public page, redirect to login
       router.replace('/auth/login' as any);
     } else if (user) {
       // Logged in, redirect based on role if they are NOT in a dashboard group
-      const dashboardGroups = ['admin', 'garage', 'staff', 'tabs'];
+      const dashboardGroups = ['admin', 'owner', 'technician', 'customer'];
       const isIntro = !dashboardGroups.includes(segments[0] as string);
       
       if (isIntro) {
@@ -35,14 +35,14 @@ function InitialLayout() {
             router.replace('/admin' as any);
             break;
           case 'workshop_owner':
-            router.replace('/garage' as any);
+            router.replace('/owner' as any);
             break;
           case 'workshop_staff':
-            router.replace('/staff' as any);
+            router.replace('/technician' as any);
             break;
           case 'customer':
           default:
-            router.replace('/tabs' as any);
+            router.replace('/customer' as any);
             break;
         }
       }
