@@ -23,17 +23,39 @@ const { height: SCREEN_H } = Dimensions.get('window');
 export function LoginScreen() {
   const { login } = useAuth();
   const router = useRouter();
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState({ email: '', password: '' });
+
+  const validate = () => {
+    let valid = true;
+    let newErrors = { email: '', password: '' };
+
+    if (!email.trim()) {
+      newErrors.email = 'Email is required';
+      valid = false;
+    } else if (!email.includes('@')) {
+      newErrors.email = 'Please enter a valid email address';
+      valid = false;
+    }
+
+    if (!password) {
+      newErrors.password = 'Password is required';
+      valid = false;
+    }
+
+    setFieldErrors(newErrors);
+    return valid;
+  };
 
   const handleSignIn = async () => {
-    if (!email.trim() || !password) {
-      setError('Please enter your email and password.');
-      return;
-    }
+    if (!validate()) return;
+    
     setLoading(true);
     setError(null);
     try {
@@ -69,7 +91,7 @@ export function LoginScreen() {
             <View style={styles.pill} />
           </View>
 
-          {/* ── WHITE FORM CARD (floats over the split) ── */}
+          {/* ── WHITE FORM CARD ── */}
           <View style={styles.formCard}>
 
             {error ? (
@@ -82,25 +104,30 @@ export function LoginScreen() {
             {/* EMAIL */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Email address</Text>
-              <View style={styles.inputRow}>
+              <View style={[styles.inputRow, fieldErrors.email ? styles.inputRowError : null]}>
                 <Ionicons name="mail-outline" size={18} color="#9CA3AF" style={styles.inputIcon} />
                 <TextInput
                   style={styles.textInput}
                   placeholder="your@email.com"
                   placeholderTextColor="#9CA3AF"
                   value={email}
-                  onChangeText={setEmail}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    if (fieldErrors.email) setFieldErrors(prev => ({ ...prev, email: '' }));
+                    if (error) setError(null);
+                  }}
                   autoCapitalize="none"
                   keyboardType="email-address"
                   returnKeyType="next"
                 />
               </View>
+              {fieldErrors.email ? <Text style={styles.inlineErrorText}>{fieldErrors.email}</Text> : null}
             </View>
 
             {/* PASSWORD */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Password</Text>
-              <View style={styles.inputRow}>
+              <View style={[styles.inputRow, fieldErrors.password ? styles.inputRowError : null]}>
                 <Ionicons name="lock-closed-outline" size={18} color="#9CA3AF" style={styles.inputIcon} />
                 <TextInput
                   style={styles.textInput}
@@ -108,7 +135,11 @@ export function LoginScreen() {
                   placeholderTextColor="#9CA3AF"
                   secureTextEntry={!showPassword}
                   value={password}
-                  onChangeText={setPassword}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    if (fieldErrors.password) setFieldErrors(prev => ({ ...prev, password: '' }));
+                    if (error) setError(null);
+                  }}
                   returnKeyType="done"
                   onSubmitEditing={handleSignIn}
                 />
@@ -120,6 +151,7 @@ export function LoginScreen() {
                   />
                 </TouchableOpacity>
               </View>
+              {fieldErrors.password ? <Text style={styles.inlineErrorText}>{fieldErrors.password}</Text> : null}
             </View>
 
             {/* SIGN IN BUTTON */}
@@ -240,6 +272,8 @@ const styles = StyleSheet.create((theme) => ({
     paddingHorizontal: 16, height: 54,
     backgroundColor: '#FAFAFA',
   },
+  inputRowError: { borderColor: '#EF4444', backgroundColor: '#FEF2F2' },
+  inlineErrorText: { color: '#EF4444', fontSize: 12, marginTop: 6, marginLeft: 4, fontWeight: '600' },
   inputIcon: { marginRight: 10 },
   textInput: { flex: 1, fontSize: 15, color: '#1A1A2E', fontWeight: '500' },
 
