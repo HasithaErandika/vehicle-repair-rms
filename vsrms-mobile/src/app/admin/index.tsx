@@ -6,10 +6,13 @@ import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { useUsers } from '@/features/auth/queries/queries';
 import { useWorkshops } from '@/features/workshops/queries/queries';
 import { useAuth } from '@/hooks';
+import { useRouter } from 'expo-router';
+import { AvatarMenu } from '@/components/ui/AvatarMenu';
 
 export default function AdminOverviewScreen() {
   const { signOut, user } = useAuth();
-  
+  const router = useRouter();
+
   const { data: users, isLoading: uLoad } = useUsers();
   const { data: workshops, isLoading: wLoad } = useWorkshops();
 
@@ -30,12 +33,11 @@ export default function AdminOverviewScreen() {
             <Text style={styles.headerSub}>Platform Control</Text>
             <Text style={styles.headerTitle} numberOfLines={1}>{displayName}</Text>
           </View>
-          <TouchableOpacity style={styles.avatar} activeOpacity={0.8} onPress={() => signOut()}>
-            <Text style={styles.avatarText}>{initials}</Text>
-            <View style={styles.logoutIcon}>
-               <Ionicons name="log-out" size={10} color="#FFF" />
-            </View>
-          </TouchableOpacity>
+          <AvatarMenu
+            initials={initials}
+            onSettings={() => router.push('/admin/settings' as any)}
+            onSignOut={signOut}
+          />
         </View>
 
         <View style={styles.decCircle1} />
@@ -70,14 +72,14 @@ export default function AdminOverviewScreen() {
             <View style={styles.chartPlaceholder}>
               <View style={styles.chartBars}>
                 {[40, 60, 45, 80, 55, 90, 70].map((h, i) => (
-                  <View key={i} style={[styles.barContainer]}>
+                  <View key={`bar-${i}`} style={[styles.barContainer]}>
                     <View style={[styles.bar, { height: h * 1.2, backgroundColor: i === 5 ? '#F56E0F' : '#E5E7EB' }]} />
                   </View>
                 ))}
               </View>
               <View style={styles.chartLabels}>
                 {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((l, i) => (
-                  <Text key={i} style={styles.chartLabel}>{l}</Text>
+                  <Text key={`label-${i}`} style={styles.chartLabel}>{l}</Text>
                 ))}
               </View>
             </View>
@@ -136,13 +138,6 @@ const styles = StyleSheet.create((theme) => ({
     marginTop: 4 
   },
   
-  avatar: {
-    width: 48, height: 48, borderRadius: 14, backgroundColor: 'rgba(245,110,15,0.15)',
-    alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: '#F56E0F',
-    position: 'relative',
-  },
-  avatarText: { fontSize: 16, fontWeight: '900', color: '#F56E0F' },
-  logoutIcon: { position: 'absolute', bottom: -6, right: -6, backgroundColor: '#F56E0F', borderRadius: 10, padding: 3 },
 
   decCircle1: { position: 'absolute', width: 130, height: 130, borderRadius: 65, backgroundColor: 'rgba(245,110,15,0.13)', top: -25, right: -25 },
   decCircle2: { position: 'absolute', width: 70, height: 70, borderRadius: 35, backgroundColor: 'rgba(245,110,15,0.08)', bottom: 10, right: 90 },

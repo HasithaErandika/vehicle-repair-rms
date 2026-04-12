@@ -11,7 +11,10 @@ export interface Workshop {
   imageUrl?: string;
   contactNumber?: string;
   servicesOffered?: string[];
-  distance?: number; // appended by $geoNear on backend
+  distance?: number;   // appended by $geoNear on backend
+  ownerId?: string;    // set when created by workshop_owner
+  technicians?: string[]; // array of User IDs
+  active?: boolean;    // false = deactivated by admin
 }
 
 export interface CreateWorkshopPayload {
@@ -22,4 +25,11 @@ export interface CreateWorkshopPayload {
   contactNumber: string;
   servicesOffered?: string[];
   location: { type: 'Point'; coordinates: [number, number] };
+}
+
+export interface AddTechnicianPayload {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
 }

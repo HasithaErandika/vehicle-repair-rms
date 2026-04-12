@@ -113,7 +113,7 @@ export default function AddVehicleScreen() {
                 ? <ActivityIndicator color="#FFFFFF" />
                 : <>
                     <Ionicons name="add-circle-outline" size={20} color="#FFFFFF" />
-                    <Text style={styles.submitBtnText}>Add to Garage</Text>
+                    <Text style={styles.submitBtnText}>Add to My Vehicles</Text>
                   </>
               }
             </TouchableOpacity>

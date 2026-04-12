@@ -3,6 +3,7 @@
 const ServiceRecord = require('../models/ServiceRecord');
 const Vehicle       = require('../models/Vehicle');
 const Appointment   = require('../models/Appointment');
+const Workshop      = require('../models/Workshop');
 const { AppError }  = require('../middleware/errorHandler');
 
 // ── Pagination helper ─────────────────────────────────────────────────────────
@@ -107,12 +108,30 @@ const updateRecord = async (req, res, next) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DELETE /api/v1/records/:id  — admin only (hard delete)
+// DELETE /api/v1/records/:id  — workshop_owner (their workshop) OR admin
 // ─────────────────────────────────────────────────────────────────────────────
 const deleteRecord = async (req, res, next) => {
   try {
-    const record = await ServiceRecord.findByIdAndDelete(req.params.id);
+    const record = await ServiceRecord.findById(req.params.id);
     if (!record) throw new AppError('Service record not found', 404);
+
+    // Workshop owners can only delete records belonging to their own workshop
+    if (req.user.role === 'workshop_owner') {
+      if (record.appointmentId) {
+        const appt = await Appointment.findById(record.appointmentId).select('workshopId');
+        if (appt) {
+          const workshop = await Workshop.findById(appt.workshopId).select('ownerId');
+          if (!workshop || workshop.ownerId?.toString() !== req.user._id.toString()) {
+            throw new AppError('Forbidden — this record does not belong to your workshop', 403);
+          }
+        }
+      } else {
+        // No appointment link — only admin can delete orphaned records
+        throw new AppError('Forbidden — only admin can delete records without an appointment', 403);
+      }
+    }
+
+    await ServiceRecord.findByIdAndDelete(req.params.id);
     res.json({ message: 'Service record deleted' });
   } catch (err) {
     next(err);
@@ -127,9 +146,12 @@ const getWorkshopRecords = async (req, res, next) => {
     const { workshopId } = req.params;
     const role = req.user.role;
 
-    // Workshop owners can only see their own workshop's records
-    if (role === 'workshop_owner' && req.user.workshopId?.toString() !== workshopId) {
-      throw new AppError('Forbidden — this is not your workshop', 403);
+    // Workshop owners can only see records for their own workshops
+    if (role === 'workshop_owner') {
+      const workshop = await Workshop.findById(workshopId).select('ownerId');
+      if (!workshop || workshop.ownerId?.toString() !== req.user._id.toString()) {
+        throw new AppError('Forbidden — this is not your workshop', 403);
+      }
     }
 
     const { page, limit, skip } = paginate(req.query);

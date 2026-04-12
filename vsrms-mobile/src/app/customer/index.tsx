@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { useAuth } from '@/hooks';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
+import { AvatarMenu } from '@/components/ui/AvatarMenu';
 import { useVehicles } from '@/features/vehicles/queries/queries';
 import { useMyAppointments } from '@/features/appointments/queries/queries';
 import { Vehicle } from '@/features/vehicles/types/vehicles.types';
@@ -66,12 +67,11 @@ export default function DashboardScreen() {
             <Text style={styles.greeting}>{getGreeting()}</Text>
             <Text style={styles.userName} numberOfLines={1}>{displayName}</Text>
           </View>
-          <TouchableOpacity style={styles.avatar} activeOpacity={0.8} onPress={() => signOut()}>
-            <Text style={styles.avatarText}>{initials}</Text>
-            <View style={styles.logoutIcon}>
-               <Ionicons name="log-out" size={10} color="#FFF" />
-            </View>
-          </TouchableOpacity>
+          <AvatarMenu
+            initials={initials}
+            onSettings={() => router.push('/customer/settings' as any)}
+            onSignOut={signOut}
+          />
         </View>
 
         {/* Decorative Circles */}
@@ -132,7 +132,7 @@ export default function DashboardScreen() {
                 )
                 : (vehicles ?? []).slice(0, 2).map((v: Vehicle) => (
                   <TouchableOpacity
-                    key={v._id}
+                    key={v._id || v.id}
                     style={styles.vehicleCard}
                     activeOpacity={0.7}
                     onPress={() => router.push(`/customer/vehicles/${v._id}` as any)}
@@ -262,14 +262,6 @@ const styles = StyleSheet.create((theme) => ({
   greeting: { fontSize: 14, color: 'rgba(255,255,255,0.7)', fontWeight: '600' },
   userName: { fontSize: 26, color: '#FFFFFF', fontWeight: '900', letterSpacing: -0.5, marginTop: 4 },
   
-  avatar: {
-    width: 46, height: 46, borderRadius: 12,
-    backgroundColor: 'rgba(245,110,15,0.15)',
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1.5, borderColor: '#F56E0F',
-  },
-  avatarText: { fontSize: 16, fontWeight: '900', color: '#F56E0F' },
-  logoutIcon: { position: 'absolute', bottom: -6, right: -6, backgroundColor: '#F56E0F', borderRadius: 10, padding: 3, borderWidth: 1.5, borderColor: '#1A1A2E' },
 
   decCircle1: {
     position: 'absolute', width: 130, height: 130, borderRadius: 65,

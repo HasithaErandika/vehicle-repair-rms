@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { LayoutDashboard, CalendarRange, Wrench, Users, ClipboardList } from 'lucide-react-native';
+import { LayoutDashboard, CalendarRange, Wrench, ClipboardList } from 'lucide-react-native';
 import { CustomTabBar } from '@/components/navigation/CustomTabBar';
 
 const ICONS = {
@@ -8,15 +8,13 @@ const ICONS = {
   bookings: CalendarRange,
   jobs:     Wrench,
   logs:     ClipboardList,
-  staff:    Users,
 };
 
 const LABELS = {
-  index:    'Stats',
+  index:    'My Garages',
   bookings: 'Bookings',
   jobs:     'Active',
   logs:     'Logs',
-  staff:    'Staff',
 };
 
 export default function GarageLayout() {
@@ -29,9 +27,11 @@ export default function GarageLayout() {
       <Tabs.Screen name="bookings" />
       <Tabs.Screen name="jobs" />
       <Tabs.Screen name="logs" />
-      <Tabs.Screen name="staff" />
-      {/* create-record file still exists as a route — hide it from the tab bar */}
-      <Tabs.Screen name="create-record" options={{ href: null }} />
+      {/* Hidden routes — not in tab bar */}
+      <Tabs.Screen name="staff"             options={{ href: null }} />
+      <Tabs.Screen name="create-record"     options={{ href: null }} />
+      <Tabs.Screen name="workshops/[id]"    options={{ href: null }} />
+      <Tabs.Screen name="settings"          options={{ href: null }} />
     </Tabs>
   );
 }

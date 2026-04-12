@@ -26,6 +26,8 @@ export default function AdminLayout() {
       <Tabs.Screen name="index" />
       <Tabs.Screen name="garages" />
       <Tabs.Screen name="users" />
+      {/* Hidden routes — not in tab bar */}
+      <Tabs.Screen name="settings" options={{ href: null }} />
     </Tabs>
   );
 }

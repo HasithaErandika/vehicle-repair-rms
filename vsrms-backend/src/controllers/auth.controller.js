@@ -226,42 +226,59 @@ const deactivateUser = async (req, res, next) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// POST /api/v1/auth/staff  — workshop_owner only; registers a technician
-// Creates Asgardeo account + MongoDB user linked to caller's workshopId
+// POST /api/v1/auth/staff  — workshop_owner only
+// Pre-registers a technician and links them to a specific workshop.
+// Body: { firstName, lastName, email, phone?, workshopId? }
+// If workshopId is omitted, falls back to owner.workshopId.
 // ─────────────────────────────────────────────────────────────────────────────
 const registerStaff = async (req, res, next) => {
   try {
+    const Workshop = require('../models/Workshop');
     const owner = req.user;
-    if (!owner.workshopId) {
-      throw new AppError('Your account is not linked to a workshop', 400);
-    }
 
-    const { firstName, lastName, email, phone } = req.body;
+    const { firstName, lastName, email, phone, workshopId: bodyWorkshopId } = req.body;
     if (!firstName || !lastName || !email) {
       return res.status(400).json({ error: 'firstName, lastName, and email are required' });
     }
 
-    // Create (or update) the MongoDB record so role + workshopId are ready.
-    // No Asgardeo account is created here — the technician must register via
-    // the app's normal register screen. On their first login, sync-profile
-    // matches by email and links their Asgardeo account to this record.
+    // Determine target workshop: prefer explicit workshopId, fall back to owner.workshopId
+    const targetWorkshopId = bodyWorkshopId || owner.workshopId;
+    if (!targetWorkshopId) {
+      throw new AppError('workshopId is required — specify which workshop to assign this technician to', 400);
+    }
+
+    // Verify the owner actually owns that workshop
+    const workshop = await Workshop.findById(targetWorkshopId);
+    if (!workshop) throw new AppError('Workshop not found', 404);
+    if (!workshop.ownerId || workshop.ownerId.toString() !== owner._id.toString()) {
+      throw new AppError('Forbidden — you do not own this workshop', 403);
+    }
+
+    // Upsert the staff user record (Asgardeo account created by the technician
+    // on their own first login; sync-profile matches by email).
     const staffUser = await User.findOneAndUpdate(
       { email: email.toLowerCase() },
       {
         $set: {
           role:       'workshop_staff',
-          workshopId: owner.workshopId,
+          workshopId: targetWorkshopId,
           fullName:   `${firstName} ${lastName}`.trim(),
           active:     true,
           ...(phone && { phone }),
         },
         $setOnInsert: {
           email:       email.toLowerCase(),
-          asgardeoSub: `pending-${Date.now()}`, // placeholder until first login
+          asgardeoSub: `pending-${Date.now()}`,
         },
       },
       { upsert: true, new: true },
     );
+
+    // Also add to workshop.technicians array if not already there
+    if (!workshop.technicians.some(t => t.toString() === staffUser._id.toString())) {
+      workshop.technicians.push(staffUser._id);
+      await workshop.save();
+    }
 
     return res.status(201).json({
       message: 'Technician profile created. Ask them to register with this email in the app to activate their account.',
@@ -277,16 +294,18 @@ const registerStaff = async (req, res, next) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /api/v1/auth/staff  — workshop_owner: list their own staff
+// GET /api/v1/auth/staff  — workshop_owner: list staff for a specific workshop
+// Optional ?workshopId= query param; falls back to owner.workshopId.
 // ─────────────────────────────────────────────────────────────────────────────
 const getWorkshopStaff = async (req, res, next) => {
   try {
     const owner = req.user;
-    if (!owner.workshopId) {
+    const targetWorkshopId = req.query.workshopId || owner.workshopId;
+    if (!targetWorkshopId) {
       return res.json({ data: [], total: 0 });
     }
     const { page, limit, skip } = paginate(req.query);
-    const filter = { role: 'workshop_staff', workshopId: owner.workshopId };
+    const filter = { role: 'workshop_staff', workshopId: targetWorkshopId };
     const [data, total] = await Promise.all([
       User.find(filter).skip(skip).limit(limit).sort({ createdAt: -1 }),
       User.countDocuments(filter),

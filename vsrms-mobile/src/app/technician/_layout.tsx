@@ -29,6 +29,8 @@ export default function StaffLayout() {
       <Tabs.Screen name="appointments" />
       <Tabs.Screen name="tracker" />
       <Tabs.Screen name="record" />
+      {/* Hidden routes — not in tab bar */}
+      <Tabs.Screen name="settings" options={{ href: null }} />
     </Tabs>
   );
 }

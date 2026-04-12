@@ -35,11 +35,11 @@ export const deactivateUser = async (id: string): Promise<void> => {
 };
 
 export interface RegisterStaffPayload {
-  firstName: string;
-  lastName:  string;
-  email:     string;
-  phone?:    string;
-  password:  string;
+  firstName:  string;
+  lastName:   string;
+  email:      string;
+  phone?:     string;
+  workshopId: string; // which workshop to assign this technician to
 }
 
 export const registerStaff = async (payload: RegisterStaffPayload): Promise<User> => {

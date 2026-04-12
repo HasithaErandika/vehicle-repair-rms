@@ -28,6 +28,6 @@ router.get('/workshop/:workshopId', requireRole('workshop_owner', 'workshop_staf
 router.post('/',     requireRole('workshop_staff', 'workshop_owner', 'admin'), validateCreateRecord, createRecord);
 router.get('/:id',   getRecord);
 router.put('/:id',   requireRole('workshop_staff', 'workshop_owner', 'admin'), validateUpdateRecord, updateRecord);
-router.delete('/:id', requireRole('admin'), deleteRecord);
+router.delete('/:id', requireRole('workshop_owner', 'admin'), deleteRecord);
 
 module.exports = router;

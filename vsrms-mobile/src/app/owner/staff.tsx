@@ -9,6 +9,7 @@ import { StyleSheet } from 'react-native-unistyles';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { useWorkshopStaff } from '@/features/auth/queries/queries';
 import { useRegisterStaff } from '@/features/auth/queries/mutations';
+import { useAuth } from '@/hooks';
 import { ErrorScreen } from '@/components/feedback/ErrorScreen';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { User } from '@/features/auth/types/auth.types';
@@ -42,12 +43,13 @@ function StaffCard({ member }: { member: User }) {
   );
 }
 
-const EMPTY_FORM = { firstName: '', lastName: '', email: '', phone: '', password: '' };
+const EMPTY_FORM = { firstName: '', lastName: '', email: '', phone: '' };
 
 export default function OwnerStaffScreen() {
-  const [modalVisible, setModalVisible] = useState(false);
-  const [form, setForm]                 = useState(EMPTY_FORM);
-  const [formError, setFormError]       = useState('');
+  const { user }                              = useAuth();
+  const [modalVisible, setModalVisible]       = useState(false);
+  const [form, setForm]                       = useState(EMPTY_FORM);
+  const [formError, setFormError]             = useState('');
 
   const { data, isLoading, isError, refetch } = useWorkshopStaff();
   const { mutate: register, isPending }       = useRegisterStaff();
@@ -56,22 +58,22 @@ export default function OwnerStaffScreen() {
 
   const handleRegister = () => {
     setFormError('');
-    if (!form.firstName || !form.lastName || !form.email || !form.password) {
-      setFormError('All required fields must be filled.');
+    if (!form.firstName || !form.lastName || !form.email) {
+      setFormError('First name, last name, and email are required.');
       return;
     }
-    if (form.password.length < 8) {
-      setFormError('Password must be at least 8 characters.');
+    if (!user?.workshopId) {
+      setFormError('No workshop linked to your account. Create a workshop first.');
       return;
     }
 
     register(
       {
-        firstName: form.firstName.trim(),
-        lastName:  form.lastName.trim(),
-        email:     form.email.trim().toLowerCase(),
-        phone:     form.phone.trim() || undefined,
-        password:  form.password,
+        firstName:  form.firstName.trim(),
+        lastName:   form.lastName.trim(),
+        email:      form.email.trim().toLowerCase(),
+        phone:      form.phone.trim() || undefined,
+        workshopId: user.workshopId,
       },
       {
         onSuccess: () => {
@@ -208,21 +210,10 @@ export default function OwnerStaffScreen() {
                 />
               </View>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Password * (min 8 characters)</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Secure password"
-                  secureTextEntry
-                  value={form.password}
-                  onChangeText={t => setForm(f => ({ ...f, password: t }))}
-                />
-              </View>
-
               <View style={styles.infoBox}>
                 <Ionicons name="information-circle-outline" size={16} color="#2563EB" />
                 <Text style={styles.infoText}>
-                  The technician will be able to log in with this email and password, and will be linked to your workshop automatically.
+                  The technician registers in the app with this email to activate their account. They will be automatically linked to your workshop.
                 </Text>
               </View>
 

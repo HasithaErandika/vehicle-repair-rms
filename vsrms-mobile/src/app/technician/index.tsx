@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { StyleSheet } from 'react-native-unistyles';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { useAuth } from '@/hooks';
+import { AvatarMenu } from '@/components/ui/AvatarMenu';
 import { useWorkshopAppointments } from '@/features/appointments/queries/queries';
 import { Appointment } from '@/features/appointments/types/appointments.types';
 
@@ -40,12 +41,11 @@ export default function TechnicianDashboardScreen() {
             <Text style={styles.headerSub}>Technical Assistant</Text>
             <Text style={styles.headerTitle} numberOfLines={1}>Hello, {displayName}</Text>
           </View>
-          <TouchableOpacity style={styles.avatar} activeOpacity={0.8} onPress={() => signOut()}>
-            <Text style={styles.avatarText}>{initials}</Text>
-            <View style={styles.logoutIcon}>
-               <Ionicons name="log-out" size={10} color="#FFF" />
-            </View>
-          </TouchableOpacity>
+          <AvatarMenu
+            initials={initials}
+            onSettings={() => router.push('/technician/settings' as any)}
+            onSignOut={signOut}
+          />
         </View>
         <View style={styles.decCircle1} />
         <View style={styles.decCircle2} />
@@ -162,9 +162,6 @@ const styles = StyleSheet.create((theme) => ({
     marginTop: 4 
   },
   
-  avatar: { width: 48, height: 48, borderRadius: 14, backgroundColor: 'rgba(245,110,15,0.15)', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: '#F56E0F' },
-  avatarText: { fontSize: 16, fontWeight: '900', color: '#F56E0F' },
-  logoutIcon: { position: 'absolute', bottom: -6, right: -6, backgroundColor: '#F56E0F', borderRadius: 10, padding: 3, borderWidth: 1.5, borderColor: '#1A1A2E' },
 
   decCircle1: { position: 'absolute', width: 130, height: 130, borderRadius: 65, backgroundColor: 'rgba(245,110,15,0.13)', top: -25, right: -25 },
   decCircle2: { position: 'absolute', width: 70, height: 70, borderRadius: 35, backgroundColor: 'rgba(245,110,15,0.08)', bottom: 10, right: 90 },

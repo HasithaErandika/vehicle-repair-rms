@@ -43,6 +43,8 @@ export default function TabsLayout() {
       <Tabs.Screen name="workshops" />
       <Tabs.Screen name="vehicles" />
       <Tabs.Screen name="schedule" />
+      {/* Hidden routes — not in tab bar */}
+      <Tabs.Screen name="settings" options={{ href: null }} />
     </Tabs>
   );
 }

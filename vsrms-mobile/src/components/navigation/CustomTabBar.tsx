@@ -21,14 +21,20 @@ export function CustomTabBar({ state, descriptors, navigation, icons, labels }: 
   const { theme } = useUnistyles();
   const insets = useSafeAreaInsets();
   
-  const totalTabs = state.routes.length;
+  // Only count routes that are actually shown in the tab bar (not href:null hidden routes)
+  const visibleRoutes = state.routes.filter(r => (descriptors[r.key].options as any).href !== null);
+  const totalTabs = visibleRoutes.length;
   const tabWidth = SCREEN_WIDTH / totalTabs;
-  
+
+  // Map focused index to visible-route index for the sliding indicator
+  const visibleIndex = visibleRoutes.findIndex(r => r.key === state.routes[state.index]?.key);
+
   // Shared value for sliding indicator
-  const translateX = useSharedValue(state.index * tabWidth);
+  const translateX = useSharedValue((visibleIndex >= 0 ? visibleIndex : 0) * tabWidth);
 
   useEffect(() => {
-    translateX.value = withSpring(state.index * tabWidth, {
+    const idx = visibleRoutes.findIndex(r => r.key === state.routes[state.index]?.key);
+    translateX.value = withSpring((idx >= 0 ? idx : 0) * tabWidth, {
       damping: 18,
       stiffness: 120,
       mass: 0.8,

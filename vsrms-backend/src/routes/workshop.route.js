@@ -13,23 +13,43 @@ const {
 const {
   getWorkshops,
   getNearbyWorkshops,
+  getMyWorkshops,
   getWorkshopById,
   createWorkshop,
   updateWorkshop,
   deleteWorkshop,
   uploadWorkshopImage,
+  getWorkshopTechnicians,
+  addTechnician,
+  removeTechnician,
   upload,
 } = require('../controllers/workshop.controller');
 
-// Public routes
-router.get('/',        getWorkshops);
-router.get('/nearby',  getNearbyWorkshops);   // MUST be before /:id
-router.get('/:id',     getWorkshopById);
+// ── Public routes ─────────────────────────────────────────────────────────────
+router.get('/',       getWorkshops);
+router.get('/nearby', getNearbyWorkshops); // MUST be before /:id
 
-// Admin only
-router.post('/',   protect, requireRole('admin'), validateCreateWorkshop, createWorkshop);
-router.put('/:id', protect, requireRole('admin'), validateUpdateWorkshop, updateWorkshop);
+// ── Owner: their own workshops (MUST be before /:id) ─────────────────────────
+router.get('/mine', protect, requireRole('workshop_owner', 'admin'), getMyWorkshops);
+
+// ── Public workshop detail ────────────────────────────────────────────────────
+router.get('/:id', getWorkshopById);
+
+// ── Create — workshop_owner or admin ─────────────────────────────────────────
+router.post('/', protect, requireRole('workshop_owner', 'admin'), validateCreateWorkshop, createWorkshop);
+
+// ── Update — owner of that workshop or admin ──────────────────────────────────
+router.put('/:id', protect, requireRole('workshop_owner', 'admin'), validateUpdateWorkshop, updateWorkshop);
+
+// ── Deactivate — admin only (soft-delete) ────────────────────────────────────
 router.delete('/:id', protect, requireRole('admin'), deleteWorkshop);
-router.post('/:id/image', protect, requireRole('admin'), upload.single('image'), uploadWorkshopImage);
+
+// ── Image upload — owner or admin ─────────────────────────────────────────────
+router.post('/:id/image', protect, requireRole('workshop_owner', 'admin'), upload.single('image'), uploadWorkshopImage);
+
+// ── Technician management — owner only (admin can view) ──────────────────────
+router.get('/:id/technicians',             protect, requireRole('workshop_owner', 'admin'), getWorkshopTechnicians);
+router.post('/:id/technicians',            protect, requireRole('workshop_owner'), addTechnician);
+router.delete('/:id/technicians/:userId',  protect, requireRole('workshop_owner'), removeTechnician);
 
 module.exports = router;
