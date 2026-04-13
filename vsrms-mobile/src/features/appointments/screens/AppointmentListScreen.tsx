@@ -5,17 +5,21 @@ import { StyleSheet } from 'react-native-unistyles';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { useMyAppointments } from '../queries/queries';
 import { AppointmentCard } from '../components/AppointmentCard';
+import { Button } from '@/components/ui/Button';
 import { ErrorScreen } from '@/components/feedback/ErrorScreen';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Appointment } from '../types/appointments.types';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 type TabKey = 'upcoming' | 'past';
 const TAB_STATUS: Record<TabKey, string> = {
   upcoming: 'pending,confirmed,in_progress',
-  past:     'completed,cancelled',
+  past: 'completed,cancelled',
 };
 
 export function AppointmentListScreen() {
+  const router = useRouter();
   const [tab, setTab] = useState<TabKey>('upcoming');
   const { data, isLoading, isError, refetch } = useMyAppointments(TAB_STATUS[tab]);
 
@@ -65,6 +69,7 @@ export function AppointmentListScreen() {
           <FlashList
             data={(data || []) as Appointment[]}
             renderItem={({ item }) => <AppointmentCard appointment={item as Appointment} />}
+            // @ts-expect-error - FlashList requires estimatedItemSize dynamically
             estimatedItemSize={160}
             onRefresh={refetch}
             refreshing={isLoading}
@@ -74,32 +79,41 @@ export function AppointmentListScreen() {
           />
         )}
       </View>
+
+      {/* FAB - Book Appointment */}
+      <TouchableOpacity 
+        style={styles.fab} 
+        onPress={() => router.push('/customer/workshops' as any)}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="add" size={30} color="#FFFFFF" />
+      </TouchableOpacity>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create((theme) => ({
-  topSection: { 
-    paddingHorizontal: theme.spacing.screenPadding, 
-    paddingTop: 16, 
-    paddingBottom: theme.spacing.headerBottom, 
-    position: 'relative', 
-    overflow: 'hidden' 
+  topSection: {
+    paddingHorizontal: theme.spacing.screenPadding,
+    paddingTop: 16,
+    paddingBottom: theme.spacing.headerBottom,
+    position: 'relative',
+    overflow: 'hidden'
   },
   headerTextRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 10, marginBottom: 20 },
-  headerSub: { 
-    fontSize: theme.fonts.sizes.caption, 
-    color: 'rgba(255,255,255,0.7)', 
-    fontWeight: '700', 
-    textTransform: 'uppercase', 
-    letterSpacing: 1 
+  headerSub: {
+    fontSize: theme.fonts.sizes.caption,
+    color: 'rgba(255,255,255,0.7)',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1
   },
-  headerTitle: { 
-    fontSize: theme.fonts.sizes.pageTitle, 
-    color: '#FFFFFF', 
-    fontWeight: '900', 
-    letterSpacing: -0.5, 
-    marginTop: 4 
+  headerTitle: {
+    fontSize: theme.fonts.sizes.pageTitle,
+    color: '#FFFFFF',
+    fontWeight: '900',
+    letterSpacing: -0.5,
+    marginTop: 4
   },
 
   tabContainer: { flexDirection: 'row', gap: 20, zIndex: 10 },
@@ -112,25 +126,43 @@ const styles = StyleSheet.create((theme) => ({
   decCircle1: { position: 'absolute', width: 130, height: 130, borderRadius: 65, backgroundColor: 'rgba(245,110,15,0.13)', top: -25, right: -25 },
   decCircle2: { position: 'absolute', width: 70, height: 70, borderRadius: 35, backgroundColor: 'rgba(245,110,15,0.08)', bottom: 10, right: 90 },
 
-  mainCard: { 
-    backgroundColor: '#FFFFFF', 
-    borderTopLeftRadius: 32, 
-    borderTopRightRadius: 32, 
-    marginTop: theme.spacing.cardOverlap, 
-    flex: 1, 
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: -4 }, 
-    shadowOpacity: 0.1, 
-    shadowRadius: 20, 
-    elevation: 16 
+  mainCard: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    marginTop: theme.spacing.cardOverlap,
+    flex: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 16
   },
-  
+
   loaderContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
   loadingText: { fontSize: 13, color: theme.colors.muted, fontWeight: '600' },
-  
-  list: { 
-    paddingHorizontal: theme.spacing.screenPadding, 
-    paddingTop: 24, 
-    paddingBottom: 130 
+
+  list: {
+    paddingHorizontal: theme.spacing.screenPadding,
+    paddingTop: 24,
+    paddingBottom: 130
+  },
+
+  fab: {
+    position: 'absolute',
+    bottom: 30,
+    right: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#F56E0F',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#F56E0F',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 15,
+    elevation: 8,
+    zIndex: 100,
   },
 }));
