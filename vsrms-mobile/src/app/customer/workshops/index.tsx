@@ -1,6 +1,6 @@
 import React from 'react';
-import { WorkshopListScreen } from '@/features/workshops';
+import { NearbyWorkshopsScreen } from '@/features/workshops/screens/NearbyWorkshopsScreen';
 
 export default function WorkshopsTab() {
-  return <WorkshopListScreen />;
+  return <NearbyWorkshopsScreen />;
 }

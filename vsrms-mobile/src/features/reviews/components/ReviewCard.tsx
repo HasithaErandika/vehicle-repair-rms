@@ -48,8 +48,8 @@ export function ReviewCard({ review }: { review: Review }) {
           })}
         </Text>
       </View>
-      {review.comment ? (
-        <Text style={styles.comment}>{review.comment}</Text>
+      {review.reviewText ? (
+        <Text style={styles.comment}>{review.reviewText}</Text>
       ) : null}
     </View>
   );

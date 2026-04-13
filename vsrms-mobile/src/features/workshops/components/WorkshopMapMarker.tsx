@@ -8,9 +8,11 @@ import { useRouter } from 'expo-router';
 
 interface WorkshopMapMarkerProps {
   workshop: Workshop;
+  selected?: boolean;
+  onMarkerPress?: () => void;
 }
 
-export function WorkshopMapMarker({ workshop }: WorkshopMapMarkerProps) {
+export function WorkshopMapMarker({ workshop, selected = false, onMarkerPress }: WorkshopMapMarkerProps) {
   const { theme } = useUnistyles();
   const router = useRouter();
 
@@ -20,13 +22,14 @@ export function WorkshopMapMarker({ workshop }: WorkshopMapMarkerProps) {
   return (
     <Marker
       coordinate={{ latitude, longitude }}
-      tracksViewChanges={false}
+      tracksViewChanges={selected}
+      onPress={onMarkerPress}
     >
       <View style={styles.markerContainer}>
-        <View style={styles.markerPin}>
-          <Ionicons name="car-sport" size={16} color="#FFFFFF" />
+        <View style={[styles.markerPin, selected && styles.markerPinSelected]}>
+          <Ionicons name="car-sport" size={selected ? 20 : 16} color="#FFFFFF" />
         </View>
-        <View style={styles.markerTail} />
+        <View style={[styles.markerTail, selected && styles.markerTailSelected]} />
       </View>
 
       <Callout 
@@ -69,6 +72,16 @@ const styles = StyleSheet.create((theme) => ({
     shadowRadius: 3.84,
     elevation: 5,
   },
+  markerPinSelected: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+    elevation: 10,
+    shadowOpacity: 0.45,
+    shadowRadius: 6,
+  },
   markerTail: {
     width: 0,
     height: 0,
@@ -82,6 +95,12 @@ const styles = StyleSheet.create((theme) => ({
     borderBottomColor: theme.colors.brand,
     transform: [{ rotate: '180deg' }],
     marginTop: -2,
+  },
+  markerTailSelected: {
+    borderLeftWidth: 8,
+    borderRightWidth: 8,
+    borderBottomWidth: 11,
+    marginTop: -3,
   },
   calloutContainer: {
     backgroundColor: '#FFFFFF',

@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, Modal, TextInput,
-  ActivityIndicator, StatusBar, Alert,
+  ActivityIndicator, StatusBar, Alert, Image,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { StyleSheet } from 'react-native-unistyles';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { ErrorScreen } from '@/components/feedback/ErrorScreen';
 import { useWorkshop, useWorkshopTechnicians } from '@/features/workshops/queries/queries';
-import { useAddTechnician, useRemoveTechnician, useUpdateWorkshop } from '@/features/workshops/queries/mutations';
+import { useAddTechnician, useRemoveTechnician, useUpdateWorkshop, useUploadWorkshopImage } from '@/features/workshops/queries/mutations';
 import { useWorkshopAppointments } from '@/features/appointments/queries/queries';
 import { User } from '@/features/auth/types/auth.types';
 
@@ -51,9 +52,27 @@ export default function WorkshopManageScreen() {
   const { data: confirmed }  = useWorkshopAppointments(id, 'confirmed');
   const { data: inProgress } = useWorkshopAppointments(id, 'in_progress');
 
-  const { mutate: addTech,    isPending: addPending }    = useAddTechnician(id!);
-  const { mutate: removeTech, isPending: removePending } = useRemoveTechnician(id!);
-  const { mutate: updateWS,   isPending: updatePending } = useUpdateWorkshop(id!);
+  const { mutate: addTech,      isPending: addPending }    = useAddTechnician(id!);
+  const { mutate: removeTech,   isPending: removePending } = useRemoveTechnician(id!);
+  const { mutate: updateWS,     isPending: updatePending } = useUpdateWorkshop(id!);
+  const { mutate: uploadImage,  isPending: uploadPending } = useUploadWorkshopImage(id!);
+
+  const handlePickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission required', 'Please allow photo access to upload a workshop image.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+      allowsEditing: true,
+      aspect: [16, 9],
+    });
+    if (!result.canceled && result.assets[0]) {
+      uploadImage(result.assets[0].uri);
+    }
+  };
 
   // Add technician modal
   const [addModalVisible, setAddModalVisible] = useState(false);
@@ -160,6 +179,24 @@ export default function WorkshopManageScreen() {
       {/* ── White card ── */}
       <View style={styles.mainCard}>
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+
+          {/* Workshop photo */}
+          <TouchableOpacity style={styles.imageContainer} onPress={handlePickImage} activeOpacity={0.85} disabled={uploadPending}>
+            {workshop.imageUrl ? (
+              <Image source={{ uri: workshop.imageUrl }} style={styles.workshopImage} resizeMode="cover" />
+            ) : (
+              <View style={styles.imagePlaceholder}>
+                <Ionicons name="image-outline" size={36} color="#D1D5DB" />
+                <Text style={styles.imagePlaceholderText}>Add Workshop Photo</Text>
+              </View>
+            )}
+            <View style={styles.imageOverlay}>
+              {uploadPending
+                ? <ActivityIndicator size="small" color="#FFFFFF" />
+                : <Ionicons name="camera" size={18} color="#FFFFFF" />}
+              <Text style={styles.imageOverlayText}>{workshop.imageUrl ? 'Change Photo' : 'Upload Photo'}</Text>
+            </View>
+          </TouchableOpacity>
 
           {/* Workshop info chips */}
           <View style={styles.infoRow}>
@@ -382,6 +419,25 @@ const styles = StyleSheet.create((theme) => ({
 
   mainCard: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 32, borderTopRightRadius: 32, marginTop: theme.spacing.cardOverlap, flex: 1 },
   scroll: { paddingHorizontal: theme.spacing.screenPadding, paddingTop: 24, paddingBottom: 60 },
+
+  imageContainer: {
+    height: 160,
+    borderRadius: 20,
+    overflow: 'hidden',
+    marginBottom: 20,
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+  },
+  workshopImage: { width: '100%', height: '100%' },
+  imagePlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
+  imagePlaceholderText: { fontSize: 14, fontWeight: '600', color: '#9CA3AF' },
+  imageOverlay: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    backgroundColor: 'rgba(0,0,0,0.45)', paddingVertical: 8,
+  },
+  imageOverlayText: { fontSize: 13, fontWeight: '700', color: '#FFFFFF' },
 
   infoRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 },
   infoChip: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#FFF7ED', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#FED7AA' },

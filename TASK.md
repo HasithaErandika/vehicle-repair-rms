@@ -39,6 +39,18 @@
 | 2026-04-11 | M6 Reviews | `useWorkshopReviews` missing `enabled: !!workshopId` guard | **FIXED** | Claude |
 | 2026-04-11 | Landing | `src/app/index.tsx` imported from non-existent `'../constants/theme'` | **FIXED** | Claude |
 | 2026-04-11 | General | AppLogo component was missing — auth screens showed a plain box icon | **FIXED** | Claude |
+| 2026-04-13 | M6 Reviews | `ReviewCard` used `review.comment` — field is `reviewText` in backend schema; text never rendered | **FIXED** | Claude |
+| 2026-04-13 | M6 Reviews | Review queries had `staleTime: 5min` — should be 0 (reviews change on every action) | **FIXED** | Claude |
+| 2026-04-13 | M3 Workshops | `NearbyWorkshopsScreen` filtered workshops by name/district/address in JS (architecture violation) | **FIXED** | Claude |
+| 2026-04-13 | M3 Workshops | Backend `getNearbyWorkshops` and `getWorkshops` had no `?name=` search support | **FIXED** | Claude |
+| 2026-04-13 | M3 Workshops | `WorkshopListScreen` filter button was dead UI with no handler | **FIXED** | Claude |
+| 2026-04-13 | M3 Workshops | `workshops.api.ts` had dead `deleteWorkshop = deactivateWorkshop` alias | **FIXED** | Claude |
+| 2026-04-13 | M3 Workshops | `WorkshopListScreen` had no district filter UI — backend `?district=` was inaccessible | **FIXED** | Claude |
+| 2026-04-13 | M3 Workshops | Owner workshop manage screen had no image upload — `POST /workshops/:id/image` unreachable from UI | **FIXED** | Claude |
+| 2026-04-13 | M3 Workshops | `WorkshopDetailScreen` had no Write Review button/form — `useCreateReview` was unused | **FIXED** | Claude |
+| 2026-04-13 | M3 Workshops | `WorkshopMap.tsx` was a dead placeholder, never imported by any screen | **FIXED** | Claude |
+| 2026-04-13 | General | `emulator-nvidia.sh` forced `-no-snapshot-load` (cold boot every time) and hardcoded GPU mode | **FIXED** | Claude |
+| 2026-04-13 | General | `.bashrc` sourced `~/.deno/env` without guard; `emulator-nvidia` alias bypassed fixed script | **FIXED** | Claude |
 
 ---
 
@@ -164,18 +176,20 @@
 
 ### M3 — Workshop Management (Mobile)
 - [x] `features/workshops/types/workshops.types.ts`
-- [x] `features/workshops/api/workshops.api.ts`
-- [x] `features/workshops/queries/workshops.keys.ts, mutations.ts, queries.ts`
-- [x] `features/workshops/components/WorkshopCard.tsx` — real data only (no hardcoded district/distance)
-- [x] `features/workshops/components/RatingStars.tsx, WorkshopMap.tsx`
-- [x] `features/workshops/screens/WorkshopListScreen.tsx`
-- [x] `features/workshops/screens/NearbyWorkshopsScreen.tsx`
-- [x] `features/workshops/screens/WorkshopDetailScreen.tsx` — uses `servicesOffered`, shows up to 3 reviews via `useWorkshopReviews`
+- [x] `features/workshops/api/workshops.api.ts` — added `uploadWorkshopImage`
+- [x] `features/workshops/queries/workshops.keys.ts, mutations.ts, queries.ts` — added `useUploadWorkshopImage`
+- [x] `features/workshops/components/WorkshopCard.tsx` — real data only; shows distance badge when from nearby search
+- [x] `features/workshops/components/RatingStars.tsx, WorkshopMapMarker.tsx`
+- [x] `features/workshops/screens/WorkshopListScreen.tsx` — **District filter chips** (all 25 Sri Lanka districts, passes `?district=` to backend, "All" chip clears filter)
+- [x] `features/workshops/screens/NearbyWorkshopsScreen.tsx` — map + list view; debounced name search sent to backend via `?name=` (no client-side filtering)
+- [x] `features/workshops/screens/WorkshopDetailScreen.tsx` — uses `servicesOffered`; shows reviews; **Write Review modal** (star tap rating + text, calls `useCreateReview`, visible to `customer` role only)
 - [x] `app/customer/workshops/index.tsx, [id].tsx, _layout.tsx`
-- [x] **BUG FIX B5**: `description` field in Workshop schema + createWorkshop/updateWorkshop; WorkshopDetailScreen shows it conditionally; admin garage form now has description + servicesOffered inputs
-- [x] **BUG FIX B6**: WorkshopDetailScreen "Book Appointment" button routes to `/customer/schedule/book?workshopId=…`; `app/customer/schedule/book.tsx` accepts workshopId param and pre-selects the workshop
-- [x] `app/admin/garages.tsx` — admin: create/edit/delete workshop form (FIXED crash); now includes description + servicesOffered fields
-- [x] Workshop Creator/Editor for Owners — integrated Map picker for location selection
+- [x] **BUG FIX B5**: `description` field in Workshop schema + createWorkshop/updateWorkshop; WorkshopDetailScreen shows it conditionally
+- [x] **BUG FIX B6**: WorkshopDetailScreen "Book Appointment" button routes to `/customer/schedule/book?workshopId=…`
+- [x] `app/admin/garages.tsx` — admin: deactivate workshop; shows all workshops with status badges
+- [x] Workshop Creator/Editor for Owners (`app/owner/workshops/list.tsx`) — integrated map location picker, all required fields
+- [x] Workshop Manage screen (`app/owner/workshops/[id].tsx`) — **workshop image upload** (expo-image-picker → POST /workshops/:id/image), technician management, edit modal, appointment stats
+- [x] Dead code removed: `WorkshopMap.tsx` placeholder deleted
 
 ### M4 — Appointments (Mobile)
 - [x] `features/appointments/types/appointments.types.ts`
@@ -208,12 +222,12 @@
 - [x] `app/owner/logs.tsx` — system/activity logs for the workshop
 
 ### M6 — Reviews (Mobile)
-- [x] `features/reviews/types/reviews.types.ts` — `userId` typed as union `string | { _id: string; fullName?: string; email: string }`
+- [x] `features/reviews/types/reviews.types.ts` — `userId` typed as union; `reviewText` field (corrected from `comment`)
 - [x] `features/reviews/api/reviews.api.ts`
-- [x] `features/reviews/queries/reviews.keys.ts, mutations.ts, queries.ts` — `useWorkshopReviews` has `enabled: !!workshopId` guard
-- [x] `features/reviews/components/ReviewCard.tsx` — avatar with initials, individual stars, populated userId name
+- [x] `features/reviews/queries/reviews.keys.ts, mutations.ts, queries.ts` — `useWorkshopReviews` has `enabled: !!workshopId` guard; `staleTime: 0`
+- [x] `features/reviews/components/ReviewCard.tsx` — avatar with initials, individual stars, populated userId name, `reviewText` display fixed
 - [x] `features/reviews/screens/ReviewListScreen.tsx`
-- [ ] Create review form (rate + text) inside WorkshopDetailScreen or as modal
+- [x] Create review form — Write Review modal inside `WorkshopDetailScreen` (star-tap rating + optional text, submits via `useCreateReview`, customer role only)
 - [ ] Edit/delete own review UI
 
 ---

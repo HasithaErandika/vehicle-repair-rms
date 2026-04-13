@@ -48,6 +48,12 @@ export function WorkshopCard({ workshop }: { workshop: Workshop }) {
             <Text style={styles.serviceText}>General Service</Text>
           </View>
         )}
+        {workshop.distance != null && (
+          <View style={styles.distanceTag}>
+            <Ionicons name="navigate-outline" size={11} color={theme.colors.brand} />
+            <Text style={styles.distanceText}>{workshop.distance.toFixed(1)} km</Text>
+          </View>
+        )}
         {totalReviews > 0 && (
           <Text style={styles.reviewCount}>{totalReviews} review{totalReviews !== 1 ? 's' : ''}</Text>
         )}
@@ -121,6 +127,16 @@ const styles = StyleSheet.create((theme) => ({
     borderColor: theme.colors.border,
   },
   serviceText: { fontSize: 11, fontWeight: '700', color: theme.colors.muted },
+  distanceTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: theme.colors.brandSoft,
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+    borderRadius: theme.radii.md,
+  },
+  distanceText: { fontSize: 11, fontWeight: '700', color: theme.colors.brand },
   reviewCount: { fontSize: 11, color: theme.colors.muted, fontWeight: '500' },
   arrowBox: {
     width: 28,

@@ -1,7 +1,6 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, StatusBar } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, ActivityIndicator, StatusBar, ScrollView, TouchableOpacity } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet } from 'react-native-unistyles';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { useWorkshops } from '../queries/queries';
@@ -10,8 +9,19 @@ import { ErrorScreen } from '@/components/feedback/ErrorScreen';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Workshop } from '../types/workshops.types';
 
+const SL_DISTRICTS = [
+  'Ampara', 'Anuradhapura', 'Badulla', 'Batticaloa', 'Colombo', 'Galle',
+  'Gampaha', 'Hambantota', 'Jaffna', 'Kalutara', 'Kandy', 'Kegalle',
+  'Kilinochchi', 'Kurunegala', 'Mannar', 'Matale', 'Matara', 'Monaragala',
+  'Mullaitivu', 'Nuwara Eliya', 'Polonnaruwa', 'Puttalam', 'Ratnapura',
+  'Trincomalee', 'Vavuniya',
+];
+
 export function WorkshopListScreen() {
-  const { data, isLoading, isError, refetch } = useWorkshops();
+  const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
+
+  const queryParams = selectedDistrict ? { district: selectedDistrict } : undefined;
+  const { data, isLoading, isError, refetch } = useWorkshops(queryParams);
 
   return (
     <ScreenWrapper bg="#1A1A2E">
@@ -24,9 +34,6 @@ export function WorkshopListScreen() {
             <Text style={styles.headerSub}>Find Help</Text>
             <Text style={styles.headerTitle}>Nearby Garages</Text>
           </View>
-          <TouchableOpacity style={styles.filterBtn} activeOpacity={0.8}>
-            <Ionicons name="options-outline" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
         </View>
 
         <View style={styles.decCircle1} />
@@ -35,6 +42,30 @@ export function WorkshopListScreen() {
 
       {/* ── WHITE CARD SECTION ── */}
       <View style={[styles.mainCard, { overflow: 'hidden' }]}>
+
+        {/* District filter chips */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chipRow}
+        >
+          <TouchableOpacity
+            style={[styles.chip, !selectedDistrict && styles.chipActive]}
+            onPress={() => setSelectedDistrict(null)}
+          >
+            <Text style={[styles.chipText, !selectedDistrict && styles.chipTextActive]}>All</Text>
+          </TouchableOpacity>
+          {SL_DISTRICTS.map(d => (
+            <TouchableOpacity
+              key={d}
+              style={[styles.chip, selectedDistrict === d && styles.chipActive]}
+              onPress={() => setSelectedDistrict(prev => prev === d ? null : d)}
+            >
+              <Text style={[styles.chipText, selectedDistrict === d && styles.chipTextActive]}>{d}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
         {isLoading && !data ? (
           <View style={styles.loaderContainer}>
             <ActivityIndicator size="large" color="#F56E0F" />
@@ -83,11 +114,6 @@ const styles = StyleSheet.create((theme) => ({
     marginTop: 4 
   },
   
-  filterBtn: {
-    width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.15)',
-    alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)'
-  },
-
   decCircle1: { position: 'absolute', width: 130, height: 130, borderRadius: 65, backgroundColor: 'rgba(245,110,15,0.13)', top: -25, right: -25 },
   decCircle2: { position: 'absolute', width: 70, height: 70, borderRadius: 35, backgroundColor: 'rgba(245,110,15,0.08)', bottom: 10, right: 90 },
 
@@ -103,11 +129,38 @@ const styles = StyleSheet.create((theme) => ({
     shadowRadius: 20, 
     elevation: 16 
   },
+  chipRow: {
+    paddingHorizontal: theme.spacing.screenPadding,
+    paddingVertical: 14,
+    gap: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1.5,
+    borderColor: theme.colors.border,
+  },
+  chipActive: {
+    backgroundColor: '#F56E0F',
+    borderColor: '#F56E0F',
+  },
+  chipText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: theme.colors.muted,
+  },
+  chipTextActive: {
+    color: '#FFFFFF',
+  },
   loaderContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
   loadingText: { fontSize: 13, color: theme.colors.muted, fontWeight: '600' },
-  list: { 
-    paddingHorizontal: theme.spacing.screenPadding, 
-    paddingTop: 24, 
-    paddingBottom: 130 
+  list: {
+    paddingHorizontal: theme.spacing.screenPadding,
+    paddingTop: 8,
+    paddingBottom: 130
   },
 }));

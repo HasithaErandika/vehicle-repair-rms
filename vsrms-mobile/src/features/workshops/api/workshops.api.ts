@@ -36,7 +36,16 @@ export const deactivateWorkshop = async (id: string): Promise<void> => {
   await client.delete(`/workshops/${id}`);
 };
 
-export const deleteWorkshop = deactivateWorkshop;
+export const uploadWorkshopImage = async (workshopId: string, imageUri: string): Promise<{ imageUrl: string }> => {
+  const filename = imageUri.split('/').pop() ?? 'workshop.jpg';
+  const ext = /\.(\w+)$/.exec(filename)?.[1] ?? 'jpg';
+  const formData = new FormData();
+  formData.append('image', { uri: imageUri, name: filename, type: `image/${ext}` } as any);
+  const { data } = await client.post(`/workshops/${workshopId}/image`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data;
+};
 
 export const fetchWorkshopTechnicians = async (workshopId: string): Promise<User[]> => {
   const { data } = await client.get(`/workshops/${workshopId}/technicians`);

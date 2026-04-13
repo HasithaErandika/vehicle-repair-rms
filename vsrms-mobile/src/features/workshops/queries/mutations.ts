@@ -6,6 +6,7 @@ import {
   deactivateWorkshop,
   addTechnicianToWorkshop,
   removeTechnicianFromWorkshop,
+  uploadWorkshopImage,
 } from '../api/workshops.api';
 import { useToast } from '@/providers/ToastProvider';
 import { handleApiError } from '@/services/error.handler';
@@ -65,6 +66,21 @@ export function useAddTechnician(workshopId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: workshopKeys.technicians(workshopId) });
       showToast('Technician added', 'success');
+    },
+    onError: (e: any) => showToast(handleApiError(e), 'error'),
+  });
+}
+
+export function useUploadWorkshopImage(workshopId: string) {
+  const qc = useQueryClient();
+  const { showToast } = useToast();
+
+  return useMutation({
+    mutationFn: (imageUri: string) => uploadWorkshopImage(workshopId, imageUri),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: workshopKeys.detail(workshopId) });
+      qc.invalidateQueries({ queryKey: workshopKeys.mine() });
+      showToast('Workshop photo updated', 'success');
     },
     onError: (e: any) => showToast(handleApiError(e), 'error'),
   });

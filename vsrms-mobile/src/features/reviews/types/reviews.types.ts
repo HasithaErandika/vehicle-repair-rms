@@ -3,7 +3,8 @@ export interface Review {
   workshopId: string;
   userId: string | { _id: string; fullName?: string; email: string };
   rating: number;
-  comment: string;
+  reviewText?: string;
+  appointmentId?: string;
   createdAt?: string;
   updatedAt?: string;
 }

@@ -48,6 +48,7 @@ const getWorkshops = async (req, res, next) => {
     const { page, limit, skip } = paginate(req.query);
     const filter = { active: true };
     if (req.query.district) filter.district = req.query.district.trim();
+    if (req.query.name)     filter.name     = { $regex: req.query.name.trim(), $options: 'i' };
 
     const [data, total] = await Promise.all([
       Workshop.find(filter).skip(skip).limit(limit).sort({ averageRating: -1 }),
@@ -72,6 +73,9 @@ const getNearbyWorkshops = async (req, res, next) => {
       throw new AppError('lat and lng query params are required', 400);
     }
 
+    const geoQuery = { active: true };
+    if (req.query.name) geoQuery.name = { $regex: req.query.name.trim(), $options: 'i' };
+
     const workshops = await Workshop.aggregate([
       {
         $geoNear: {
@@ -79,7 +83,7 @@ const getNearbyWorkshops = async (req, res, next) => {
           distanceField: 'distance',
           maxDistance:   maxKm * 1000,
           spherical:     true,
-          query:         { active: true },
+          query:         geoQuery,
         },
       },
       {

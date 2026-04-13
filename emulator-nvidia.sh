@@ -1,30 +1,47 @@
 #!/usr/bin/env bash
-# Launch Pixel 6 Pro AVD on NVIDIA RTX 3050 via PRIME render offload.
-# On Ubuntu with "prime-select on-demand", the Intel iGPU drives the display
-# but we can offload OpenGL/Vulkan to the discrete NVIDIA GPU using these vars.
-
-set -e
+# Launch Pixel 5 AVD with best available GPU on Ubuntu NVIDIA hybrid setup.
+# Automatically detects whether NVIDIA PRIME render offload is available and
+# falls back to the emulator's own auto-detection if it is not.
 
 EMULATOR="$HOME/Android/Sdk/emulator/emulator"
-AVD_NAME="Pixel_6_Pro"
+AVD_NAME="Pixel_5"
 
-echo "[emulator] Starting $AVD_NAME on NVIDIA RTX 3050..."
+if [ ! -f "$EMULATOR" ]; then
+  echo "[emulator] ERROR: Emulator binary not found at $EMULATOR"
+  exit 1
+fi
 
-# PRIME render offload: redirect GL calls to NVIDIA
-export __NV_PRIME_RENDER_OFFLOAD=1
-export __NV_PRIME_RENDER_OFFLOAD_PROVIDER=NVIDIA-G0
-export __GLX_VENDOR_LIBRARY_NAME=nvidia
+# Detect whether the NVIDIA discrete GPU is active and the ICD is present.
+NVIDIA_ICD="/usr/share/vulkan/icd.d/nvidia_icd.json"
+NVIDIA_AVAILABLE=false
 
-# Vulkan: point to NVIDIA ICD only
-export VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/nvidia_icd.json
+if command -v nvidia-smi &>/dev/null && nvidia-smi &>/dev/null; then
+  if [ -f "$NVIDIA_ICD" ]; then
+    NVIDIA_AVAILABLE=true
+  fi
+fi
 
-# Tell the emulator to use the host GPU (matches config.ini hw.gpu.mode=host)
-# and disable the software fallback
-export ANDROID_EMULATOR_RUNNER_FLAGS=""
+if [ "$NVIDIA_AVAILABLE" = true ]; then
+  echo "[emulator] NVIDIA GPU detected — enabling PRIME render offload."
 
+  # PRIME render offload: redirect GL/Vulkan calls to the discrete NVIDIA GPU.
+  export __NV_PRIME_RENDER_OFFLOAD=1
+  export __NV_PRIME_RENDER_OFFLOAD_PROVIDER=NVIDIA-G0
+  export __GLX_VENDOR_LIBRARY_NAME=nvidia
+  export VK_ICD_FILENAMES="$NVIDIA_ICD"
+
+  GPU_FLAG="-gpu host"
+else
+  echo "[emulator] NVIDIA PRIME not available — letting the emulator choose GPU mode."
+  GPU_FLAG="-gpu auto"
+fi
+
+echo "[emulator] Starting $AVD_NAME..."
+
+# shellcheck disable=SC2086
 exec "$EMULATOR" \
   -avd "$AVD_NAME" \
-  -gpu host \
-  -no-snapshot-load \
+  $GPU_FLAG \
   -memory 4096 \
+  -no-boot-anim \
   "$@"

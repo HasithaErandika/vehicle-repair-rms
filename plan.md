@@ -1,7 +1,7 @@
 # plan.md — VSRMS Implementation Plan
 
 > Living document. Update status as work progresses.
-> Current date: 2026-04-11
+> Current date: 2026-04-13
 
 ---
 
@@ -49,16 +49,16 @@ Dashboards standardized to premium Dark Header/White Card theme.
 | features/auth/screens/LoginScreen.tsx | ✓ Done | Fixed handleSignIn flow (B2) |
 | features/auth/screens/RegisterScreen.tsx | ✓ Done | Standardized to premium UI |
 | features/vehicles/screens/* | ✓ Done | List, Add, Edit, Detail |
-| features/workshops/screens/WorkshopDetailScreen | ✓ Done | Fixed specialization/description (B4, B5) |
-| features/workshops/screens/WorkshopListScreen | ✓ Done | |
-| features/workshops/screens/NearbyWorkshopsScreen | ✓ Done | |
+| features/workshops/screens/WorkshopDetailScreen | ✓ Done | Fixed specialization/description (B4, B5); Write Review modal added |
+| features/workshops/screens/WorkshopListScreen | ✓ Done | District filter chips (25 Sri Lanka districts, `?district=` to backend) |
+| features/workshops/screens/NearbyWorkshopsScreen | ✓ Done | Debounced `?name=` search to backend; no client-side filtering |
 | features/appointments/screens/AppointmentListScreen | ✓ Done | Upcoming/Past tabs pass comma-separated status to backend (B3) |
 | features/records/screens/* | ✓ Done | List, Detail, Add |
 | features/reviews/screens/ReviewListScreen | ✓ Done | |
 | app/customer/schedule/ | ✓ Done | Book screen route implementation |
 | app/customer/workshops/ | ✓ Done | Book from workshop detail implementation |
 | app/technician/* | ✓ Done | Premium Dashboard + Appointments |
-| app/owner/* | ✓ Done | Premium Dashboard + Jobs + Workshop Management + Staff |
+| app/owner/* | ✓ Done | Premium Dashboard + Jobs + Workshop Management + Staff; image upload added to manage screen |
 | app/admin/* | ✓ Done | Premium Dashboard + Garages (FIXED B8) |
 
 ---
