@@ -1,15 +1,16 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet } from 'react-native-unistyles';
 import { Appointment, AppointmentStatus } from '../types/appointments.types';
+import { useRouter } from 'expo-router';
 
 const STATUS_CONFIG: Record<AppointmentStatus, { label: string; bg: string; text: string; accent: string }> = {
-  pending:     { label: 'Pending',     bg: '#FFFBEB', text: '#D97706', accent: '#F59E0B' },
-  confirmed:   { label: 'Confirmed',   bg: '#EFF6FF', text: '#2563EB', accent: '#3B82F6' },
+  pending: { label: 'Pending', bg: '#FFFBEB', text: '#D97706', accent: '#F59E0B' },
+  confirmed: { label: 'Confirmed', bg: '#EFF6FF', text: '#2563EB', accent: '#3B82F6' },
   in_progress: { label: 'In Progress', bg: '#FFF7ED', text: '#EA580C', accent: '#F56E0F' },
-  completed:   { label: 'Completed',   bg: '#ECFDF5', text: '#059669', accent: '#10B981' },
-  cancelled:   { label: 'Cancelled',   bg: '#FEF2F2', text: '#DC2626', accent: '#EF4444' },
+  completed: { label: 'Completed', bg: '#ECFDF5', text: '#059669', accent: '#10B981' },
+  cancelled: { label: 'Cancelled', bg: '#FEF2F2', text: '#DC2626', accent: '#EF4444' },
 };
 
 function getVehicleLabel(vehicleId: Appointment['vehicleId']): string {
@@ -28,49 +29,63 @@ function getWorkshopLabel(workshopId: Appointment['workshopId']): string {
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
+  if (isNaN(d.getTime())) return 'N/A';
   return d.toLocaleDateString('en-LK', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 export function AppointmentCard({ appointment }: { appointment: Appointment }) {
+  const router = useRouter();
   const status = appointment.status ?? 'pending';
   const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.pending;
 
+  const handlePress = () => {
+    const id = appointment._id || appointment.id;
+    if (id) {
+      router.push(`/customer/schedule/${id}`);
+    }
+  };
+
   return (
-    <View style={[styles.card, { borderLeftColor: cfg.accent }]}>
-      {/* DATE + STATUS */}
-      <View style={styles.cardHeader}>
-        <View style={styles.dateBox}>
-          <Ionicons name="calendar-outline" size={13} color="#6B7280" />
-          <Text style={styles.dateText}>{formatDate(appointment.scheduledDate)}</Text>
+    <TouchableOpacity 
+      activeOpacity={0.8} 
+      onPress={handlePress}
+    >
+      <View style={[styles.card, { borderLeftColor: cfg.accent }]}>
+        {/* DATE + STATUS */}
+        <View style={styles.cardHeader}>
+          <View style={styles.dateBox}>
+            <Ionicons name="calendar-outline" size={13} color="#6B7280" />
+            <Text style={styles.dateText}>{formatDate(appointment.scheduledDate)}</Text>
+          </View>
+          <View style={[styles.statusBadge, { backgroundColor: cfg.bg }]}>
+            <View style={[styles.statusDot, { backgroundColor: cfg.accent }]} />
+            <Text style={[styles.statusText, { color: cfg.text }]}>{cfg.label}</Text>
+          </View>
         </View>
-        <View style={[styles.statusBadge, { backgroundColor: cfg.bg }]}>
-          <View style={[styles.statusDot, { backgroundColor: cfg.accent }]} />
-          <Text style={[styles.statusText, { color: cfg.text }]}>{cfg.label}</Text>
+
+        {/* SERVICE TYPE */}
+        <Text style={styles.serviceType}>{appointment.serviceType}</Text>
+
+        {/* VEHICLE */}
+        <View style={styles.infoRow}>
+          <Ionicons name="car-outline" size={15} color="#6B7280" />
+          <Text style={styles.infoText}>{getVehicleLabel(appointment.vehicleId)}</Text>
         </View>
-      </View>
 
-      {/* SERVICE TYPE */}
-      <Text style={styles.serviceType}>{appointment.serviceType}</Text>
-
-      {/* VEHICLE */}
-      <View style={styles.infoRow}>
-        <Ionicons name="car-outline" size={15} color="#6B7280" />
-        <Text style={styles.infoText}>{getVehicleLabel(appointment.vehicleId)}</Text>
-      </View>
-
-      {/* WORKSHOP */}
-      <View style={styles.infoRow}>
-        <Ionicons name="business-outline" size={15} color="#6B7280" />
-        <Text style={styles.infoText}>{getWorkshopLabel(appointment.workshopId)}</Text>
-      </View>
-
-      {appointment.notes ? (
-        <View style={styles.notesBox}>
-          <Ionicons name="document-text-outline" size={13} color="#9CA3AF" />
-          <Text style={styles.notesText}>{appointment.notes}</Text>
+        {/* WORKSHOP */}
+        <View style={styles.infoRow}>
+          <Ionicons name="business-outline" size={15} color="#6B7280" />
+          <Text style={styles.infoText}>{getWorkshopLabel(appointment.workshopId)}</Text>
         </View>
-      ) : null}
-    </View>
+
+        {appointment.notes ? (
+          <View style={styles.notesBox}>
+            <Ionicons name="document-text-outline" size={13} color="#9CA3AF" />
+            <Text style={styles.notesText}>{appointment.notes}</Text>
+          </View>
+        ) : null}
+      </View>
+    </TouchableOpacity>
   );
 }
 

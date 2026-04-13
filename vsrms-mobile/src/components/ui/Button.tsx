@@ -5,18 +5,18 @@ import { StyleSheet } from 'react-native-unistyles';
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
   loading?: boolean;
   disabled?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
 }
 
-export function Button({ 
-  title, 
-  onPress, 
-  variant = 'primary', 
-  loading, 
+export function Button({
+  title,
+  onPress,
+  variant = 'primary',
+  loading,
   disabled,
   style,
   textStyle
@@ -34,11 +34,11 @@ export function Button({
       activeOpacity={0.7}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'outline' ? '#F56E0F' : '#fff'} />
+        <ActivityIndicator color={(variant === 'outline' || variant === 'ghost') ? '#F56E0F' : '#fff'} />
       ) : (
         <Text style={[
           styles.text,
-          styles[`${variant}Text`],
+          styles[`${variant}Text` as keyof typeof styles],
           textStyle
         ]}>
           {title}
@@ -61,10 +61,12 @@ const styles = StyleSheet.create((theme) => ({
   secondary: { backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border },
   outline: { backgroundColor: 'transparent', borderWidth: 2, borderColor: theme.colors.brand },
   ghost: { backgroundColor: 'transparent' },
+  danger: { backgroundColor: theme.colors.error },
   disabled: { opacity: 0.5 },
   text: { fontSize: theme.fonts.sizes.md, fontWeight: '800' },
   primaryText: { color: '#fff' },
   secondaryText: { color: theme.colors.text },
   outlineText: { color: theme.colors.brand },
   ghostText: { color: theme.colors.brand },
+  dangerText: { color: '#fff' },
 }));
