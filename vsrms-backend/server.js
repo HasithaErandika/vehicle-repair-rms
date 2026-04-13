@@ -3,21 +3,21 @@
 const dotenv = require('dotenv');
 dotenv.config();
 
-const express        = require('express');
-const cors           = require('cors');
-const helmet         = require('helmet');
-const mongoSanitize  = require('express-mongo-sanitize');
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
 
-const connectDB              = require('./src/config/db');
+const connectDB = require('./src/config/db');
 const { globalErrorHandler } = require('./src/middleware/errorHandler');
-const { apiLimiter }         = require('./src/middleware/rateLimiter');
+const { apiLimiter } = require('./src/middleware/rateLimiter');
 
-const authRoutes        = require('./src/routes/auth.route');
-const vehicleRoutes     = require('./src/routes/vehicle.route');
-const workshopRoutes    = require('./src/routes/workshop.route');
+const authRoutes = require('./src/routes/auth.route');
+const vehicleRoutes = require('./src/routes/vehicle.route');
+const workshopRoutes = require('./src/routes/workshop.route');
 const appointmentRoutes = require('./src/routes/appointment.route');
-const recordRoutes      = require('./src/routes/record.route');
-const reviewRoutes      = require('./src/routes/review.route');
+const recordRoutes = require('./src/routes/record.route');
+const reviewRoutes = require('./src/routes/review.route');
 
 // ── App ──────────────────────────────────────────────────────────────────────
 const app = express();
@@ -60,15 +60,15 @@ app.use('/api/v1', apiLimiter);
 
 // ── Health check ──────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => res.json({ status: 'ok', service: 'VSRMS API' }));
-app.get('/',       (_req, res) => res.json({ status: 'ok', service: 'VSRMS API' }));
+app.get('/', (_req, res) => res.json({ status: 'ok', service: 'VSRMS API' }));
 
 // ── Routes ───────────────────────────────────────────────────────────────────
-app.use('/api/v1/auth',         authRoutes);
-app.use('/api/v1/vehicles',     vehicleRoutes);
-app.use('/api/v1/workshops',    workshopRoutes);
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/vehicles', vehicleRoutes);
+app.use('/api/v1/workshops', workshopRoutes);
 app.use('/api/v1/appointments', appointmentRoutes);
-app.use('/api/v1/records',      recordRoutes);
-app.use('/api/v1/reviews',      reviewRoutes);
+app.use('/api/v1/records', recordRoutes);
+app.use('/api/v1/reviews', reviewRoutes);
 
 // ── 404 ──────────────────────────────────────────────────────────────────────
 app.use((_req, res) => res.status(404).json({ error: 'Route not found' }));
