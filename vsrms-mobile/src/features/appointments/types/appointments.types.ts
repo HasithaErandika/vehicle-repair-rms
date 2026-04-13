@@ -5,7 +5,7 @@ export interface Appointment {
   id?: string;
   userId: string | { _id: string; fullName?: string; email: string };
   vehicleId: string | { _id: string; registrationNo: string; make: string; model: string };
-  workshopId: string | { _id: string; name: string; address: string };
+  workshopId: string | { _id: string; name: string; address: string; servicesOffered?: string[] };
   serviceType: string;
   scheduledDate: string;
   status: AppointmentStatus;

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, Image, ScrollView, TouchableOpacity, ActivityIndicator, Platform,
+  View, Text, Image, ScrollView, TouchableOpacity, ActivityIndicator, Platform, StatusBar,
   Modal, TextInput,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -59,8 +59,9 @@ export function WorkshopDetailScreen({ id: propId }: { id?: string }) {
   );
 
   return (
-    <ScreenWrapper>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
+    <ScreenWrapper bg="#FFFFFF">
+      <StatusBar barStyle="dark-content" />
+      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ paddingBottom: 60 }}>
 
         {/* HERO IMAGE */}
         {workshop.imageUrl
@@ -197,21 +198,20 @@ export function WorkshopDetailScreen({ id: propId }: { id?: string }) {
             ) : (
               <Text style={styles.noReviewsText}>No reviews yet. Be the first to review!</Text>
             )}
+          {/* BOOK BUTTON AT BOTTOM */}
+          <View style={styles.buttonSection}>
+            <TouchableOpacity
+              style={styles.bookBtn}
+              onPress={() => router.push(`/customer/schedule/book?workshopId=${workshop._id ?? workshop.id}` as any)}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="calendar-outline" size={20} color="#FFFFFF" />
+              <Text style={styles.bookBtnText}>Book Appointment</Text>
+            </TouchableOpacity>
           </View>
         </View>
-      </ScrollView>
-
-      {/* STICKY BOOK BUTTON */}
-      <View style={styles.stickyFooter}>
-        <TouchableOpacity
-          style={styles.bookBtn}
-          onPress={() => router.push(`/customer/schedule/book?workshopId=${workshop._id ?? workshop.id}` as any)}
-          activeOpacity={0.85}
-        >
-          <Ionicons name="calendar-outline" size={20} color="#FFFFFF" />
-          <Text style={styles.bookBtnText}>Book Appointment</Text>
-        </TouchableOpacity>
       </View>
+    </ScrollView>
 
       {/* WRITE REVIEW MODAL */}
       <Modal visible={reviewModalVisible} animationType="slide" transparent>
@@ -330,7 +330,7 @@ const styles = StyleSheet.create((theme) => ({
   },
   detailMap: { ...StyleSheet.absoluteFillObject },
   moreReviews: { fontSize: 13, color: theme.colors.brand, fontWeight: '700', textAlign: 'center', marginTop: 8 },
-  noReviewsText: { fontSize: 13, color: theme.colors.muted, fontWeight: '500', fontStyle: 'italic', textAlign: 'center', paddingVertical: 16 },
+  noReviewsText: { fontSize: 13, color: theme.colors.muted, fontStyle: 'italic', paddingVertical: 10, marginBottom: 20 },
   writeReviewBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     backgroundColor: theme.colors.brandSoft, paddingHorizontal: 12, paddingVertical: 6,
@@ -372,16 +372,10 @@ const styles = StyleSheet.create((theme) => ({
   },
   serviceChipText: { fontSize: 13, fontWeight: '600', color: theme.colors.text },
 
-  stickyFooter: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    padding: 20, paddingBottom: 36,
-    backgroundColor: 'rgba(255,255,255,0.97)',
-    borderTopWidth: 1, borderTopColor: theme.colors.border,
-  },
+  buttonSection: { marginTop: 10, marginBottom: 20, paddingHorizontal: 20 },
   bookBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
-    backgroundColor: theme.colors.brand, borderRadius: 16, height: 56,
-    shadowColor: theme.colors.brand, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8,
+    backgroundColor: theme.colors.brand, borderRadius: 16, height: 58,
   },
   bookBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
 }));

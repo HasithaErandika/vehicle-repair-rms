@@ -32,29 +32,36 @@ export function BookAppointmentScreen() {
   const { data: vehicles = [], isLoading: vLoading, isError: vError, refetch: vRefetch } = useVehicles();
   const { data: workshops = [], isLoading: wLoading, isError: wError, refetch: wRefetch } = useWorkshops();
 
-  const [vehicleId, setVehicleId]       = useState('');
-  const [workshopId, setWorkshopId]     = useState(params.workshopId ?? '');
-  const [serviceType, setServiceType]   = useState('');
+  const [vehicleId, setVehicleId] = useState('');
+  const [workshopId, setWorkshopId] = useState(params.workshopId ?? '');
+  const [serviceType, setServiceType] = useState('');
   const [customService, setCustomService] = useState('');
-  // dateStr in YYYY-MM-DD format
+  
   const tomorrow = new Date(Date.now() + 86400000);
   const pad = (n: number) => String(n).padStart(2, '0');
-  const [dateStr, setDateStr]           = useState(
+  const [dateStr, setDateStr] = useState(
     `${tomorrow.getFullYear()}-${pad(tomorrow.getMonth() + 1)}-${pad(tomorrow.getDate())}`
   );
-  const [notes, setNotes]               = useState('');
-  const [errors, setErrors]             = useState<Record<string, string>>({});
+  const [notes, setNotes] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const selectedWorkshop = workshops.find(w => (w._id === workshopId || w.id === workshopId));
+  const availableServices = (selectedWorkshop?.servicesOffered && selectedWorkshop.servicesOffered.length > 0)
+    ? [...selectedWorkshop.servicesOffered, 'Other']
+    : SERVICE_TYPES;
 
   const { mutate: book, isPending } = useCreateAppointment();
 
   const validate = () => {
     const e: Record<string, string> = {};
-    if (!vehicleId)   e.vehicleId   = 'Select a vehicle';
-    if (!workshopId)  e.workshopId  = 'Select a workshop';
+    if (!vehicleId) e.vehicleId = 'Select a vehicle';
+    if (!workshopId) e.workshopId = 'Select a workshop';
     if (!serviceType) e.serviceType = 'Select a service type';
+    
     const parsedDate = new Date(dateStr);
     if (!dateStr || isNaN(parsedDate.getTime())) e.date = 'Enter a valid date (YYYY-MM-DD)';
     else if (parsedDate <= new Date()) e.date = 'Date must be in the future';
+    
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -65,7 +72,13 @@ export function BookAppointmentScreen() {
     if (!finalService) { setErrors(e => ({ ...e, serviceType: 'Describe the service' })); return; }
 
     book(
-      { vehicleId, workshopId, serviceType: finalService, scheduledDate: new Date(dateStr).toISOString(), notes: notes.trim() || undefined },
+      { 
+        vehicleId, 
+        workshopId, 
+        serviceType: finalService, 
+        scheduledDate: new Date(dateStr).toISOString(), 
+        notes: notes.trim() || undefined 
+      },
       { onSuccess: () => router.back() },
     );
   };
@@ -77,8 +90,9 @@ export function BookAppointmentScreen() {
       </View>
     </ScreenWrapper>
   );
-  if (vError)   return <ErrorScreen onRetry={vRefetch} />;
-  if (wError)   return <ErrorScreen onRetry={wRefetch} />;
+
+  if (vError) return <ErrorScreen onRetry={vRefetch} />;
+  if (wError) return <ErrorScreen onRetry={wRefetch} />;
 
   return (
     <ScreenWrapper bg="#1A1A2E">
@@ -102,142 +116,152 @@ export function BookAppointmentScreen() {
 
       {/* ── WHITE CARD SECTION ── */}
       <View style={styles.mainCard}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
-        {/* VEHICLE */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Select Vehicle *</Text>
-          {vehicles.length === 0
-            ? <Text style={styles.emptyHint}>No vehicles registered. Add one first.</Text>
-            : vehicles.map(v => (
-              <TouchableOpacity
-                key={v._id}
-                style={[styles.selectCard, vehicleId === v._id && styles.selectCardActive]}
-                onPress={() => setVehicleId(v._id)}
-                activeOpacity={0.8}
-              >
-                <View style={styles.selectCardIcon}>
-                  <Ionicons name="car-sport-outline" size={20} color={vehicleId === v._id ? '#F56E0F' : '#6B7280'} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.selectCardTitle, vehicleId === v._id && styles.selectCardTitleActive]}>
-                    {v.make} {v.model} ({v.year})
-                  </Text>
-                  <Text style={styles.selectCardSub}>{v.registrationNo}</Text>
-                </View>
-                {vehicleId === v._id && <Ionicons name="checkmark-circle" size={20} color="#F56E0F" />}
-              </TouchableOpacity>
-            ))
-          }
-          {errors.vehicleId && <Text style={styles.errorText}>{errors.vehicleId}</Text>}
-        </View>
-
-        {/* WORKSHOP */}
-        {!params.workshopId && (
+          {/* VEHICLE */}
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>Select Workshop *</Text>
-            {workshops.map(w => (
-              <TouchableOpacity
-                key={w._id ?? w.id}
-                style={[styles.selectCard, workshopId === (w._id ?? w.id) && styles.selectCardActive]}
-                onPress={() => setWorkshopId(w._id ?? w.id!)}
-                activeOpacity={0.8}
-              >
-                <View style={styles.selectCardIcon}>
-                  <Ionicons name="business-outline" size={20} color={workshopId === (w._id ?? w.id) ? '#F56E0F' : '#6B7280'} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.selectCardTitle, workshopId === (w._id ?? w.id) && styles.selectCardTitleActive]}>
-                    {w.name}
-                  </Text>
-                  <Text style={styles.selectCardSub}>{w.district} · ⭐ {w.averageRating.toFixed(1)}</Text>
-                </View>
-                {workshopId === (w._id ?? w.id) && <Ionicons name="checkmark-circle" size={20} color="#F56E0F" />}
-              </TouchableOpacity>
-            ))}
-            {errors.workshopId && <Text style={styles.errorText}>{errors.workshopId}</Text>}
+            <Text style={styles.sectionLabel}>Select Vehicle *</Text>
+            {vehicles.length === 0
+              ? <Text style={styles.emptyHint}>No vehicles registered. Add one first.</Text>
+              : vehicles.map(v => (
+                <TouchableOpacity
+                  key={v._id || v.id}
+                  style={[
+                    styles.selectCard, 
+                    !!vehicleId && (vehicleId === v._id || vehicleId === v.id) && styles.selectCardActive
+                  ]}
+                  onPress={() => setVehicleId(v._id || v.id!)}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.selectCardIcon}>
+                    <Ionicons 
+                      name="car-sport-outline" 
+                      size={20} 
+                      color={(!!vehicleId && (vehicleId === v._id || vehicleId === v.id)) ? '#F56E0F' : '#6B7280'} 
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[
+                      styles.selectCardTitle, 
+                      !!vehicleId && (vehicleId === v._id || vehicleId === v.id) && styles.selectCardTitleActive
+                    ]}>
+                      {v.make} {v.model} ({v.year})
+                    </Text>
+                    <Text style={styles.selectCardSub}>{v.registrationNo}</Text>
+                  </View>
+                  {(!!vehicleId && (vehicleId === v._id || vehicleId === v.id)) && <Ionicons name="checkmark-circle" size={20} color="#F56E0F" />}
+                </TouchableOpacity>
+              ))
+            }
+            {errors.vehicleId && <Text style={styles.errorText}>{errors.vehicleId}</Text>}
           </View>
-        )}
 
-        {/* SERVICE TYPE */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Service Type *</Text>
-          <View style={styles.chipGrid}>
-            {SERVICE_TYPES.map(s => (
-              <TouchableOpacity
-                key={s}
-                style={[styles.chip, serviceType === s && styles.chipActive]}
-                onPress={() => setServiceType(s)}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.chipText, serviceType === s && styles.chipTextActive]}>{s}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          {serviceType === 'Other' && (
-            <TextInput
-              style={styles.input}
-              placeholder="Describe the service..."
-              placeholderTextColor="#9CA3AF"
-              value={customService}
-              onChangeText={setCustomService}
-            />
+          {/* WORKSHOP */}
+          {!params.workshopId && (
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>Select Workshop *</Text>
+              {workshops.map(w => (
+                <TouchableOpacity
+                  key={w._id ?? w.id}
+                  style={[styles.selectCard, workshopId === (w._id ?? w.id) && styles.selectCardActive]}
+                  onPress={() => setWorkshopId(w._id ?? w.id!)}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.selectCardIcon}>
+                    <Ionicons name="business-outline" size={20} color={workshopId === (w._id ?? w.id) ? '#F56E0F' : '#6B7280'} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.selectCardTitle, workshopId === (w._id ?? w.id) && styles.selectCardTitleActive]}>
+                      {w.name}
+                    </Text>
+                    <Text style={styles.selectCardSub}>{w.district} · ⭐ {w.averageRating.toFixed(1)}</Text>
+                  </View>
+                  {workshopId === (w._id ?? w.id) && <Ionicons name="checkmark-circle" size={20} color="#F56E0F" />}
+                </TouchableOpacity>
+              ))}
+              {errors.workshopId && <Text style={styles.errorText}>{errors.workshopId}</Text>}
+            </View>
           )}
-          {errors.serviceType && <Text style={styles.errorText}>{errors.serviceType}</Text>}
-        </View>
 
-        {/* DATE */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Preferred Date *</Text>
-          <View style={styles.dateInputRow}>
-            <Ionicons name="calendar-outline" size={18} color="#F56E0F" />
+          {/* SERVICE TYPE */}
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Service Type *</Text>
+            <View style={styles.chipGrid}>
+              {availableServices.map(s => (
+                <TouchableOpacity
+                  key={s}
+                  style={[styles.chip, serviceType === s && styles.chipActive]}
+                  onPress={() => setServiceType(s)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.chipText, serviceType === s && styles.chipTextActive]}>{s}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {serviceType === 'Other' && (
+              <TextInput
+                style={styles.input}
+                placeholder="Describe the service..."
+                placeholderTextColor="#9CA3AF"
+                value={customService}
+                onChangeText={setCustomService}
+              />
+            )}
+            {errors.serviceType && <Text style={styles.errorText}>{errors.serviceType}</Text>}
+          </View>
+
+          {/* DATE */}
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Preferred Date *</Text>
+            <View style={styles.dateInputRow}>
+              <Ionicons name="calendar-outline" size={18} color="#F56E0F" />
+              <TextInput
+                style={styles.dateInput}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor="#9CA3AF"
+                value={dateStr}
+                onChangeText={setDateStr}
+                keyboardType="numbers-and-punctuation"
+                returnKeyType="done"
+                maxLength={10}
+              />
+            </View>
+            <Text style={styles.dateHint}>Enter date in YYYY-MM-DD format (must be tomorrow or later)</Text>
+            {errors.date && <Text style={styles.errorText}>{errors.date}</Text>}
+          </View>
+
+          {/* NOTES */}
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Notes <Text style={styles.optional}>(optional)</Text></Text>
             <TextInput
-              style={styles.dateInput}
-              placeholder="YYYY-MM-DD"
+              style={[styles.input, styles.textArea]}
+              placeholder="Any specific concerns or instructions..."
               placeholderTextColor="#9CA3AF"
-              value={dateStr}
-              onChangeText={setDateStr}
-              keyboardType="numbers-and-punctuation"
-              returnKeyType="done"
-              maxLength={10}
+              value={notes}
+              onChangeText={setNotes}
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
             />
           </View>
-          <Text style={styles.dateHint}>Enter date in YYYY-MM-DD format (must be tomorrow or later)</Text>
-          {errors.date && <Text style={styles.errorText}>{errors.date}</Text>}
-        </View>
 
-        {/* NOTES */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Notes <Text style={styles.optional}>(optional)</Text></Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="Any specific concerns or instructions..."
-            placeholderTextColor="#9CA3AF"
-            value={notes}
-            onChangeText={setNotes}
-            multiline
-            numberOfLines={3}
-            textAlignVertical="top"
-          />
-        </View>
-
-        {/* SUBMIT */}
-        <TouchableOpacity
-          style={[styles.bookBtn, isPending && styles.bookBtnDisabled]}
-          onPress={handleBook}
-          disabled={isPending}
-          activeOpacity={0.85}
-        >
-          {isPending
-            ? <ActivityIndicator color="#FFFFFF" />
-            : <>
+          {/* SUBMIT */}
+          <TouchableOpacity
+            style={[styles.bookBtn, isPending && styles.bookBtnDisabled]}
+            onPress={handleBook}
+            disabled={isPending}
+            activeOpacity={0.85}
+          >
+            {isPending
+              ? <ActivityIndicator color="#FFFFFF" />
+              : <>
                 <Ionicons name="calendar-outline" size={20} color="#FFFFFF" />
                 <Text style={styles.bookBtnText}>Confirm Booking</Text>
               </>
-          }
-        </TouchableOpacity>
+            }
+          </TouchableOpacity>
 
-      </ScrollView>
+        </ScrollView>
       </View>
     </ScreenWrapper>
   );
@@ -281,9 +305,7 @@ const styles = StyleSheet.create((theme) => ({
     shadowRadius: 20,
     elevation: 16,
   },
-
-  scroll: { padding: 20, paddingBottom: 60 },
-
+  scroll: { padding: 20, paddingBottom: 100 },
   section: { marginBottom: 28 },
   sectionLabel: { fontSize: 14, fontWeight: '800', color: '#1A1A2E', marginBottom: 12 },
   optional: { fontWeight: '500', color: '#9CA3AF' },
