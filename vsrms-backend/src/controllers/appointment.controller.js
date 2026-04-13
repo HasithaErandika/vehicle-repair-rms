@@ -40,7 +40,7 @@ const getMyAppointments = async (req, res, next) => {
 // ─────────────────────────────────────────────────────────────────────────────
 const getAppointment = async (req, res, next) => {
   try {
-    const appt = await Appointment.findById(req.params.id);
+    const appt = await Appointment.findById(req.params.id).populate('workshopId');
     if (!appt) throw new AppError('Appointment not found', 404);
 
     // Visibility rules:
