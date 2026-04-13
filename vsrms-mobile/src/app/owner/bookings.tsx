@@ -12,12 +12,12 @@ import { Appointment } from '@/features/appointments/types/appointments.types';
 import { ErrorScreen } from '@/components/feedback/ErrorScreen';
 import { EmptyState } from '@/components/ui/EmptyState';
 
-function BookingCard({ 
-  appt, 
-  onStatusChange 
-}: { 
-  appt: Appointment; 
-  onStatusChange: (id: string, s: string) => void 
+function BookingCard({
+  appt,
+  onStatusChange
+}: {
+  appt: Appointment;
+  onStatusChange: (id: string, s: string) => void
 }) {
   const customerName = typeof appt.userId === 'object' ? appt.userId.fullName : 'Customer';
   const vehicleName = typeof appt.vehicleId === 'object' ? `${appt.vehicleId.make} ${appt.vehicleId.model}` : 'Vehicle';
@@ -51,14 +51,14 @@ function BookingCard({
 
       {appt.status === 'pending' && (
         <View style={styles.actionRow}>
-          <TouchableOpacity 
-            style={styles.declineBtn} 
+          <TouchableOpacity
+            style={styles.declineBtn}
             onPress={() => onStatusChange(appt._id!, 'cancelled')}
           >
             <Text style={styles.declineText}>Decline</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.approveBtn} 
+          <TouchableOpacity
+            style={styles.approveBtn}
             onPress={() => onStatusChange(appt._id!, 'confirmed')}
           >
             <Text style={styles.approveText}>Approve</Text>
@@ -73,7 +73,7 @@ export default function BookingsScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const [status, setStatus] = useState<'pending' | 'confirmed' | 'completed' | 'cancelled'>('pending');
-  
+
   const { data, isLoading, isError, refetch } = useWorkshopAppointments(user?.workshopId, status);
   const { mutate: updateStatus } = useUpdateAppointmentStatus();
 
@@ -92,8 +92,8 @@ export default function BookingsScreen() {
             <Text style={styles.headerSub}>Management</Text>
             <Text style={styles.headerTitle}>Bookings</Text>
           </View>
-          <TouchableOpacity 
-            style={styles.jobsBtn} 
+          <TouchableOpacity
+            style={styles.jobsBtn}
             onPress={() => router.push('/owner/jobs' as any)}
           >
             <Ionicons name="hammer-outline" size={20} color="#FFFFFF" />
@@ -104,8 +104,8 @@ export default function BookingsScreen() {
         {/* Status Tabs */}
         <View style={styles.tabContainer}>
           {(['pending', 'confirmed', 'completed'] as const).map((s) => (
-            <TouchableOpacity 
-              key={s} 
+            <TouchableOpacity
+              key={s}
               onPress={() => setStatus(s)}
               style={[styles.tab, status === s && styles.activeTab]}
             >
@@ -127,16 +127,17 @@ export default function BookingsScreen() {
           <View style={styles.centered}><ActivityIndicator size="large" color="#F56E0F" /></View>
         ) : isError ? (
           <ErrorScreen onRetry={refetch} variant="inline" />
-                ) : (
+        ) : (
           <FlashList
-             data={(data || []) as Appointment[]}
-             renderItem={({ item }) => <BookingCard appt={item as Appointment} onStatusChange={handleStatusUpdate} />}
-             estimatedItemSize={140}
-             onRefresh={refetch}
-             refreshing={isLoading}
-             keyExtractor={(a: Appointment) => a._id || a.id || Math.random().toString()}
-             contentContainerStyle={styles.list}
-             ListEmptyComponent={<EmptyState message={`No ${status} bookings found.`} />}
+            data={(data || []) as Appointment[]}
+            renderItem={({ item }) => <BookingCard appt={item as Appointment} onStatusChange={handleStatusUpdate} />}
+            // @ts-expect-error - FlashList requires estimatedItemSize dynamically
+            estimatedItemSize={140}
+            onRefresh={refetch}
+            refreshing={isLoading}
+            keyExtractor={(a: Appointment) => a._id || a.id || Math.random().toString()}
+            contentContainerStyle={styles.list}
+            ListEmptyComponent={<EmptyState message={`No ${status} bookings found.`} />}
           />
         )}
       </View>
@@ -145,27 +146,28 @@ export default function BookingsScreen() {
 }
 
 const styles = StyleSheet.create((theme) => ({
-  topSection: { 
-    paddingHorizontal: theme.spacing.screenPadding, 
-    paddingTop: 16, 
-    paddingBottom: theme.spacing.headerBottom, 
-    position: 'relative', 
-    overflow: 'hidden' 
+  topSection: {
+    paddingHorizontal: theme.spacing.screenPadding,
+    paddingTop: 16,
+    paddingBottom: 20,
+    position: 'relative',
+    overflow: 'hidden',
+    backgroundColor: '#1A1A2E'
   },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 10, marginBottom: 20 },
-  headerSub: { 
-    fontSize: theme.fonts.sizes.caption, 
-    color: 'rgba(255,255,255,0.7)', 
-    fontWeight: '700', 
-    textTransform: 'uppercase', 
-    letterSpacing: 1 
+  headerSub: {
+    fontSize: theme.fonts.sizes.caption,
+    color: 'rgba(255,255,255,0.7)',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1
   },
-  headerTitle: { 
-    fontSize: theme.fonts.sizes.pageTitle, 
-    color: '#FFFFFF', 
-    fontWeight: '900', 
-    letterSpacing: -0.5, 
-    marginTop: 4 
+  headerTitle: {
+    fontSize: theme.fonts.sizes.pageTitle,
+    color: '#FFFFFF',
+    fontWeight: '900',
+    letterSpacing: -0.5,
+    marginTop: 4
   },
   jobsBtn: {
     flexDirection: 'row',
@@ -194,23 +196,23 @@ const styles = StyleSheet.create((theme) => ({
   decCircle1: { position: 'absolute', width: 130, height: 130, borderRadius: 65, backgroundColor: 'rgba(245,110,15,0.13)', top: -25, right: -25 },
   decCircle2: { position: 'absolute', width: 70, height: 70, borderRadius: 35, backgroundColor: 'rgba(245,110,15,0.08)', bottom: 10, right: 90 },
 
-  mainCard: { 
-    backgroundColor: '#FFFFFF', 
-    borderTopLeftRadius: 32, 
-    borderTopRightRadius: 32, 
-    marginTop: theme.spacing.cardOverlap, 
-    flex: 1, 
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: -4 }, 
-    shadowOpacity: 0.1, 
-    shadowRadius: 20, 
-    elevation: 16 
+  mainCard: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    marginTop: theme.spacing.cardOverlap,
+    flex: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 16
   },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  list: { 
-    paddingHorizontal: theme.spacing.screenPadding, 
-    paddingTop: 24, 
-    paddingBottom: 130 
+  list: {
+    paddingHorizontal: theme.spacing.screenPadding,
+    paddingTop: 24,
+    paddingBottom: 130
   },
 
   card: { backgroundColor: '#FFFFFF', borderRadius: 24, marginBottom: 16, borderWidth: 1.5, borderColor: '#F3F4F6', overflow: 'hidden' },
