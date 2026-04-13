@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Animated } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
-function ShimmerBox({ width, height, borderRadius = 8 }: { width: number | string; height: number; borderRadius?: number }) {
+export function Skeleton({ width, height, borderRadius = 8 }: { width: number | string; height: number; borderRadius?: number }) {
   const opacity = useRef(new Animated.Value(0.4)).current;
 
   useEffect(() => {
@@ -17,7 +17,9 @@ function ShimmerBox({ width, height, borderRadius = 8 }: { width: number | strin
   return (
     <Animated.View
       style={{
-        width, height, borderRadius,
+        width: width as any,
+        height,
+        borderRadius,
         backgroundColor: '#E5E7EB',
         opacity,
       }}
@@ -32,11 +34,11 @@ export function VehicleSkeleton() {
     <View style={styles.container}>
       {[0, 1, 2, 3].map((idx) => (
         <View key={idx} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-          <ShimmerBox width={52} height={52} borderRadius={12} />
+          <Skeleton width={52} height={52} borderRadius={12} />
           <View style={styles.textGroup}>
-            <ShimmerBox width="70%" height={16} borderRadius={6} />
+            <Skeleton width="70%" height={16} borderRadius={6} />
             <View style={{ height: 6 }} />
-            <ShimmerBox width="45%" height={12} borderRadius={6} />
+            <Skeleton width="45%" height={12} borderRadius={6} />
           </View>
         </View>
       ))}

@@ -231,7 +231,7 @@ export default function WorkshopManageScreen() {
           <View style={styles.actionsRow}>
             <TouchableOpacity
               style={styles.actionBtn}
-              onPress={() => router.push('/owner/bookings' as any)}
+              onPress={() => router.push({ pathname: '/owner/bookings', params: { workshopId: workshop._id || workshop.id } } as any)}
             >
               <Ionicons name="calendar-outline" size={20} color="#2563EB" />
               <Text style={styles.actionBtnText}>Bookings</Text>
