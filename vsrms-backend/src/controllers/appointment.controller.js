@@ -93,12 +93,12 @@ const createAppointment = async (req, res, next) => {
     const dayStart = new Date(date); dayStart.setHours(0, 0, 0, 0);
     const dayEnd   = new Date(dayStart); dayEnd.setDate(dayEnd.getDate() + 1);
 
-    const conflict = await Appointment.findOne({
+    const conflictCount = await Appointment.countDocuments({
       workshopId,
       scheduledDate: { $gte: dayStart, $lt: dayEnd },
       status: { $in: ['pending', 'confirmed', 'in_progress'] },
     });
-    if (conflict) throw new AppError('Workshop already has a booking on this date', 409);
+    if (conflictCount >= 20) throw new AppError('Workshop has reached the maximum capacity of 20 appointments for this date', 409);
 
     const appt = await Appointment.create({
       userId: req.user._id,

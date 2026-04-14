@@ -82,24 +82,28 @@ const register = async (req, res, next) => {
     };
     const internalRole = roleMapping[role] || 'customer';
 
-    // Self-registration via SCIM2 — no management token required.
-    // Requires "Self Registration" to be enabled in the Asgardeo console:
-    //   Console → User Management → Self Registration → Enable
-    const scimUser = {
-      schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-      userName: email,
-      password,
-      name: { givenName: firstName, familyName: lastName },
-      emails: [{ primary: true, value: email }],
-      ...(phone && { phoneNumbers: [{ type: 'mobile', value: phone }] }),
+    // Self-registration via /me endpoint — no management token required.
+    // Requires "Self Registration" to be enabled in the Asgardeo console
+    const mePayload = {
+      user: {
+        username: email,
+        realm: "PRIMARY",
+        password: password
+      },
+      properties: [
+        { key: "http://wso2.org/claims/givenname", value: firstName },
+        { key: "http://wso2.org/claims/lastname", value: lastName },
+        { key: "http://wso2.org/claims/emailaddress", value: email },
+        ...(phone ? [{ key: "http://wso2.org/claims/mobile", value: phone }] : [])
+      ]
     };
 
-    const scimRes = await axios.post(`${ASGARDEO_BASE}/scim2/Users`, scimUser, {
-      headers: { 'Content-Type': 'application/scim+json' },
+    const scimRes = await axios.post(`${ASGARDEO_BASE}/api/identity/user/v1.0/me`, mePayload, {
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    // Pre-create MongoDB document so role and profile are ready before first login.
-    const asgardeoSub = scimRes.data?.id ?? email;
+    // The /me endpoint does not return the user ID directly in the same way, but it works
+    const asgardeoSub = scimRes.data?.userId ?? email;
     await User.findOneAndUpdate(
       { email: email.toLowerCase() },
       {
