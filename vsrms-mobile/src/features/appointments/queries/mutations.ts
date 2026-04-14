@@ -12,7 +12,7 @@ export function useCreateAppointment() {
   return useMutation({
     mutationFn: createAppointment,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: appointmentKeys.mine() });
+      qc.invalidateQueries({ queryKey: appointmentKeys.all() });
       showToast('Appointment booked successfully!', 'success');
     },
     onError: (e: any) => showToast(handleApiError(e), 'error'),
@@ -40,7 +40,7 @@ export function useDeleteAppointment() {
   return useMutation({
     mutationFn: deleteAppointment,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: appointmentKeys.mine() });
+      qc.invalidateQueries({ queryKey: appointmentKeys.all() });
       showToast('Appointment cancelled', 'success');
     },
     onError: (e: any) => showToast(handleApiError(e), 'error'),
@@ -54,8 +54,7 @@ export function useUpdateAppointment() {
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: Partial<Appointment> }) => updateAppointment(id, payload),
     onSuccess: (_, { id }) => {
-      qc.invalidateQueries({ queryKey: appointmentKeys.mine() });
-      qc.invalidateQueries({ queryKey: appointmentKeys.detail(id) });
+      qc.invalidateQueries({ queryKey: appointmentKeys.all() });
       showToast('Appointment updated successfully!', 'success');
     },
     onError: (e: any) => showToast(handleApiError(e), 'error'),

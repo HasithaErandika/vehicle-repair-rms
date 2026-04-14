@@ -12,8 +12,8 @@ export function useCreateRecord() {
   return useMutation({
     mutationFn: (payload: Partial<ServiceRecord>) => createRecord(payload),
     onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: recordKeys.lists() });
-      if (data.vehicleId) qc.invalidateQueries({ queryKey: recordKeys.vehicle(data.vehicleId) });
+      qc.invalidateQueries({ queryKey: recordKeys.all() });
+      qc.invalidateQueries({ queryKey: ['appointments'] }); // Invalidate global appointments cache since status becomes 'completed'
       showToast('Record added successfully', 'success');
     },
     onError: (e) => showToast(handleApiError(e), 'error'),

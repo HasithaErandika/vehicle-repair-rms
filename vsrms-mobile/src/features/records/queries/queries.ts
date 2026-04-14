@@ -7,6 +7,8 @@ export function useVehicleRecords(vehicleId: string, params?: Record<string, any
     queryKey: [...recordKeys.vehicle(vehicleId), params],
     queryFn:  () => fetchRecordsByVehicle(vehicleId, params),
     staleTime: 5 * 60 * 1000,
+    refetchInterval: 5000,
+    refetchIntervalInBackground: true,
   });
 }
 
@@ -24,5 +26,7 @@ export function useWorkshopRecords(workshopId: string, params?: Record<string, a
     queryFn:  () => fetchWorkshopRecords(workshopId, params),
     enabled:  !!workshopId,
     staleTime: 0,
+    refetchInterval: 5000,
+    refetchIntervalInBackground: true,
   });
 }

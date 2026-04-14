@@ -6,8 +6,9 @@ export const fetchMyAppointments = async (params?: Record<string, any>): Promise
   return data.data || data;
 };
 
-export const fetchWorkshopAppointments = async (workshopId: string, params?: Record<string, any>): Promise<Appointment[]> => {
-  const { data } = await client.get(`/appointments/workshop/${workshopId}`, { params });
+export const fetchWorkshopAppointments = async (workshopId?: string, params?: Record<string, any>): Promise<Appointment[]> => {
+  const url = (workshopId && workshopId !== 'all') ? `/appointments/workshop/${workshopId}` : '/appointments/workshop-all';
+  const { data } = await client.get(url, { params });
   return data.data || data;
 };
 
