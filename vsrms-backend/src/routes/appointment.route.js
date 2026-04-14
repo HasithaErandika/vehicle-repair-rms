@@ -26,6 +26,7 @@ router.use(protect);
 
 // Specific paths must come before /:id
 router.get('/mine',                                                    getMyAppointments);
+router.get('/workshop-all', requireRole('workshop_owner', 'admin'),     getWorkshopAppointments); // Global view
 router.get('/workshop/:workshopId', requireRole('workshop_staff', 'workshop_owner', 'admin'), getWorkshopAppointments);
 router.post('/',                    validateCreateAppointment,         createAppointment);
 router.get('/:id',                                                     getAppointment);

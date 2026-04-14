@@ -25,11 +25,18 @@ client.interceptors.response.use(
     if (axios.isAxiosError(error)) {
       const data = error.response?.data;
       // Backend shape: { error: "..." }  OR  { error: "...", details: [...] }
-      const serverMessage: string =
+      let serverMessage: string =
         data?.error ||
         data?.message ||
         error.message ||
         'An unexpected error occurred';
+
+      // If validation details exist, append the first field-level message
+      if (data?.details?.length) {
+        const firstDetail = data.details[0];
+        const fieldMsg = firstDetail?.msg || firstDetail?.message;
+        if (fieldMsg) serverMessage = `${serverMessage}: ${fieldMsg}`;
+      }
 
       // On 401: clear stored token so AuthProvider redirects to login.
       // Do NOT retry — there is no refresh-token flow implemented.

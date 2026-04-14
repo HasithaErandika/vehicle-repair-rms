@@ -242,7 +242,7 @@ const styles = StyleSheet.create((theme) => ({
   decCircle2: { position: 'absolute', width: 70, height: 70, borderRadius: 35, backgroundColor: 'rgba(245,110,15,0.08)', bottom: 0, right: 90 },
 
   mainCard: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 32, borderTopRightRadius: 32, marginTop: 16, flex: 1 },
-  scroll: { paddingHorizontal: theme.spacing.screenPadding, paddingTop: 28, paddingBottom: 60 },
+  scroll: { paddingHorizontal: theme.spacing.screenPadding, paddingTop: 28, paddingBottom: 130 },
 
   section: { marginBottom: 28 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },

@@ -83,6 +83,12 @@ const createRecord = async (req, res, next) => {
       mileageAtService,
       technicianName,
     });
+
+    // If linked to an appointment, mark it as completed
+    if (appointmentId) {
+      await Appointment.findByIdAndUpdate(appointmentId, { status: 'completed' });
+    }
+
     res.status(201).json({ record });
   } catch (err) {
     next(err);
