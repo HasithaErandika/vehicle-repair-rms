@@ -1,16 +1,19 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, ActivityIndicator, StatusBar, TouchableOpacity } from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet } from 'react-native-unistyles';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { useAuth } from '@/hooks';
 import { useWorkshopAppointments } from '@/features/appointments/queries/queries';
+import { useWorkshop } from '@/features/workshops/queries/queries';
 import { Appointment } from '@/features/appointments/types/appointments.types';
 import { ErrorScreen } from '@/components/feedback/ErrorScreen';
 import { EmptyState } from '@/components/ui/EmptyState';
 
 function JobCard({ job }: { job: Appointment }) {
+  const router = useRouter();
   const customerName = typeof job.userId === 'object' ? job.userId.fullName : 'Customer';
   const vehicleName = typeof job.vehicleId === 'object' ? `${job.vehicleId.make} ${job.vehicleId.model}` : 'Vehicle';
 
@@ -21,6 +24,9 @@ function JobCard({ job }: { job: Appointment }) {
           <Ionicons name="construct-outline" size={24} color="#F56E0F" />
         </View>
         <View style={styles.jobMain}>
+          {typeof job.workshopId === 'object' && (job.workshopId as any)?.name && (
+            <Text style={styles.cardWorkshopName}>{(job.workshopId as any).name}</Text>
+          )}
           <Text style={styles.jobTitle}>{customerName}</Text>
           <Text style={styles.jobSub}>{vehicleName}</Text>
           <View style={styles.tagRow}>
@@ -33,8 +39,23 @@ function JobCard({ job }: { job: Appointment }) {
              </View>
           </View>
         </View>
-        <TouchableOpacity style={styles.detailBtn}>
-           <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+        <TouchableOpacity 
+          style={styles.completeBtn}
+          onPress={() => {
+            const vid = typeof job.vehicleId === 'object' ? (job.vehicleId as any)._id || (job.vehicleId as any).id : job.vehicleId;
+            const wid = typeof job.workshopId === 'object' ? (job.workshopId as any)._id || (job.workshopId as any).id : job.workshopId;
+            
+            router.push({ 
+              pathname: '/owner/create-record', 
+              params: { 
+                appointmentId: job.id || job._id, 
+                workshopId: wid,
+                vehicleId: vid
+              } 
+            } as any);
+          }}
+        >
+           <Text style={styles.completeBtnText}>Finish</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -42,20 +63,41 @@ function JobCard({ job }: { job: Appointment }) {
 }
 
 export default function OwnerJobsScreen() {
+  const router = useRouter();
+  const { workshopId: paramWorkshopId } = useLocalSearchParams<{ workshopId: string }>();
   const { user } = useAuth();
-  const { data, isLoading, isError, refetch } = useWorkshopAppointments(user?.workshopId, 'in_progress');
+  
+    const targetWorkshopId = useMemo(() => paramWorkshopId || 'all', [paramWorkshopId]);
+    
+    const { data: workshop } = useWorkshop(targetWorkshopId && targetWorkshopId !== 'all' ? targetWorkshopId : '');
+    const { data, isLoading, isError, refetch } = useWorkshopAppointments(targetWorkshopId, 'in_progress');
 
-  return (
-    <ScreenWrapper bg="#1A1A2E">
-      <StatusBar barStyle="light-content" backgroundColor="#1A1A2E" />
-
-      {/* ── DARK TOP SECTION ── */}
-      <View style={styles.topSection}>
-        <View style={styles.headerRow}>
-          <View>
-            <Text style={styles.headerSub}>Operations</Text>
-            <Text style={styles.headerTitle}>Active Jobs</Text>
-          </View>
+  // Deduplicate by id — guards against stale cache returning same appointment twice
+  const appointments = useMemo(() => {
+    const seen = new Set<string>();
+    return (data ?? []).filter(a => {
+      const key = (a as any).id || (a as any)._id;
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [data]);
+  
+    const workshopName = (!targetWorkshopId || targetWorkshopId === 'all') 
+      ? 'All Active Jobs' 
+      : (typeof workshop === 'object' ? (workshop as any).name : 'Active Jobs');
+  
+    return (
+      <ScreenWrapper bg="#1A1A2E">
+        <StatusBar barStyle="light-content" backgroundColor="#1A1A2E" />
+  
+        {/* ── DARK TOP SECTION ── */}
+        <View style={styles.topSection}>
+          <View style={styles.headerRow}>
+            <View>
+              <Text style={styles.headerSub}>Operations</Text>
+              <Text style={styles.headerTitle} numberOfLines={1}>{workshopName}</Text>
+            </View>
           <View style={styles.badge}>
              <Ionicons name="flash-outline" size={22} color="#FFFFFF" />
           </View>
@@ -66,19 +108,19 @@ export default function OwnerJobsScreen() {
       </View>
 
       {/* ── WHITE CARD SECTION ── */}
-      <View style={[styles.mainCard, { overflow: 'hidden' }]}>
+      <View style={styles.mainCard}>
         {isLoading && !data ? (
           <View style={styles.centered}><ActivityIndicator size="large" color="#F56E0F" /></View>
         ) : isError ? (
           <ErrorScreen onRetry={refetch} variant="inline" />
         ) : (
           <FlashList
-             data={(data || []) as Appointment[]}
+             data={appointments as Appointment[]}
              renderItem={({ item }) => <JobCard job={item as Appointment} />}
              estimatedItemSize={120}
              onRefresh={refetch}
              refreshing={isLoading}
-             keyExtractor={(a: Appointment) => a._id || a.id || Math.random().toString()}
+             keyExtractor={(a: Appointment) => (a as any).id || (a as any)._id || Math.random().toString()}
              contentContainerStyle={styles.list}
              ListEmptyComponent={<EmptyState message="No active jobs in the workshop currently." />}
           />
@@ -138,7 +180,15 @@ const styles = StyleSheet.create((theme) => ({
   card: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: 18, marginBottom: 16, borderWidth: 1.5, borderColor: '#F3F4F6', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2 },
   cardRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   jobIcon: { width: 50, height: 50, borderRadius: 14, backgroundColor: '#FFF7ED', alignItems: 'center', justifyContent: 'center' },
-  jobMain: { flex: 1 },
+  cardWorkshopName: { 
+    fontSize: 10, 
+    fontWeight: '800', 
+    color: '#EA580C', 
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4
+  },
+  jobMain: { flex: 1, paddingLeft: 4 },
   jobTitle: { fontSize: 16, fontWeight: '900', color: '#1A1A2E' },
   jobSub: { fontSize: 13, color: '#6B7280', fontWeight: '600', marginTop: 2 },
   
@@ -149,5 +199,20 @@ const styles = StyleSheet.create((theme) => ({
   statusDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#F56E0F' },
   statusText: { fontSize: 10, fontWeight: '800', color: '#F56E0F', textTransform: 'uppercase' },
 
-  detailBtn: { width: 32, height: 32, borderRadius: 10, backgroundColor: '#F9FAFB', alignItems: 'center', justifyContent: 'center' },
+  completeBtn: {
+    backgroundColor: '#F56E0F',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    shadowColor: '#F56E0F',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4
+  },
+  completeBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
+  },
 }));

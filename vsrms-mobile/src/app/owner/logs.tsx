@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, ActivityIndicator, StatusBar, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet } from 'react-native-unistyles';
@@ -77,9 +77,12 @@ function RecordRow({ record }: { record: ServiceRecord }) {
 
 export default function OwnerLogsScreen() {
   const router = useRouter();
+  const { workshopId: paramWorkshopId } = useLocalSearchParams<{ workshopId: string }>();
   const { user } = useAuth();
-  const workshopId = user?.workshopId as string | undefined;
-  const { data, isLoading, isError, refetch } = useWorkshopRecords(workshopId ?? '');
+  
+  const targetWorkshopId = useMemo(() => paramWorkshopId || 'all', [paramWorkshopId]);
+  
+  const { data, isLoading, isError, refetch } = useWorkshopRecords(targetWorkshopId ?? '');
 
   return (
     <ScreenWrapper bg="#1A1A2E">
@@ -94,7 +97,7 @@ export default function OwnerLogsScreen() {
           </View>
           <TouchableOpacity 
             style={styles.addBtn} 
-            onPress={() => router.push('/owner/create-record' as any)}
+            onPress={() => router.push({ pathname: '/owner/create-record', params: { workshopId: targetWorkshopId } } as any)}
           >
             <Ionicons name="add" size={24} color="#FFFFFF" />
           </TouchableOpacity>
@@ -104,7 +107,7 @@ export default function OwnerLogsScreen() {
       </View>
 
       {/* ── WHITE CARD SECTION ── */}
-      <View style={[styles.mainCard, { overflow: 'hidden' }]}>
+      <View style={styles.mainCard}>
         {isLoading && !data ? (
           <View style={styles.centered}>
             <ActivityIndicator size="large" color="#F56E0F" />
@@ -118,7 +121,7 @@ export default function OwnerLogsScreen() {
             estimatedItemSize={180}
             onRefresh={refetch}
             refreshing={isLoading}
-            keyExtractor={(r: any) => r._id || r.id || Math.random().toString()}
+            keyExtractor={(r: any) => r.id || r._id || Math.random().toString()}
             contentContainerStyle={styles.list}
             ListEmptyComponent={<EmptyState message="No service records yet for this workshop." />}
           />

@@ -74,14 +74,21 @@ export default function OwnerOverviewScreen() {
             <Text style={styles.sectionTitle}>Quick Access</Text>
             <View style={styles.quickLinks}>
               {[
-                { label: 'My Workshops', icon: 'list-outline' as const, color: '#F56E0F', href: '/owner/workshops/list' },
-                { label: 'Operations',   icon: 'calendar-outline' as const, color: '#2563EB', href: '/owner/bookings' },
-                { label: 'History',      icon: 'document-text-outline' as const, color: '#6B7280', href: '/owner/logs' },
+                { label: 'Workshops',  icon: 'list-outline' as const, color: '#F56E0F', path: '/owner/workshops/list' },
+                { label: 'Operations', icon: 'calendar-outline' as const, color: '#2563EB', path: '/owner/bookings' },
+                { label: 'History',    icon: 'document-text-outline' as const, color: '#6B7280', path: '/owner/logs' },
               ].map(item => (
                 <TouchableOpacity 
                   key={item.label} 
                   style={styles.quickLink} 
-                  onPress={() => router.push(item.href as any)}
+                  onPress={() => {
+                    // Global links now default to 'all' for owners
+                    if (item.path !== '/owner/workshops/list') {
+                      router.push({ pathname: item.path, params: { workshopId: 'all' } } as any);
+                    } else {
+                      router.push(item.path as any);
+                    }
+                  }}
                   activeOpacity={0.7}
                 >
                   <View style={[styles.quickLinkIcon, { borderColor: item.color + '20' }]}>
@@ -135,7 +142,6 @@ export default function OwnerOverviewScreen() {
               ))
             )}
           </View>
-
         </ScrollView>
       </View>
     </ScreenWrapper>
