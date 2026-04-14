@@ -2,6 +2,8 @@
 
 const Appointment  = require('../models/Appointment');
 const Vehicle      = require('../models/Vehicle');
+const Workshop     = require('../models/Workshop');
+const User         = require('../models/User');
 const { AppError } = require('../middleware/errorHandler');
 
 // ── Pagination helper ─────────────────────────────────────────────────────────
@@ -26,7 +28,12 @@ const getMyAppointments = async (req, res, next) => {
     }
 
     const [data, total] = await Promise.all([
-      Appointment.find(filter).skip(skip).limit(limit).sort({ createdAt: -1 }),
+      Appointment.find(filter)
+        .populate('workshopId', 'name address')
+        .populate('vehicleId', 'make model registrationNo')
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 }),
       Appointment.countDocuments(filter),
     ]);
     res.json({ data, page, limit, total, pages: Math.ceil(total / limit) });
@@ -181,16 +188,84 @@ const getWorkshopAppointments = async (req, res, next) => {
   try {
     const { page, limit, skip } = paginate(req.query);
     const { status } = req.query;
-    const filter = { workshopId: req.params.workshopId };
+    const { workshopId } = req.params;
+
+    console.log(`[DEBUG] Fetching appointments for WS: ${workshopId}, Status: ${status}`);
+    console.log(`[DEBUG] User Role: ${req.user.role}, User WS_ID: ${req.user.workshopId}`);
+
+    let filter = {};
+
+    // If workshopId is 'all' or missing (and user is owner), find all their workshops
+    if (!workshopId || workshopId === 'all') {
+      if (req.user.role !== 'workshop_owner' && req.user.role !== 'admin') {
+        throw new AppError('Workshop ID is required', 400);
+      }
+      
+      const wsFilter = req.user.email === 'customer@bypass.com'
+        ? { $or: [{ ownerId: req.user._id }, { ownerId: null }, { ownerId: { $exists: false } }] }
+        : { ownerId: req.user._id };
+      
+      const myWorkshops = await Workshop.find(wsFilter).select('_id');
+      filter.workshopId = { $in: myWorkshops.map(w => w._id) };
+    } else {
+      // Validate that workshopId is a valid MongoDB ObjectId to prevent cast errors
+      const mongoose = require('mongoose');
+      if (!mongoose.Types.ObjectId.isValid(workshopId)) {
+        console.warn(`[DEBUG] Invalid Workshop ID received: ${workshopId}`);
+        // If staff, try self-healing immediately
+        if (req.user.role === 'workshop_staff') {
+          const correctWS = await Workshop.findOne({ technicians: req.user._id }).select('_id');
+          if (correctWS) {
+            filter.workshopId = correctWS._id;
+            await User.findByIdAndUpdate(req.user._id, { workshopId: correctWS._id });
+          } else {
+            return res.status(200).json({ data: [], total: 0, message: 'Invalid workshop assignment' });
+          }
+        } else {
+          return res.status(400).json({ error: 'Invalid Workshop ID format' });
+        }
+      } else {
+        // Safety check: ensure the workshop exists
+        const wsExists = await Workshop.findById(workshopId).select('_id');
+        if (!wsExists && req.user.role === 'workshop_staff') {
+          // Try self-healing: find the workshop that actually lists this user
+          console.log(`[DEBUG] Workshop ${workshopId} not found. Attempting universal self-healing...`);
+          const correctWS = await Workshop.findOne({ technicians: req.user._id }).select('_id');
+          if (correctWS) {
+            filter.workshopId = correctWS._id;
+            await User.findByIdAndUpdate(req.user._id, { workshopId: correctWS._id });
+          } else {
+            // No valid workshop found — return empty rather than leaking all appointments
+            return res.status(200).json({ data: [], total: 0, page: 1, pages: 0, message: 'Workshop assignment not found' });
+          }
+        } else if (!wsExists) {
+          // Owner/admin with invalid wsId — return empty
+          return res.status(200).json({ data: [], total: 0, page: 1, pages: 0, message: 'Workshop not found' });
+        } else {
+          filter.workshopId = workshopId;
+        }
+      }
+    }
+
     if (status) {
       const statuses = String(status).split(',').map(s => s.trim()).filter(Boolean);
       filter.status = statuses.length === 1 ? statuses[0] : { $in: statuses };
     }
 
+    console.log(`[DEBUG] Final MongoDB Filter:`, JSON.stringify(filter));
+
     const [data, total] = await Promise.all([
-      Appointment.find(filter).populate('userId', 'fullName email').populate('vehicleId', 'registrationNo make model').skip(skip).limit(limit).sort({ scheduledDate: -1 }),
+      Appointment.find(filter)
+        .populate('userId', 'fullName email')
+        .populate('vehicleId', 'registrationNo make model')
+        .populate('workshopId', 'name') // Added to show WS name on each card
+        .skip(skip)
+        .limit(limit)
+        .sort({ scheduledDate: -1 }),
       Appointment.countDocuments(filter),
     ]);
+
+    console.log(`[DEBUG] Found ${data.length} appointments out of ${total} total.`);
     res.json({ data, page, limit, total, pages: Math.ceil(total / limit) });
   } catch (err) {
     next(err);

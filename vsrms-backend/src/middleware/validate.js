@@ -111,7 +111,7 @@ const validateCreateRecord = [
   body('vehicleId').notEmpty().withMessage('Vehicle ID is required'),
   body('serviceDate').isISO8601().withMessage('Service date must be a valid ISO date'),
   body('workDone').trim().notEmpty().withMessage('Work done description is required'),
-  body('totalCost').isFloat({ min: 0 }).withMessage('Total cost must be >= 0'),
+  body('totalCost').toFloat().isFloat({ min: 0 }).withMessage('Total cost must be >= 0'),
   handleValidationErrors,
 ];
 

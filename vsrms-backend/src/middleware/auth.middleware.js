@@ -3,6 +3,10 @@
 const jwt        = require('jsonwebtoken');
 const jwksClient = require('jwks-rsa');
 const User       = require('../models/User');
+const Workshop   = require('../models/Workshop');
+
+// Cache the mock workshop ID so we only hit the DB once per server start
+let _cachedMockWSId = null;
 
 // Configure JWKS client — caches signing keys to avoid repeated JWKS fetches
 const client = jwksClient({
@@ -26,7 +30,7 @@ function getKey(header, callback) {
  * Controllers MUST use req.user._id (ObjectId), req.user.role, etc.
  * Raw JWT claims are available on req.jwtClaims if needed.
  */
-const protect = (req, res, next) => {
+const protect = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -38,15 +42,39 @@ const protect = (req, res, next) => {
   // ⚠️ DEVELOPMENT BYPASS: Multi-Role Mock Logic
   if (token && token.startsWith('mock-')) {
     const role = token.split('-').slice(1).join('-'); // e.g., customer, admin, workshop_owner, workshop_staff
-    req.user = {
+    const mockEmail = `${role}@bypass.com`;
+
+    // Try to find a real workshop to avoid 404s (cached after first lookup)
+    let mockWSId = _cachedMockWSId || '607f1f77bcf86cd799439012';
+    if (!_cachedMockWSId) {
+      try {
+        const liveWS = await Workshop.findOne({ active: true }).select('_id');
+        if (liveWS) {
+          _cachedMockWSId = liveWS._id.toString();
+          mockWSId = _cachedMockWSId;
+        }
+      } catch (e) {
+        // Workshop model not ready yet — use static fallback ID silently
+      }
+    }
+
+    const mockUser = {
       _id: '507f1f77bcf86cd799439011',
       asgardeoSub: token,
-      email: `${role}@bypass.com`,
+      email: mockEmail,
       fullName: `${role.charAt(0).toUpperCase() + role.slice(1)} Bypass`,
       role: role,
       active: true,
-      workshopId: (role === 'workshop_owner' || role === 'workshop_staff') ? '607f1f77bcf86cd799439012' : undefined,
+      workshopId: (role === 'workshop_owner' || role === 'workshop_staff') ? mockWSId : undefined,
     };
+    
+    // Crucial: Set jwtClaims so sync-profile logic doesn't crash
+    req.jwtClaims = {
+      sub: token,
+      email: mockEmail,
+      name: mockUser.fullName
+    };
+    req.user = mockUser;
     return next();
   }
 
