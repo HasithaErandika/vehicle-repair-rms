@@ -22,8 +22,11 @@ export function CustomTabBar({ state, descriptors, navigation, icons, labels }: 
   const { theme } = useUnistyles();
   const insets = useSafeAreaInsets();
 
-  // Only count routes shown in the tab bar (exclude href:null hidden routes)
-  const visibleRoutes = state.routes.filter(r => (descriptors[r.key].options as any).href !== null);
+  // Only count routes shown in the tab bar (exclude hidden routes or those without icons)
+  const visibleRoutes = state.routes.filter(r => {
+    const options = descriptors[r.key].options as any;
+    return options.href !== null && !!icons[r.name];
+  });
   const totalTabs = visibleRoutes.length;
   const tabWidth  = SCREEN_WIDTH / totalTabs;
 
@@ -59,16 +62,15 @@ export function CustomTabBar({ state, descriptors, navigation, icons, labels }: 
         <View style={styles.activePill} />
       </Animated.View>
 
-      {/* Tab items — only visible routes */}
       <View style={styles.tabsRow}>
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
-          // Skip hidden routes
-          if ((options as any).href === null) return null;
-
           const isFocused = state.index === index;
           const Icon      = icons[route.name];
           const label     = labels[route.name] ?? route.name;
+
+          // Skip hidden routes or those without an icon defined
+          if ((options as any).href === null || !Icon) return null;
 
           const onPress = () => {
             const event = navigation.emit({

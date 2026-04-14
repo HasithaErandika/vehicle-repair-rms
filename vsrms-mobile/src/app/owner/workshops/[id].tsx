@@ -238,14 +238,14 @@ export default function WorkshopManageScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionBtn}
-              onPress={() => router.push('/owner/jobs' as any)}
+              onPress={() => router.push({ pathname: '/owner/jobs', params: { workshopId: workshop._id || workshop.id } } as any)}
             >
               <Ionicons name="hammer-outline" size={20} color="#F56E0F" />
               <Text style={styles.actionBtnText}>Active Jobs</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionBtn}
-              onPress={() => router.push('/owner/logs' as any)}
+              onPress={() => router.push({ pathname: '/owner/logs', params: { workshopId: workshop._id || workshop.id } } as any)}
             >
               <Ionicons name="document-text-outline" size={20} color="#6B7280" />
               <Text style={styles.actionBtnText}>Records</Text>

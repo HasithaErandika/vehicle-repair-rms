@@ -235,7 +235,7 @@ export default function OwnerDashboardScreen() {
           <View style={styles.centered}><ActivityIndicator size="large" color="#F56E0F" /></View>
         ) : isError ? (
           <ErrorScreen onRetry={refetch} variant="inline" />
-        ) : workshops.length === 0 ? (
+        ) : (workshops || []).length === 0 ? (
           <ScrollView contentContainerStyle={styles.emptyScroll}>
             <View style={styles.emptyState}>
               <View style={styles.emptyIcon}>
@@ -256,7 +256,7 @@ export default function OwnerDashboardScreen() {
             <Text style={styles.listHeader}>
               Tap a workshop to manage bookings, staff, and records
             </Text>
-            {workshops.map(w => (
+            {(workshops || []).map(w => (
               <WorkshopCard key={w._id ?? w.id} workshop={w} />
             ))}
           </ScrollView>

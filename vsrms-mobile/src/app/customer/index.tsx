@@ -11,12 +11,12 @@ import { useMyAppointments } from '@/features/appointments/queries/queries';
 import { Vehicle } from '@/features/vehicles/types/vehicles.types';
 import { Appointment } from '@/features/appointments/types/appointments.types';
 
-const STATUS_CONFIG: Record<string, { bg: string; text: string; dot: string }> = {
-  pending:     { bg: '#FFFBEB', text: '#D97706', dot: '#F59E0B' },
-  confirmed:   { bg: '#ECFDF5', text: '#059669', dot: '#10B981' },
+const STATUS_CONFIG: Record<string, { bg: string; text: string; dot: string; label?: string }> = {
+  pending: { bg: '#FFFBEB', text: '#D97706', dot: '#F59E0B' },
+  confirmed: { bg: '#ECFDF5', text: '#059669', dot: '#10B981' },
   in_progress: { bg: '#EFF6FF', text: '#2563EB', dot: '#3B82F6' },
-  completed:   { bg: '#F0FDF4', text: '#15803D', dot: '#22C55E' },
-  cancelled:   { bg: '#FEF2F2', text: '#DC2626', dot: '#EF4444' },
+  completed: { bg: '#F0FDF4', text: '#15803D', dot: '#22C55E' },
+  cancelled: { bg: '#FEF2F2', text: '#DC2626', dot: '#EF4444', label: 'REJECTED' },
 };
 
 function getGreeting(): string {
@@ -49,11 +49,11 @@ export default function DashboardScreen() {
   const { theme } = useUnistyles();
 
   const { data: vehicles, isLoading: vLoad } = useVehicles();
-  const { data: appointments, isLoading: aLoad } = useMyAppointments('pending,confirmed,in_progress');
+  const { data: appointments, isLoading: aLoad } = useMyAppointments('pending,confirmed,in_progress,cancelled');
 
   const displayName = user?.fullName ?? user?.email ?? 'Guest';
   const initials = displayName.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
-  const upcomingAppt = appointments?.[0] ?? null;
+  const upcomingAppt = appointments?.find(a => a.status !== 'cancelled') ?? null;
   const statusCfg = upcomingAppt ? (STATUS_CONFIG[upcomingAppt.status] ?? STATUS_CONFIG.pending) : null;
 
   return (
@@ -101,7 +101,7 @@ export default function DashboardScreen() {
               </View>
               {aLoad
                 ? <ActivityIndicator size="small" color="#F56E0F" style={{ marginVertical: 4 }} />
-                : <Text style={styles.statValue}>{appointments?.length ?? 0}</Text>
+                : <Text style={styles.statValue}>{appointments?.filter(a => a.status !== 'cancelled').length ?? 0}</Text>
               }
               <Text style={styles.statLabel}>Upcoming</Text>
             </View>
@@ -183,7 +183,7 @@ export default function DashboardScreen() {
                       <View style={[styles.statusBadge, { backgroundColor: statusCfg?.bg }]}>
                         <View style={[styles.statusDot, { backgroundColor: statusCfg?.dot }]} />
                         <Text style={[styles.statusText, { color: statusCfg?.text }]}>
-                          {upcomingAppt.status.replace('_', ' ')}
+                          {statusCfg?.label ?? upcomingAppt.status.replace('_', ' ')}
                         </Text>
                       </View>
                       <Text style={styles.apptDate}>
@@ -218,9 +218,9 @@ export default function DashboardScreen() {
             <Text style={styles.sectionTitle}>Quick Actions</Text>
             <View style={styles.quickLinks}>
               {[
-                { icon: 'search-outline' as const,   label: 'Find Garage',  href: '/customer/workshops' },
-                { icon: 'calendar-outline' as const,  label: 'Schedule',     href: '/customer/schedule'  },
-                { icon: 'car-sport-outline' as const, label: 'Add Vehicle',  href: '/customer/vehicles/add'  },
+                { icon: 'search-outline' as const, label: 'Find Garage', href: '/customer/workshops' },
+                { icon: 'calendar-outline' as const, label: 'Schedule', href: '/customer/schedule' },
+                { icon: 'car-sport-outline' as const, label: 'Add Vehicle', href: '/customer/vehicles/add' },
               ].map(q => (
                 <TouchableOpacity
                   key={q.label}
@@ -261,7 +261,7 @@ const styles = StyleSheet.create((theme) => ({
   headerText: { flex: 1 },
   greeting: { fontSize: 14, color: 'rgba(255,255,255,0.7)', fontWeight: '600' },
   userName: { fontSize: 26, color: '#FFFFFF', fontWeight: '900', letterSpacing: -0.5, marginTop: 4 },
-  
+
 
   decCircle1: {
     position: 'absolute', width: 130, height: 130, borderRadius: 65,
@@ -285,9 +285,9 @@ const styles = StyleSheet.create((theme) => ({
     shadowRadius: 20,
     elevation: 16,
   },
-  scroll: { 
-    paddingHorizontal: 24, 
-    paddingTop: 28, 
+  scroll: {
+    paddingHorizontal: 24,
+    paddingTop: 28,
     paddingBottom: 130,
   },
 
@@ -342,10 +342,10 @@ const styles = StyleSheet.create((theme) => ({
   statusDot: { width: 6, height: 6, borderRadius: 3 },
   statusText: { fontSize: 12, fontWeight: '800', textTransform: 'capitalize' },
   apptDate: { fontSize: 13, fontWeight: '800', color: '#1A1A2E' },
-  
+
   apptTitle: { fontSize: 18, fontWeight: '900', color: '#1A1A2E', marginBottom: 4, letterSpacing: -0.3 },
   apptSub: { fontSize: 13, color: '#6B7280', fontWeight: '600', marginBottom: 16 },
-  
+
   workshopBox: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     backgroundColor: '#FAFAFA', borderRadius: 12, padding: 14,

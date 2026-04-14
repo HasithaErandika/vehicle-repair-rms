@@ -20,18 +20,18 @@ function getVehicleLabel(a: Appointment): string {
 }
 
 function getVehicleId(a: Appointment): string {
-  if (typeof a.vehicleId === 'object') return a.vehicleId._id;
-  return a.vehicleId;
+  if (typeof a.vehicleId === 'object') return (a.vehicleId as any).id || (a.vehicleId as any)._id;
+  return a.vehicleId as string;
 }
 
 export default function OwnerCreateRecordScreen() {
   const { theme } = useUnistyles();
   const router = useRouter();
-  const params = useLocalSearchParams<{ appointmentId?: string }>();
+  const params = useLocalSearchParams<{ appointmentId?: string, workshopId?: string }>();
   const { user } = useAuth();
 
-  const workshopId = user?.workshopId;
-  const { data: inProgressAppts } = useWorkshopAppointments(workshopId, 'in_progress');
+  const targetWorkshopId = params.workshopId || user?.workshopId;
+  const { data: inProgressAppts } = useWorkshopAppointments(targetWorkshopId, 'in_progress');
 
   const [selectedAppt, setSelectedAppt] = useState<Appointment | null>(null);
   const [showPicker, setShowPicker]     = useState(false);
@@ -47,7 +47,7 @@ export default function OwnerCreateRecordScreen() {
   // Handle pre-selected appointment if passed in params
   React.useEffect(() => {
     if (params.appointmentId && inProgressAppts) {
-      const found = inProgressAppts.find(a => a._id === params.appointmentId);
+      const found = inProgressAppts.find(a => (a._id || a.id) === params.appointmentId);
       if (found) setSelectedAppt(found);
     }
   }, [params.appointmentId, inProgressAppts]);
@@ -130,10 +130,10 @@ export default function OwnerCreateRecordScreen() {
                   {(inProgressAppts ?? []).length === 0 ? (
                     <Text style={styles.pickerEmpty}>No active jobs in progress</Text>
                   ) : (
-                    inProgressAppts?.map(a => (
+                    inProgressAppts?.map((a, idx) => (
                       <TouchableOpacity
-                        key={a._id}
-                        style={[styles.pickerItem, selectedAppt?._id === a._id && styles.pickerItemActive]}
+                        key={a._id || a.id || `appt-${idx}`}
+                        style={[styles.pickerItem, (selectedAppt?._id || selectedAppt?.id) === (a._id || a.id) && styles.pickerItemActive]}
                         onPress={() => { setSelectedAppt(a); setShowPicker(false); }}
                       >
                         <Text style={styles.pickerItemText}>{getVehicleLabel(a)}</Text>

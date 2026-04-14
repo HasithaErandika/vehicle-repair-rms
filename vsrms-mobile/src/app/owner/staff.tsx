@@ -107,7 +107,7 @@ export default function OwnerStaffScreen() {
       </View>
 
       {/* ── WHITE CARD SECTION ── */}
-      <View style={[styles.mainCard, { overflow: 'hidden' }]}>
+      <View style={styles.mainCard}>
         {isLoading && !data ? (
           <View style={styles.centered}><ActivityIndicator size="large" color="#F56E0F" /></View>
         ) : isError ? (
