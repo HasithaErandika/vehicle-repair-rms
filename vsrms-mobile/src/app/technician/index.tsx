@@ -7,7 +7,10 @@ import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { useAuth } from '@/hooks';
 import { AvatarMenu } from '@/components/ui/AvatarMenu';
 import { useWorkshopAppointments } from '@/features/appointments/queries/queries';
+import { useWorkshop } from '@/features/workshops/queries/queries';
 import { Appointment } from '@/features/appointments/types/appointments.types';
+import client from '@/services/http.client';
+import { useEffect } from 'react';
 
 function getVehicleLabel(a: Appointment): string {
   if (typeof a.vehicleId === 'object') {
@@ -20,6 +23,18 @@ export default function TechnicianDashboardScreen() {
   const router = useRouter();
   const { user, signOut } = useAuth();
   const workshopId = user?.workshopId;
+  const { data: workshop, isError: wsError, refetch: refetchWS } = useWorkshop(workshopId ?? '');
+
+  const hasAttemptedRepair = React.useRef(false);
+
+  // AUTO-REPAIR: If workshop is missing or broken, try a profile sync once
+  useEffect(() => {
+    if (user && (!workshopId || wsError) && !hasAttemptedRepair.current) {
+      hasAttemptedRepair.current = true;
+      console.log('[DEBUG] Workshop link missing or broken, attempting auto-repair...');
+      client.post('/auth/sync-profile').then(() => refetchWS()).catch(e => console.error('Sync failed:', e));
+    }
+  }, [user, workshopId, wsError]);
 
   const { data: pending,    isLoading: pLoad } = useWorkshopAppointments(workshopId, 'pending');
   const { data: inProgress, isLoading: iLoad } = useWorkshopAppointments(workshopId, 'in_progress');
@@ -40,6 +55,12 @@ export default function TechnicianDashboardScreen() {
           <View style={styles.headerText}>
             <Text style={styles.headerSub}>Technical Assistant</Text>
             <Text style={styles.headerTitle} numberOfLines={1}>Hello, {displayName}</Text>
+            {workshop?.name && (
+              <View style={styles.wsBadge}>
+                <Ionicons name="business" size={10} color="rgba(255,255,255,0.8)" />
+                <Text style={styles.wsBadgeText}>{workshop.name}</Text>
+              </View>
+            )}
           </View>
           <AvatarMenu
             initials={initials}
@@ -55,6 +76,41 @@ export default function TechnicianDashboardScreen() {
       <View style={styles.mainCard}>
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} bounces={true}>
           
+          {/* WORKSHOP WARNING OR BROKEN LINK */}
+          {(wsError || !workshopId) && (
+            <View style={styles.warningBanner}>
+              <Ionicons name="alert-circle" size={20} color="#991B1B" />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.warningTitle}>
+                  {!workshopId ? 'Workshop Not Linked' : 'Broken Workshop Link'}
+                </Text>
+                <Text style={styles.warningSub}>
+                  {!workshopId 
+                    ? 'Your account is not assigned to a workshop yet. Contact your manager.' 
+                    : 'The workshop you were linked to can no longer be found. Contact your manager to be re-assigned.'}
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* CONFIRMED JOBS ALERT */}
+          {!anyLoading && (confirmed?.length ?? 0) > 0 && (
+            <TouchableOpacity 
+              style={styles.confirmedAlert} 
+              activeOpacity={0.8}
+              onPress={() => router.push('/technician/appointments?status=confirmed' as any)}
+            >
+              <View style={styles.alertIconBox}>
+                <Ionicons name="notifications" size={18} color="#FFFFFF" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.alertTitle}>New Jobs Ready!</Text>
+                <Text style={styles.alertSub}>{confirmed?.length} booking(s) have been approved and are ready to start.</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="#059669" />
+            </TouchableOpacity>
+          )}
+
           {/* Stats Grid */}
           <View style={styles.statsGrid}>
             <View style={styles.statCard}>
@@ -109,8 +165,8 @@ export default function TechnicianDashboardScreen() {
                 <Text style={styles.emptyText}>Queue is completely empty</Text>
               </View>
             ) : (
-              myJobs.map(a => (
-                <TouchableOpacity key={a._id} style={styles.taskCard} activeOpacity={0.7} onPress={() => router.push('/technician/tracker' as any)}>
+              myJobs.map((a, idx) => (
+                <TouchableOpacity key={a._id || a.id || `job-${idx}`} style={styles.taskCard} activeOpacity={0.7} onPress={() => router.push('/technician/tracker' as any)}>
                   <View style={styles.taskHeader}>
                      <View style={[styles.statusBadge, { backgroundColor: a.status === 'in_progress' ? 'rgba(245,110,15,0.1)' : '#ECFDF5' }]}>
                         <Text style={[styles.statusText, { color: a.status === 'in_progress' ? '#F56E0F' : '#059669' }]}>
@@ -130,6 +186,8 @@ export default function TechnicianDashboardScreen() {
               ))
             )}
           </View>
+
+
 
         </ScrollView>
       </View>
@@ -159,8 +217,10 @@ const styles = StyleSheet.create((theme) => ({
     color: '#FFFFFF', 
     fontWeight: '900', 
     letterSpacing: -0.5, 
-    marginTop: 4 
+    marginTop: 2 
   },
+  wsBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4, backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, alignSelf: 'flex-start' },
+  wsBadgeText: { fontSize: 10, fontWeight: '700', color: 'rgba(255,255,255,0.9)', textTransform: 'uppercase' },
   
 
   decCircle1: { position: 'absolute', width: 130, height: 130, borderRadius: 65, backgroundColor: 'rgba(245,110,15,0.13)', top: -25, right: -25 },
@@ -209,6 +269,44 @@ const styles = StyleSheet.create((theme) => ({
   statusText: { fontSize: 10, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 0.5 },
   taskDate: { fontSize: 12, color: '#9CA3AF', fontWeight: '700' },
   taskTitle: { fontSize: 16, fontWeight: '900', color: '#1A1A2E', marginBottom: 6, letterSpacing: -0.3 },
-  vehicleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   vehicleText: { fontSize: 13, color: '#6B7280', fontWeight: '600' },
+
+  warningBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#FEF2F2',
+    padding: 16,
+    borderRadius: 20,
+    marginBottom: 24,
+    borderWidth: 1.5,
+    borderColor: '#FECACA',
+  },
+  warningTitle: { fontSize: 14, fontWeight: '900', color: '#991B1B' },
+  warningSub: { fontSize: 12, fontWeight: '600', color: '#B91C1C', marginTop: 2, lineHeight: 16 },
+
+  debugBox: { marginTop: 40, padding: 12, backgroundColor: '#F3F4F6', borderRadius: 10, borderStyle: 'dotted', borderWidth: 1, borderColor: '#D1D5DB' },
+  debugText: { fontSize: 10, color: '#9CA3AF', fontFamily: 'Courier', fontWeight: '600' },
+
+  confirmedAlert: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#ECFDF5',
+    padding: 16,
+    borderRadius: 20,
+    marginBottom: 24,
+    borderWidth: 1.5,
+    borderColor: '#A7F3D0',
+  },
+  alertIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: '#10B981',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  alertTitle: { fontSize: 14, fontWeight: '900', color: '#065F46' },
+  alertSub: { fontSize: 12, fontWeight: '600', color: '#047857', marginTop: 2 },
 }));

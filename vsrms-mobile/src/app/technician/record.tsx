@@ -4,7 +4,7 @@ import {
   KeyboardAvoidingView, Platform, ActivityIndicator, StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { useAuth } from '@/hooks';
@@ -20,8 +20,8 @@ function getVehicleLabel(a: Appointment): string {
 }
 
 function getVehicleId(a: Appointment): string {
-  if (typeof a.vehicleId === 'object') return a.vehicleId._id;
-  return a.vehicleId;
+  if (typeof a.vehicleId === 'object') return (a.vehicleId as any).id || (a.vehicleId as any)._id;
+  return a.vehicleId as string;
 }
 
 export default function StaffRecordScreen() {
@@ -32,8 +32,21 @@ export default function StaffRecordScreen() {
   const workshopId = user?.workshopId;
   const { data: inProgressAppts } = useWorkshopAppointments(workshopId, 'in_progress');
 
+  const { appointmentId } = useLocalSearchParams<{ appointmentId: string }>();
   const [selectedAppt, setSelectedAppt] = useState<Appointment | null>(null);
   const [showPicker, setShowPicker]     = useState(false);
+  
+  // Auto-select if appointmentId is passed
+  React.useEffect(() => {
+    if (appointmentId && inProgressAppts) {
+      const found = inProgressAppts.find(a => (a._id || a.id) === appointmentId);
+      if (found) {
+        setSelectedAppt(found as any);
+        setWorkDone(found.serviceType); // Auto-fill work description
+      }
+    }
+  }, [appointmentId, inProgressAppts]);
+
   const [workDone, setWorkDone]         = useState('');
   const [mileage, setMileage]           = useState('');
   const [totalCost, setTotalCost]       = useState('');
@@ -121,9 +134,9 @@ export default function StaffRecordScreen() {
                   {(inProgressAppts ?? []).length === 0 ? (
                     <Text style={styles.pickerEmpty}>No in-progress jobs found</Text>
                   ) : (
-                    inProgressAppts?.map(a => (
+                    inProgressAppts?.map((a, idx) => (
                       <TouchableOpacity
-                        key={a._id}
+                        key={a._id || a.id || `appt-${idx}`}
                         style={[styles.pickerItem, selectedAppt?._id === a._id && styles.pickerItemActive]}
                         onPress={() => { setSelectedAppt(a); setShowPicker(false); }}
                       >

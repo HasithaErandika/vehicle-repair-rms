@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Gauge, CalendarClock, ClipboardCheck, FilePlus } from 'lucide-react-native';
+import { Gauge, CalendarClock, ClipboardCheck, FilePlus, Settings2 } from 'lucide-react-native';
 import { CustomTabBar } from '@/components/navigation/CustomTabBar';
 
 const ICONS = {
@@ -8,6 +8,7 @@ const ICONS = {
   appointments: CalendarClock,
   tracker:      ClipboardCheck,
   record:       FilePlus,
+  settings:     Settings2,
 };
 
 const LABELS = {
@@ -15,6 +16,7 @@ const LABELS = {
   appointments: 'Schedule',
   tracker:      'Tracker',
   record:       'New Log',
+  settings:     'Settings',
 };
 
 export default function StaffLayout() {
@@ -29,8 +31,7 @@ export default function StaffLayout() {
       <Tabs.Screen name="appointments" />
       <Tabs.Screen name="tracker" />
       <Tabs.Screen name="record" />
-      {/* Hidden routes — not in tab bar */}
-      <Tabs.Screen name="settings" options={{ href: null }} />
+      <Tabs.Screen name="settings" />
     </Tabs>
   );
 }
