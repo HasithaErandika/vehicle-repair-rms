@@ -10,7 +10,7 @@ const STATUS_CONFIG: Record<AppointmentStatus, { label: string; bg: string; text
   confirmed: { label: 'Confirmed', bg: '#EFF6FF', text: '#2563EB', accent: '#3B82F6' },
   in_progress: { label: 'In Progress', bg: '#FFF7ED', text: '#EA580C', accent: '#F56E0F' },
   completed: { label: 'Completed', bg: '#ECFDF5', text: '#059669', accent: '#10B981' },
-  cancelled: { label: 'REJECTED', bg: '#FEF2F2', text: '#DC2626', accent: '#EF4444' },
+  cancelled: { label: 'Cancelled', bg: '#FEF2F2', text: '#DC2626', accent: '#EF4444' },
 };
 
 function getVehicleLabel(vehicleId: Appointment['vehicleId']): string {
@@ -33,21 +33,7 @@ function formatDate(iso: string): string {
   return d.toLocaleDateString('en-LK', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-export function AppointmentCard({ 
-  appointment, 
-  isOwner = false,
-  isTechnician = false,
-  onAccept,
-  onStart,
-  onFinalize
-}: { 
-  appointment: Appointment;
-  isOwner?: boolean;
-  isTechnician?: boolean;
-  onAccept?: () => void;
-  onStart?: () => void;
-  onFinalize?: () => void;
-}) {
+export function AppointmentCard({ appointment }: { appointment: Appointment }) {
   const router = useRouter();
   const status = appointment.status ?? 'pending';
   const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.pending;
@@ -55,9 +41,7 @@ export function AppointmentCard({
   const handlePress = () => {
     const id = appointment._id || appointment.id;
     if (id) {
-      // Navigate to correct detail screen based on role
-      const route = isOwner ? `/owner/bookings?id=${id}` : (isTechnician ? `/technician/tracker` : `/customer/schedule/${id}`);
-      router.push(route as any);
+      router.push(`/customer/schedule/${id}`);
     }
   };
 
@@ -67,40 +51,17 @@ export function AppointmentCard({
       onPress={handlePress}
     >
       <View style={[styles.card, { borderLeftColor: cfg.accent }]}>
-        {/* TOP HEADER: Choice between Date (Customer/Tech) or Workshop (Owner) + Status */}
+        {/* DATE + STATUS */}
         <View style={styles.cardHeader}>
-          {isOwner ? (
-            <View style={styles.wsHeaderBox}>
-               <Ionicons name="business" size={14} color="#F56E0F" />
-               <Text style={styles.wsHeaderText}>{getWorkshopLabel(appointment.workshopId)}</Text>
-            </View>
-          ) : (
-            <View style={styles.dateBox}>
-              <Ionicons name="calendar-outline" size={13} color="#6B7280" />
-              <Text style={styles.dateText}>{formatDate(appointment.scheduledDate)}</Text>
-            </View>
-          )}
+          <View style={styles.dateBox}>
+            <Ionicons name="calendar-outline" size={13} color="#6B7280" />
+            <Text style={styles.dateText}>{formatDate(appointment.scheduledDate)}</Text>
+          </View>
           <View style={[styles.statusBadge, { backgroundColor: cfg.bg }]}>
             <View style={[styles.statusDot, { backgroundColor: cfg.accent }]} />
             <Text style={[styles.statusText, { color: cfg.text }]}>{cfg.label}</Text>
           </View>
         </View>
- 
-        {/* Secondary Date Row: Only show for OWNER, because they see Workshop in the header */}
-        {isOwner && (
-          <View style={styles.dateRow}>
-             <Ionicons name="calendar-outline" size={12} color="#6B7280" />
-             <Text style={styles.dateText}>{formatDate(appointment.scheduledDate)}</Text>
-          </View>
-        )}
-
-        {/* WORKSHOP TAG (Global View) - Show for Owner/Customer, hide for Tech (who knows their WS) */}
-        {!isTechnician && typeof appointment.workshopId === 'object' && (appointment.workshopId as any)?.name && (
-          <View style={styles.workshopTag}>
-            <Ionicons name="business" size={11} color="#F56E0F" />
-            <Text style={styles.workshopTagText}>{(appointment.workshopId as any).name}</Text>
-          </View>
-        )}
 
         {/* SERVICE TYPE */}
         <Text style={styles.serviceType}>{appointment.serviceType}</Text>
@@ -111,45 +72,18 @@ export function AppointmentCard({
           <Text style={styles.infoText}>{getVehicleLabel(appointment.vehicleId)}</Text>
         </View>
 
-        {/* WORKSHOP - Hide for technician to reduce clutter */}
-        {!isTechnician && (
-          <View style={styles.infoRow}>
-            <Ionicons name="business-outline" size={15} color="#6B7280" />
-            <Text style={styles.infoText}>{getWorkshopLabel(appointment.workshopId)}</Text>
-          </View>
-        )}
+        {/* WORKSHOP */}
+        <View style={styles.infoRow}>
+          <Ionicons name="business-outline" size={15} color="#6B7280" />
+          <Text style={styles.infoText}>{getWorkshopLabel(appointment.workshopId)}</Text>
+        </View>
 
-        {/* NOTES - Show for everyone if they exist */}
         {appointment.notes ? (
           <View style={styles.notesBox}>
             <Ionicons name="document-text-outline" size={13} color="#9CA3AF" />
             <Text style={styles.notesText}>{appointment.notes}</Text>
           </View>
         ) : null}
-
-        {/* ACTION BUTTONS (Technician Only) */}
-        {isTechnician && (
-          <View style={styles.actionContainer}>
-            {status === 'pending' && onAccept && (
-              <TouchableOpacity style={styles.actionBtn} onPress={onAccept}>
-                <Ionicons name="checkmark-circle" size={16} color="#FFFFFF" />
-                <Text style={styles.actionBtnText}>Accept Job</Text>
-              </TouchableOpacity>
-            )}
-            {status === 'confirmed' && onStart && (
-              <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#3B82F6' }]} onPress={onStart}>
-                <Ionicons name="play-circle" size={16} color="#FFFFFF" />
-                <Text style={styles.actionBtnText}>Start Repair</Text>
-              </TouchableOpacity>
-            )}
-            {status === 'in_progress' && onFinalize && (
-              <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#059669' }]} onPress={onFinalize}>
-                <Ionicons name="checkmark-done-circle" size={16} color="#FFFFFF" />
-                <Text style={styles.actionBtnText}>Finalize Job</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
       </View>
     </TouchableOpacity>
   );

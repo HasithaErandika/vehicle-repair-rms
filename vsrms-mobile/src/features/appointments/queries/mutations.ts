@@ -54,7 +54,8 @@ export function useUpdateAppointment() {
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: Partial<Appointment> }) => updateAppointment(id, payload),
     onSuccess: (_, { id }) => {
-      qc.invalidateQueries({ queryKey: appointmentKeys.all() });
+      qc.invalidateQueries({ queryKey: appointmentKeys.mine() });
+      qc.invalidateQueries({ queryKey: appointmentKeys.detail(id) });
       showToast('Appointment updated successfully!', 'success');
     },
     onError: (e: any) => showToast(handleApiError(e), 'error'),

@@ -12,18 +12,47 @@ import { AppointmentCard } from '@/features/appointments/components/AppointmentC
 import { ErrorScreen } from '@/components/feedback/ErrorScreen';
 import { EmptyState } from '@/components/ui/EmptyState';
 
-type TabStatus = 'pending' | 'confirmed' | 'in_progress' | 'completed';
+function ApptCard({
+  appt,
+  onAccept
+}: {
+  appt: Appointment;
+  onAccept: (id: string) => void
+}) {
+  const customerName = typeof appt.userId === 'object' ? appt.userId.fullName : 'Customer';
+  const vehicleName = typeof appt.vehicleId === 'object' ? `${appt.vehicleId.make} ${appt.vehicleId.model}` : 'Vehicle';
+
+  return (
+    <View style={styles.card}>
+      <View style={styles.cardBody}>
+        <View style={styles.statusRow}>
+          <View style={[styles.pill, { backgroundColor: appt.status === 'confirmed' ? '#ECFDF5' : '#FFFBEB' }]}>
+            <Text style={[styles.pillText, { color: appt.status === 'confirmed' ? '#059669' : '#D97706' }]}>
+              {appt.status.toUpperCase()}
+            </Text>
+          </View>
+          <Text style={styles.dateText}>{new Date(appt.scheduledDate).toLocaleDateString()}</Text>
+        </View>
+
+        <Text style={styles.serviceTitle}>{appt.serviceType}</Text>
+        <Text style={styles.ownerText}>{customerName} • {vehicleName}</Text>
+      </View>
+
+      {appt.status === 'pending' && (
+        <TouchableOpacity style={styles.acceptBtn} onPress={() => onAccept(appt._id!)}>
+          <Ionicons name="checkmark-circle-outline" size={18} color="#FFFFFF" />
+          <Text style={styles.acceptText}>Accept Job</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
 
 export default function TechnicianAppointmentsScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const { status: initialStatus } = useLocalSearchParams<{ status: TabStatus }>();
-  const [status, setStatus] = useState<TabStatus>(initialStatus || 'pending');
+  const [status, setStatus] = useState<'pending' | 'confirmed' | 'completed'>('pending');
 
-  const { data: pData, isLoading: pLoad } = useWorkshopAppointments(user?.workshopId, 'pending');
-  const { data: cData, isLoading: cLoad } = useWorkshopAppointments(user?.workshopId, 'confirmed');
-  const { data: iData, isLoading: iLoadCount } = useWorkshopAppointments(user?.workshopId, 'in_progress');
-  
   const { data, isLoading, isError, refetch } = useWorkshopAppointments(user?.workshopId, status);
   const { mutate: updateStatus } = useUpdateAppointmentStatus();
 
@@ -87,22 +116,20 @@ export default function TechnicianAppointmentsScreen() {
         </View>
 
         {/* Custom Tabs */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabScroll}>
-          <View style={styles.tabContainer}>
-            {(['pending', 'confirmed', 'in_progress', 'completed'] as const).map((s) => (
-              <TouchableOpacity
-                key={s}
-                onPress={() => setStatus(s)}
-                style={[styles.tab, status === s && styles.activeTab]}
-              >
-                <Text style={[styles.tabText, status === s && styles.activeTabText]}>
-                  {s.replace('_', ' ').charAt(0).toUpperCase() + s.replace('_', ' ').slice(1)}
-                </Text>
-                {status === s && <View style={styles.activeLine} />}
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
+        <View style={styles.tabContainer}>
+          {(['pending', 'confirmed', 'completed'] as const).map((s) => (
+            <TouchableOpacity
+              key={s}
+              onPress={() => setStatus(s)}
+              style={[styles.tab, status === s && styles.activeTab]}
+            >
+              <Text style={[styles.tabText, status === s && styles.activeTabText]}>
+                {s.charAt(0).toUpperCase() + s.slice(1)}
+              </Text>
+              {status === s && <View style={styles.activeLine} />}
+            </TouchableOpacity>
+          ))}
+        </View>
 
         <View style={styles.decCircle1} />
         <View style={styles.decCircle2} />
@@ -116,32 +143,15 @@ export default function TechnicianAppointmentsScreen() {
           <ErrorScreen onRetry={refetch} variant="inline" />
         ) : (
           <FlashList<Appointment>
-            data={appointments as Appointment[]}
-            renderItem={({ item }) => (
-              <AppointmentCard 
-                appointment={item} 
-                isTechnician={true}
-                onAccept={() => handleAccept(item._id || item.id!)} 
-                onStart={() => handleStart(item._id || item.id!)}
-                onFinalize={() => handleFinalize(item._id || item.id!)}
-              />
-            )}
+            data={data || []}
+            renderItem={({ item }) => <ApptCard appt={item} onAccept={handleAccept} />}
             // @ts-expect-error - FlashList requires estimatedItemSize dynamically
             estimatedItemSize={140}
             onRefresh={refetch}
             refreshing={isLoading}
-            keyExtractor={(a) => (a as any).id || (a as any)._id || Math.random().toString()}
+            keyExtractor={(a) => a._id || a.id || Math.random().toString()}
             contentContainerStyle={styles.list}
-            ListEmptyComponent={
-              <EmptyState 
-                message={status === 'pending' 
-                  ? 'No pending bookings found. Check "Confirmed" if you are waiting for an approved job!' 
-                  : status === 'in_progress'
-                  ? 'No active jobs. Start a confirmed job to see it here!'
-                  : `No ${status.replace('_', ' ')} tasks found for your workshop.`
-                } 
-              />
-            }
+            ListEmptyComponent={<EmptyState message={`No ${status} tasks assigned yet.`} />}
           />
         )}
       </View>

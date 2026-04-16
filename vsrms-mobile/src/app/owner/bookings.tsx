@@ -57,13 +57,13 @@ function BookingCard({
         <View style={styles.actionRow}>
           <TouchableOpacity
             style={styles.declineBtn}
-            onPress={() => onStatusChange(appt.id!, 'cancelled')}
+            onPress={() => onStatusChange(appt._id!, 'cancelled')}
           >
             <Text style={styles.declineText}>Decline</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.approveBtn}
-            onPress={() => onStatusChange(appt.id!, 'confirmed')}
+            onPress={() => onStatusChange(appt._id!, 'confirmed')}
           >
             <Text style={styles.approveText}>Approve</Text>
           </TouchableOpacity>
@@ -91,11 +91,7 @@ export default function BookingsScreen() {
   const { user } = useAuth();
   const [status, setStatus] = useState<'pending' | 'confirmed' | 'completed' | 'cancelled'>('pending');
 
-  // Priority: 1. Workshop ID passed in URL params, 2. User's primary workshopId
-  const targetWorkshopId = useMemo(() => paramWorkshopId || 'all', [paramWorkshopId]);
-
-  const { data: workshop } = useWorkshop(targetWorkshopId && targetWorkshopId !== 'all' ? targetWorkshopId : '');
-  const { data, isLoading, isError, refetch } = useWorkshopAppointments(targetWorkshopId, status);
+  const { data, isLoading, isError, refetch } = useWorkshopAppointments(user?.workshopId, status);
   const { mutate: updateStatus } = useUpdateAppointmentStatus();
 
   // Deduplicate by id — guards against backend returning same appointment twice
@@ -130,7 +126,7 @@ export default function BookingsScreen() {
           </View>
           <TouchableOpacity
             style={styles.jobsBtn}
-            onPress={() => router.push({ pathname: '/owner/jobs', params: { workshopId: targetWorkshopId } } as any)}
+            onPress={() => router.push('/owner/jobs' as any)}
           >
             <Ionicons name="hammer-outline" size={20} color="#FFFFFF" />
             <Text style={styles.jobsBtnText}>Jobs</Text>
@@ -165,13 +161,13 @@ export default function BookingsScreen() {
           <ErrorScreen onRetry={refetch} variant="inline" />
         ) : (
           <FlashList
-            data={appointments as Appointment[]}
+            data={(data || []) as Appointment[]}
             renderItem={({ item }) => <BookingCard appt={item as Appointment} onStatusChange={handleStatusUpdate} />}
             // @ts-expect-error - FlashList requires estimatedItemSize dynamically
             estimatedItemSize={140}
             onRefresh={refetch}
             refreshing={isLoading}
-            keyExtractor={(a: Appointment) => a.id || a._id || Math.random().toString()}
+            keyExtractor={(a: Appointment) => a._id || a.id || Math.random().toString()}
             contentContainerStyle={styles.list}
             ListEmptyComponent={<EmptyState message={`No ${status} bookings found.`} />}
           />
@@ -185,7 +181,7 @@ const styles = StyleSheet.create((theme) => ({
   topSection: {
     paddingHorizontal: theme.spacing.screenPadding,
     paddingTop: 16,
-    paddingBottom: theme.spacing.headerBottom,
+    paddingBottom: 20,
     position: 'relative',
     overflow: 'hidden',
     backgroundColor: '#1A1A2E'
