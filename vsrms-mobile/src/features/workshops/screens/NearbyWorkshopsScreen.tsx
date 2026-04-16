@@ -21,7 +21,7 @@ import { Workshop } from '../types/workshops.types';
 // ─────────────────────────────────────────────────────────────────────────────
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const CARD_WIDTH   = SCREEN_WIDTH * 0.76;
+const CARD_WIDTH = SCREEN_WIDTH * 0.76;
 const CARD_SPACING = 12;
 const PANEL_HEIGHT = SCREEN_HEIGHT - 180; // list panel leaves 180px of map visible at top
 
@@ -152,18 +152,18 @@ const cardStyles = StyleSheet.create((theme) => ({
 
 export function NearbyWorkshopsScreen() {
   const { theme } = useUnistyles();
-  const router    = useRouter();
-  const mapRef    = useRef<MapView>(null);
+  const router = useRouter();
+  const mapRef = useRef<MapView>(null);
   const carouselRef = useRef<ScrollView>(null);
-  const panelY    = useRef(new Animated.Value(PANEL_HEIGHT)).current;
+  const panelY = useRef(new Animated.Value(PANEL_HEIGHT)).current;
 
-  const [viewMode, setViewMode]         = useState<'map' | 'list'>('map');
-  const [location, setLocation]         = useState<Location.LocationObject | null>(null);
-  const [locationError, setLocErr]      = useState<string | null>(null);
-  const [searchQuery, setSearchQuery]   = useState('');
+  const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
+  const [location, setLocation] = useState<Location.LocationObject | null>(null);
+  const [locationError, setLocErr] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebounced] = useState('');
   const [selectedDistrict, setDistrict] = useState<string | null>(null);
-  const [selectedId, setSelectedId]     = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   // Debounce search → 400 ms
   useEffect(() => {
@@ -189,11 +189,11 @@ export function NearbyWorkshopsScreen() {
   // Nearby query (map mode) — larger 50 km radius for the map view
   const nearbyParams = location
     ? {
-        lat: location.coords.latitude,
-        lng: location.coords.longitude,
-        maxKm: 50,
-        ...(debouncedSearch && { name: debouncedSearch }),
-      }
+      lat: location.coords.latitude,
+      lng: location.coords.longitude,
+      maxKm: 50,
+      ...(debouncedSearch && { name: debouncedSearch }),
+    }
     : undefined;
 
   const {
@@ -203,7 +203,7 @@ export function NearbyWorkshopsScreen() {
   // All-workshops query (list mode) — district + name filters
   const listParams: Record<string, string> = {};
   if (selectedDistrict) listParams.district = selectedDistrict;
-  if (debouncedSearch)  listParams.name     = debouncedSearch;
+  if (debouncedSearch) listParams.name = debouncedSearch;
 
   const {
     data: listData, isLoading: listLoading, isError: listError, refetch: listRefetch,
@@ -215,7 +215,7 @@ export function NearbyWorkshopsScreen() {
     const workshops = nearbyData ?? [];
     if (workshops.length === 0) return;
     const coords = workshops.map(w => ({
-      latitude:  w.location.coordinates[1],
+      latitude: w.location.coordinates[1],
       longitude: w.location.coordinates[0],
     }));
     mapRef.current?.fitToCoordinates(coords, {
@@ -252,9 +252,9 @@ export function NearbyWorkshopsScreen() {
   const focusWorkshop = useCallback((workshop: Workshop, index: number) => {
     setSelectedId(workshop._id ?? workshop.id ?? null);
     mapRef.current?.animateToRegion({
-      latitude:      workshop.location.coordinates[1],
-      longitude:     workshop.location.coordinates[0],
-      latitudeDelta:  0.025,
+      latitude: workshop.location.coordinates[1],
+      longitude: workshop.location.coordinates[0],
+      latitudeDelta: 0.025,
       longitudeDelta: 0.025,
     }, 350);
     carouselRef.current?.scrollTo({ x: index * (CARD_WIDTH + CARD_SPACING), animated: true });
@@ -267,9 +267,9 @@ export function NearbyWorkshopsScreen() {
     if (!w) return;
     setSelectedId(w._id ?? w.id ?? null);
     mapRef.current?.animateToRegion({
-      latitude:      w.location.coordinates[1],
-      longitude:     w.location.coordinates[0],
-      latitudeDelta:  0.025,
+      latitude: w.location.coordinates[1],
+      longitude: w.location.coordinates[0],
+      latitudeDelta: 0.025,
       longitudeDelta: 0.025,
     }, 300);
   }, [nearbyData]);
@@ -279,11 +279,11 @@ export function NearbyWorkshopsScreen() {
   const mapWorkshops = nearbyData ?? [];
   const initialRegion = location
     ? {
-        latitude:      location.coords.latitude,
-        longitude:     location.coords.longitude,
-        latitudeDelta:  0.15,
-        longitudeDelta: 0.15,
-      }
+      latitude: location.coords.latitude,
+      longitude: location.coords.longitude,
+      latitudeDelta: 0.15,
+      longitudeDelta: 0.15,
+    }
     : SRI_LANKA_CENTER;
 
   const bannerTop = Platform.OS === 'ios' ? 72 : 80;
@@ -479,75 +479,75 @@ const styles = StyleSheet.create((theme) => ({
 
   // Floating header
   floatingHeader: {
-    position:  'absolute',
-    top:       Platform.OS === 'ios' ? 10 : 16,
-    left:      16,
-    right:     16,
-    zIndex:    200,
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 10 : 16,
+    left: 16,
+    right: 16,
+    zIndex: 200,
     flexDirection: 'row',
-    gap:       10,
+    gap: 10,
     alignItems: 'center',
   },
   searchBar: {
-    flex:           1,
-    flexDirection:  'row',
-    alignItems:     'center',
-    gap:            8,
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     backgroundColor: '#FFFFFF',
-    borderRadius:   18,
+    borderRadius: 18,
     paddingHorizontal: 14,
-    height:         52,
-    shadowColor:    '#000',
-    shadowOffset:   { width: 0, height: 6 },
-    shadowOpacity:  0.14,
-    shadowRadius:   16,
-    elevation:      10,
+    height: 52,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.14,
+    shadowRadius: 16,
+    elevation: 10,
   },
   searchInput: {
-    flex:       1,
-    fontSize:   15,
+    flex: 1,
+    fontSize: 15,
     fontWeight: '600',
-    color:      theme.colors.text,
+    color: theme.colors.text,
   },
   togglePill: {
-    flexDirection:   'row',
+    flexDirection: 'row',
     backgroundColor: '#FFFFFF',
-    borderRadius:    18,
-    padding:         4,
-    height:          52,
-    alignItems:      'center',
-    shadowColor:     '#000',
-    shadowOffset:    { width: 0, height: 6 },
-    shadowOpacity:   0.14,
-    shadowRadius:    16,
-    elevation:       10,
+    borderRadius: 18,
+    padding: 4,
+    height: 52,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.14,
+    shadowRadius: 16,
+    elevation: 10,
   },
   toggleBtn: {
-    width:          40,
-    height:         40,
-    borderRadius:   12,
-    alignItems:     'center',
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
     justifyContent: 'center',
   },
   toggleActive: { backgroundColor: '#F56E0F' },
 
   // Stats badge
   statsBadge: {
-    position:     'absolute',
-    alignSelf:    'center',
-    zIndex:       100,
+    position: 'absolute',
+    alignSelf: 'center',
+    zIndex: 100,
     flexDirection: 'row',
-    alignItems:   'center',
-    gap:          7,
+    alignItems: 'center',
+    gap: 7,
     backgroundColor: '#FFFFFF',
     borderRadius: 22,
     paddingHorizontal: 14,
-    paddingVertical:   8,
-    shadowColor:  '#000',
+    paddingVertical: 8,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.09,
-    shadowRadius:  10,
-    elevation:    5,
+    shadowRadius: 10,
+    elevation: 5,
   },
   statsDot: {
     width: 7, height: 7, borderRadius: 3.5,
@@ -557,24 +557,24 @@ const styles = StyleSheet.create((theme) => ({
 
   // Location denied banner
   locationBanner: {
-    position:    'absolute',
-    left:        16,
-    right:       16,
-    zIndex:      100,
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    zIndex: 100,
     flexDirection: 'row',
-    alignItems:  'center',
-    gap:         8,
+    alignItems: 'center',
+    gap: 8,
     backgroundColor: '#FFFBEB',
     borderRadius: 14,
     paddingHorizontal: 12,
-    paddingVertical:   10,
-    borderWidth:  1,
-    borderColor:  '#FDE68A',
-    shadowColor:  '#000',
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
-    shadowRadius:  6,
-    elevation:    3,
+    shadowRadius: 6,
+    elevation: 3,
   },
   locationBannerText: { flex: 1, fontSize: 12, fontWeight: '600', color: '#92400E' },
   listLinkBtn: {
@@ -588,67 +588,67 @@ const styles = StyleSheet.create((theme) => ({
   // Bottom carousel
   carouselWrapper: {
     position: 'absolute',
-    bottom:   Platform.OS === 'ios' ? 34 : 20,
-    left:     0,
-    right:    0,
-    zIndex:   100,
+    bottom: Platform.OS === 'ios' ? 34 : 20,
+    left: 0,
+    right: 0,
+    zIndex: 100,
   },
   carouselContent: {
     paddingHorizontal: 16,
-    paddingVertical:   4,
+    paddingVertical: 4,
   },
 
   // Animated list panel
   listPanel: {
-    position:         'absolute',
-    left:             0,
-    right:            0,
-    bottom:           0,
-    height:           PANEL_HEIGHT,
-    backgroundColor:  '#FFFFFF',
-    borderTopLeftRadius:  28,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: PANEL_HEIGHT,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    shadowColor:      '#000',
-    shadowOffset:     { width: 0, height: -8 },
-    shadowOpacity:    0.12,
-    shadowRadius:     24,
-    elevation:        24,
-    zIndex:           150,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    elevation: 24,
+    zIndex: 150,
   },
   handleArea: {
-    alignItems:      'center',
-    paddingTop:      10,
-    paddingBottom:   6,
+    alignItems: 'center',
+    paddingTop: 10,
+    paddingBottom: 6,
   },
   handle: {
-    width:           44,
-    height:          4,
-    borderRadius:    2,
+    width: 44,
+    height: 4,
+    borderRadius: 2,
     backgroundColor: '#E5E7EB',
   },
 
   // District chips
   chipRow: {
     paddingHorizontal: 16,
-    paddingVertical:   10,
-    gap:               8,
+    paddingVertical: 10,
+    gap: 8,
   },
   chip: {
     paddingHorizontal: 14,
-    paddingVertical:   7,
-    borderRadius:      20,
-    backgroundColor:   '#F9FAFB',
-    borderWidth:       1.5,
-    borderColor:       '#E5E7EB',
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
   },
   chipActive: { backgroundColor: '#F56E0F', borderColor: '#F56E0F' },
-  chipText:   { fontSize: 13, fontWeight: '700', color: '#6B7280' },
+  chipText: { fontSize: 13, fontWeight: '700', color: '#6B7280' },
   chipTextActive: { color: '#FFFFFF' },
 
   // Count row
   countRow: {
     paddingHorizontal: 20,
-    paddingBottom:     8,
+    paddingBottom: 8,
   },
   countText: { fontSize: 12, fontWeight: '600', color: '#9CA3AF' },
 

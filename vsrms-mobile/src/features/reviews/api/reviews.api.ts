@@ -20,3 +20,7 @@ export const updateReview = async (id: string, payload: Partial<Review>): Promis
   const { data } = await client.put(`/reviews/${id}`, payload);
   return data.review || data;
 };
+
+export const deleteReview = async (id: string): Promise<void> => {
+  await client.delete(`/reviews/${id}`);
+};

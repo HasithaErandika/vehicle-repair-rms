@@ -32,7 +32,7 @@ export function WorkshopMapMarker({ workshop, selected = false, onMarkerPress }:
         <View style={[styles.markerTail, selected && styles.markerTailSelected]} />
       </View>
 
-      <Callout 
+      <Callout
         onPress={() => router.push(`/customer/workshops/${workshop._id ?? workshop.id}` as any)}
         tooltip
       >

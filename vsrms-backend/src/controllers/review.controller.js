@@ -18,10 +18,16 @@ const paginate = (query) => {
 const getWorkshopReviews = async (req, res, next) => {
   try {
     const { page, limit, skip } = paginate(req.query);
+    const { sort } = req.query;
     const filter = { workshopId: req.params.workshopId };
 
+    // Build sort object
+    let sortObj = { createdAt: -1 }; // Default: newest
+    if (sort === 'highest') sortObj = { rating: -1, createdAt: -1 };
+    if (sort === 'lowest')  sortObj = { rating: 1,  createdAt: -1 };
+
     const [data, total] = await Promise.all([
-      Review.find(filter).populate('userId', 'fullName').skip(skip).limit(limit).sort({ createdAt: -1 }),
+      Review.find(filter).populate('userId', 'fullName').skip(skip).limit(limit).sort(sortObj),
       Review.countDocuments(filter),
     ]);
     res.json({ data, page, limit, total, pages: Math.ceil(total / limit) });
@@ -36,10 +42,16 @@ const getWorkshopReviews = async (req, res, next) => {
 const getMyReviews = async (req, res, next) => {
   try {
     const { page, limit, skip } = paginate(req.query);
+    const { sort } = req.query;
     const filter = { userId: req.user._id };
 
+    // Build sort object
+    let sortObj = { createdAt: -1 }; // Default: newest
+    if (sort === 'highest') sortObj = { rating: -1, createdAt: -1 };
+    if (sort === 'lowest')  sortObj = { rating: 1,  createdAt: -1 };
+
     const [data, total] = await Promise.all([
-      Review.find(filter).skip(skip).limit(limit).sort({ createdAt: -1 }),
+      Review.find(filter).skip(skip).limit(limit).sort(sortObj),
       Review.countDocuments(filter),
     ]);
     res.json({ data, page, limit, total, pages: Math.ceil(total / limit) });

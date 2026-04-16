@@ -70,21 +70,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const bypassLogin = async (role: 'admin' | 'workshop_owner' | 'workshop_staff' | 'customer') => {
     setIsLoading(true);
-    await StorageService.setToken(`mock-${role}`);
-    setUser({
-      id: `mock-${role}`,
-      asgardeoId: `mock-${role}`,
-      email: `${role}@bypass.com`,
-      firstName: role.charAt(0).toUpperCase() + role.slice(1),
-      lastName: 'Bypass',
-      fullName: `${role.charAt(0).toUpperCase() + role.slice(1)} Bypass`,
-      role: role,
-      status: 'active',
-      isEmailVerified: true,
-      lastLogin: new Date().toISOString(),
-      workshopId: ['workshop_owner', 'workshop_staff'].includes(role) ? '607f1f77bcf86cd799439012' : undefined,
-    } as any);
-    setIsLoading(false);
+    try {
+      await StorageService.setToken(`mock-${role}`);
+      const userData = await getMe();
+      setUser(userData);
+    } catch (err) {
+      console.error('[AuthProvider] Bypass login failed:', err);
+      await StorageService.removeToken();
+      setUser(null);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

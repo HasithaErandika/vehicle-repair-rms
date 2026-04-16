@@ -11,10 +11,12 @@ import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { useWorkshop } from '../queries/queries';
 import { useWorkshopReviews } from '@/features/reviews/queries/queries';
-import { useCreateReview } from '@/features/reviews/queries/mutations';
+import { useCreateReview, useUpdateReview, useDeleteReview } from '@/features/reviews/queries/mutations';
+import { Review } from '@/features/reviews/types/reviews.types';
 import { useAuth } from '@/hooks';
 import { RatingStars } from '../components/RatingStars';
 import { ReviewCard } from '@/features/reviews/components/ReviewCard';
+import { ReviewFormModal } from '@/features/reviews/components/ReviewFormModal';
 import { ErrorScreen } from '@/components/feedback/ErrorScreen';
 
 export function WorkshopDetailScreen({ id: propId }: { id?: string }) {
@@ -25,25 +27,49 @@ export function WorkshopDetailScreen({ id: propId }: { id?: string }) {
   const { user } = useAuth();
 
   const [reviewModalVisible, setReviewModalVisible] = useState(false);
-  const [reviewRating, setReviewRating] = useState(0);
-  const [reviewText, setReviewText] = useState('');
+  const [editingReview, setEditingReview] = useState<Review | null>(null);
 
   const { data: workshop, isLoading, isError, refetch } = useWorkshop(id!);
   const { data: reviews } = useWorkshopReviews(id ?? '');
-  const { mutate: submitReview, isPending: submittingReview } = useCreateReview();
+  const { mutate: createReview, isPending: creatingReview } = useCreateReview();
+  const { mutate: updateReview, isPending: updatingReview } = useUpdateReview();
+  const { mutate: deleteReview } = useDeleteReview();
 
-  const handleSubmitReview = () => {
-    if (!reviewRating || !id) return;
-    submitReview(
-      { workshopId: id, rating: reviewRating, reviewText: reviewText.trim() || undefined },
-      {
-        onSuccess: () => {
-          setReviewModalVisible(false);
-          setReviewRating(0);
-          setReviewText('');
+  const submittingReview = creatingReview || updatingReview;
+
+  const handleSubmitReview = (rating: number, text: string) => {
+    if (!rating || !id) return;
+
+    if (editingReview) {
+      updateReview(
+        { id: editingReview.id, payload: { rating, reviewText: text.trim() || undefined } },
+        {
+          onSuccess: () => {
+            setReviewModalVisible(false);
+            setEditingReview(null);
+          },
+        }
+      );
+    } else {
+      createReview(
+        { workshopId: id, rating, reviewText: text.trim() || undefined },
+        {
+          onSuccess: () => {
+            setReviewModalVisible(false);
+          },
         },
-      },
-    );
+      );
+    }
+  };
+
+  const handleEditReview = (review: Review) => {
+    setEditingReview(review);
+    setReviewModalVisible(true);
+  };
+
+  const handleDeleteReview = (review: Review) => {
+    if (!review.id) return;
+    deleteReview(review.id);
   };
 
   if (isLoading) return (
@@ -109,10 +135,10 @@ export function WorkshopDetailScreen({ id: propId }: { id?: string }) {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Address</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => MapUtils.openMapDirections(
-                  workshop.location.coordinates[1], 
-                  workshop.location.coordinates[0], 
+                  workshop.location.coordinates[1],
+                  workshop.location.coordinates[0],
                   workshop.name
                 )}
                 style={styles.directionsLink}
@@ -189,15 +215,27 @@ export function WorkshopDetailScreen({ id: propId }: { id?: string }) {
             {reviews && reviews.length > 0 ? (
               <>
                 {reviews.slice(0, 3).map((r, i) => (
-                  <ReviewCard key={r._id || i} review={r} />
+                  <ReviewCard
+                    key={r.id || (r as any)._id || i}
+                    review={r}
+                    onEdit={handleEditReview}
+                    onDelete={handleDeleteReview}
+                  />
                 ))}
-                {reviews.length > 3 && (
-                  <Text style={styles.moreReviews}>+{reviews.length - 3} more reviews</Text>
+                {reviews.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() => router.push(`/customer/workshops/reviews?workshopId=${id}&name=${workshop.name}` as any)}
+                  >
+                    <Text style={styles.moreReviews}>
+                      {reviews.length > 3 ? `View all ${reviews.length} reviews` : 'View all reviews'}
+                    </Text>
+                  </TouchableOpacity>
                 )}
               </>
             ) : (
               <Text style={styles.noReviewsText}>No reviews yet. Be the first to review!</Text>
             )}
+          </View>
           {/* BOOK BUTTON AT BOTTOM */}
           <View style={styles.buttonSection}>
             <TouchableOpacity
@@ -210,67 +248,16 @@ export function WorkshopDetailScreen({ id: propId }: { id?: string }) {
             </TouchableOpacity>
           </View>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
 
-      {/* WRITE REVIEW MODAL */}
-      <Modal visible={reviewModalVisible} animationType="slide" transparent>
-        <View style={styles.reviewModalBg}>
-          <View style={styles.reviewModalContent}>
-            <View style={styles.reviewModalHandle} />
-            <View style={styles.reviewModalHeader}>
-              <View>
-                <Text style={styles.reviewModalTitle}>Write a Review</Text>
-                <Text style={styles.reviewModalSub}>{workshop.name}</Text>
-              </View>
-              <TouchableOpacity onPress={() => { setReviewModalVisible(false); setReviewRating(0); setReviewText(''); }}>
-                <Ionicons name="close" size={24} color="#6B7280" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Star picker */}
-            <View style={styles.starPicker}>
-              {[1, 2, 3, 4, 5].map(i => (
-                <TouchableOpacity key={i} onPress={() => setReviewRating(i)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                  <Ionicons
-                    name={i <= reviewRating ? 'star' : 'star-outline'}
-                    size={36}
-                    color={i <= reviewRating ? '#F59E0B' : '#D1D5DB'}
-                  />
-                </TouchableOpacity>
-              ))}
-            </View>
-            <Text style={styles.starLabel}>
-              {reviewRating === 0 ? 'Tap to rate' : ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][reviewRating]}
-            </Text>
-
-            <View style={styles.reviewInputGroup}>
-              <Text style={styles.reviewInputLabel}>Your Review (optional)</Text>
-              <TextInput
-                style={styles.reviewInput}
-                placeholder="Share your experience..."
-                placeholderTextColor="#9CA3AF"
-                value={reviewText}
-                onChangeText={setReviewText}
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-              />
-            </View>
-
-            <TouchableOpacity
-              style={[styles.reviewSubmitBtn, (reviewRating === 0 || submittingReview) && { opacity: 0.5 }]}
-              onPress={handleSubmitReview}
-              disabled={reviewRating === 0 || submittingReview}
-            >
-              {submittingReview
-                ? <ActivityIndicator color="#FFF" />
-                : <><Ionicons name="send-outline" size={18} color="#FFF" /><Text style={styles.reviewSubmitBtnText}>Submit Review</Text></>
-              }
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      <ReviewFormModal
+        visible={reviewModalVisible}
+        onClose={() => { setReviewModalVisible(false); setEditingReview(null); }}
+        onSubmit={(rating, text) => handleSubmitReview(rating, text)}
+        isSubmitting={submittingReview}
+        initialData={editingReview}
+        workshopName={workshop.name}
+      />
     </ScreenWrapper>
   );
 }
@@ -305,11 +292,11 @@ const styles = StyleSheet.create((theme) => ({
   infoChipText: { fontSize: 13, fontWeight: '700', color: theme.colors.brand },
 
   section: { marginBottom: 24 },
-  sectionHeader: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    marginBottom: 10 
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10
   },
   sectionTitle: { fontSize: 16, fontWeight: '800', color: theme.colors.text },
   directionsLink: { flexDirection: 'row', alignItems: 'center', gap: 4 },
@@ -338,30 +325,6 @@ const styles = StyleSheet.create((theme) => ({
   },
   writeReviewBtnText: { fontSize: 12, fontWeight: '700', color: theme.colors.brand },
 
-  reviewModalBg: { flex: 1, backgroundColor: 'rgba(26,26,46,0.7)', justifyContent: 'flex-end' },
-  reviewModalContent: {
-    backgroundColor: '#FFFFFF', borderTopLeftRadius: 32, borderTopRightRadius: 32,
-    padding: 24, paddingTop: 12,
-  },
-  reviewModalHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#E5E7EB', alignSelf: 'center', marginBottom: 20 },
-  reviewModalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 },
-  reviewModalTitle: { fontSize: 20, fontWeight: '900', color: theme.colors.text },
-  reviewModalSub: { fontSize: 13, color: theme.colors.muted, marginTop: 3, fontWeight: '500' },
-  starPicker: { flexDirection: 'row', justifyContent: 'center', gap: 12, marginBottom: 8 },
-  starLabel: { fontSize: 14, fontWeight: '700', color: theme.colors.muted, textAlign: 'center', marginBottom: 20 },
-  reviewInputGroup: { marginBottom: 20 },
-  reviewInputLabel: { fontSize: 11, fontWeight: '800', color: theme.colors.muted, textTransform: 'uppercase', marginBottom: 8, marginLeft: 2 },
-  reviewInput: {
-    backgroundColor: theme.colors.surface, borderRadius: 14, padding: 14,
-    fontSize: 15, color: theme.colors.text, minHeight: 100,
-    borderWidth: 1.5, borderColor: theme.colors.border,
-  },
-  reviewSubmitBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: theme.colors.brand, borderRadius: 16, height: 56,
-    marginBottom: 8,
-    shadowColor: theme.colors.brand, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8,
-  },
   reviewSubmitBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
 
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

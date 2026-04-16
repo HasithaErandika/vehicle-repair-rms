@@ -28,7 +28,7 @@ interface LocationPickerProps {
 }
 
 function LocationPickerModal({ visible, initial, onConfirm, onCancel }: LocationPickerProps) {
-  const [coord, setCoord]     = useState(initial);
+  const [coord, setCoord] = useState(initial);
   const [locating, setLocating] = useState(false);
 
   const handleMapPress = (e: MapPressEvent) => {
@@ -146,14 +146,14 @@ export default function OwnerDashboardScreen() {
   const router = useRouter();
   const { user, signOut } = useAuth();
   const displayName = user?.fullName ?? user?.email ?? 'Owner';
-  const initials    = displayName.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
+  const initials = displayName.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
 
   const { data: workshops = [], isLoading, isError, refetch } = useMyWorkshops();
   const { mutate: create, isPending: creating } = useCreateWorkshop();
 
-  const [createModalVisible, setCreateModalVisible]     = useState(false);
+  const [createModalVisible, setCreateModalVisible] = useState(false);
   const [locationPickerVisible, setLocationPickerVisible] = useState(false);
-  const [pickedCoord, setPickedCoord]                   = useState(DEFAULT_COORD);
+  const [pickedCoord, setPickedCoord] = useState(DEFAULT_COORD);
   const [formData, setFormData] = useState({
     name: '', address: '', contactNumber: '', district: 'Colombo', description: '', servicesOffered: '',
   });
@@ -162,11 +162,11 @@ export default function OwnerDashboardScreen() {
     if (!formData.name || !formData.address || !formData.contactNumber) return;
     create(
       {
-        name:            formData.name,
-        address:         formData.address,
-        contactNumber:   formData.contactNumber,
-        district:        formData.district,
-        description:     formData.description || undefined,
+        name: formData.name,
+        address: formData.address,
+        contactNumber: formData.contactNumber,
+        district: formData.district,
+        description: formData.description || undefined,
         servicesOffered: formData.servicesOffered
           ? formData.servicesOffered.split(',').map(s => s.trim()).filter(Boolean)
           : [],
@@ -276,10 +276,10 @@ export default function OwnerDashboardScreen() {
 
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               {[
-                { key: 'name',          label: 'Workshop Name *',          placeholder: 'e.g. Master Motors' },
-                { key: 'address',       label: 'Full Address *',           placeholder: 'Street, City' },
-                { key: 'contactNumber', label: 'Contact Number *',         placeholder: '+94 XX XXX XXXX' },
-                { key: 'district',      label: 'District *',               placeholder: 'Colombo' },
+                { key: 'name', label: 'Workshop Name *', placeholder: 'e.g. Master Motors' },
+                { key: 'address', label: 'Full Address *', placeholder: 'Street, City' },
+                { key: 'contactNumber', label: 'Contact Number *', placeholder: '+94 XX XXX XXXX' },
+                { key: 'district', label: 'District *', placeholder: 'Colombo' },
               ].map(f => (
                 <View key={f.key} style={styles.inputGroup}>
                   <Text style={styles.inputLabel}>{f.label}</Text>

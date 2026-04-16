@@ -1,8 +1,10 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
+import { useAuth } from '@/hooks';
 import { Review } from '../types/reviews.types';
+import { ReviewActionSheet } from './ReviewActionSheet';
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -29,8 +31,35 @@ function getUserInitial(userId: Review['userId']): string {
   return label[0]?.toUpperCase() ?? '?';
 }
 
-export function ReviewCard({ review }: { review: Review }) {
+export function ReviewCard({ 
+  review, 
+  onEdit, 
+  onDelete 
+}: { 
+  review: Review; 
+  onEdit?: (review: Review) => void;
+  onDelete?: (review: Review) => void;
+}) {
   const { theme } = useUnistyles();
+  const { user: authUser } = useAuth();
+  const [sheetVisible, setSheetVisible] = React.useState(false);
+
+  const getReviewOwnerId = (): string | null => {
+    if (!review.userId) return null;
+    if (typeof review.userId === 'object') {
+      return (review.userId.id || (review.userId as any)._id || '').toString();
+    }
+    return review.userId.toString();
+  };
+
+  const getAuthUserId = (): string | null => {
+    if (!authUser) return null;
+    return (authUser.id || (authUser as any)._id || '').toString();
+  };
+
+  const reviewOwnerId = getReviewOwnerId();
+  const authUserId = getAuthUserId();
+  const isOwner = !!authUserId && !!reviewOwnerId && authUserId === reviewOwnerId;
 
   return (
     <View style={styles.card}>
@@ -42,15 +71,33 @@ export function ReviewCard({ review }: { review: Review }) {
           <Text style={styles.reviewerName}>{getUserLabel(review.userId)}</Text>
           <StarRating rating={review.rating} />
         </View>
-        <Text style={styles.dateText}>
-          {new Date(review.createdAt || Date.now()).toLocaleDateString('en-LK', {
-            day: 'numeric', month: 'short', year: 'numeric',
-          })}
-        </Text>
+        <View style={styles.rightHeader}>
+          <Text style={styles.dateText}>
+            {new Date(review.createdAt || Date.now()).toLocaleDateString('en-LK', {
+              day: 'numeric', month: 'short', year: 'numeric',
+            })}
+          </Text>
+          {isOwner && (
+            <TouchableOpacity 
+              style={styles.optionsBtn} 
+              onPress={() => setSheetVisible(true)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="ellipsis-vertical" size={20} color={theme.colors.muted} />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
       {review.reviewText ? (
         <Text style={styles.comment}>{review.reviewText}</Text>
       ) : null}
+
+      <ReviewActionSheet
+        visible={sheetVisible}
+        onClose={() => setSheetVisible(false)}
+        onEdit={() => onEdit?.(review)}
+        onDelete={() => onDelete?.(review)}
+      />
     </View>
   );
 }
@@ -78,6 +125,11 @@ const styles = StyleSheet.create((theme) => ({
   avatarText: { fontSize: 14, fontWeight: '800', color: theme.colors.brand },
   reviewerInfo: { flex: 1, gap: 3 },
   reviewerName: { fontSize: 14, fontWeight: '700', color: theme.colors.text },
-  dateText: { fontSize: 11, color: theme.colors.muted, fontWeight: '500', marginTop: 2 },
+  rightHeader: { alignItems: 'flex-end', gap: 4 },
+  dateText: { fontSize: 11, color: theme.colors.muted, fontWeight: '500' },
+  optionsBtn: { 
+    padding: 4, 
+    marginRight: -8,
+  },
   comment: { fontSize: 13, color: theme.colors.muted, lineHeight: 20, fontStyle: 'italic' },
 }));

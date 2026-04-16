@@ -220,6 +220,7 @@ export default function DashboardScreen() {
               {[
                 { icon: 'search-outline' as const, label: 'Find Garage', href: '/customer/workshops' },
                 { icon: 'calendar-outline' as const, label: 'Schedule', href: '/customer/schedule' },
+                { icon: 'star-outline' as const, label: 'My Reviews', href: '/customer/reviews' },
                 { icon: 'car-sport-outline' as const, label: 'Add Vehicle', href: '/customer/vehicles/add' },
               ].map(q => (
                 <TouchableOpacity
