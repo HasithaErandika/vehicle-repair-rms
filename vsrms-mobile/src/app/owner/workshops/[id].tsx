@@ -293,7 +293,7 @@ export default function WorkshopManageScreen() {
               <TechCard
                 key={t.id ?? t.email}
                 member={t}
-                onRemove={() => handleRemoveTech(t.id!, t.fullName ?? t.email)}
+                onRemove={() => handleRemoveTech((t.id || t._id)!, t.fullName ?? t.email)}
               />
             ))
           )}
