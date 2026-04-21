@@ -48,7 +48,11 @@ const getWorkshops = async (req, res, next) => {
     const { page, limit, skip } = paginate(req.query);
     const filter = { active: true };
     if (req.query.district) filter.district = req.query.district.trim();
-    if (req.query.name)     filter.name     = { $regex: req.query.name.trim(), $options: 'i' };
+    // Escape user input to prevent regex injection / ReDoS
+    if (req.query.name) {
+      const escaped = req.query.name.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.name = { $regex: escaped, $options: 'i' };
+    }
 
     const [data, total] = await Promise.all([
       Workshop.find(filter).skip(skip).limit(limit).sort({ averageRating: -1 }),
@@ -74,7 +78,11 @@ const getNearbyWorkshops = async (req, res, next) => {
     }
 
     const geoQuery = { active: true };
-    if (req.query.name) geoQuery.name = { $regex: req.query.name.trim(), $options: 'i' };
+    // Escape user input to prevent regex injection / ReDoS
+    if (req.query.name) {
+      const escaped = req.query.name.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      geoQuery.name = { $regex: escaped, $options: 'i' };
+    }
 
     const workshops = await Workshop.aggregate([
       {
@@ -129,48 +137,7 @@ const getMyWorkshops = async (req, res, next) => {
 // ─────────────────────────────────────────────────────────────────────────────
 const getWorkshopById = async (req, res, next) => {
   try {
-    let workshop = await Workshop.findById(req.params.id);
-    
-    // Universal Self-healing: If workshop is not found, attempt to find or create a fallback
-    if (!workshop) {
-      console.log(`[DEBUG] Workshop ${req.params.id} not found. Attempting universal self-healing...`);
-      
-      // 1. Try to find any active workshop first
-      workshop = await Workshop.findOne({ active: true });
-      
-      // 2. If no active ones, try any workshop at all
-      if (!workshop) workshop = await Workshop.findOne();
-      
-      // 3. [LAST RESORT] If DB is completely empty, create a primary default
-      if (!workshop) {
-        console.log('[DEBUG] Database empty. Creating emergency default workshop...');
-        workshop = await Workshop.create({
-          name: 'Primary Workshop',
-          address: 'Main St, Colombo, SL',
-          district: 'Colombo',
-          location: { type: 'Point', coordinates: [79.8612, 6.9271] },
-          servicesOffered: ['General Service', 'Tire Change'],
-          contactNumber: '0112223334',
-          active: true
-        });
-      }
-
-      if (workshop && req.user) {
-        console.log(`[DEBUG] Re-linking user ${req.user._id} to workshop ${workshop._id}`);
-        // Silently repair the user's profile to stop the 404 loop
-        await User.findByIdAndUpdate(req.user._id, { 
-          workshopId: workshop._id,
-          $set: { active: true } 
-        });
-
-        // If staff, also ensure they are in the technicians array
-        if (req.user.role === 'workshop_staff' && !workshop.technicians.includes(req.user._id)) {
-            workshop.technicians.push(req.user._id);
-            await workshop.save();
-        }
-      }
-    }
-
+    const workshop = await Workshop.findById(req.params.id);
     if (!workshop) throw new AppError('Workshop not found', 404);
     res.json({ workshop });
   } catch (err) {
@@ -337,6 +304,7 @@ const addTechnician = async (req, res, next) => {
     );
 
     // Add to workshop's technicians array (avoid duplicates)
+    // Use .some() with string comparison — ObjectId objects fail reference equality checks
     if (!workshop.technicians.some(t => t.toString() === staffUser._id.toString())) {
       workshop.technicians.push(staffUser._id);
       await workshop.save();

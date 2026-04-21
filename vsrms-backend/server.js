@@ -6,6 +6,7 @@ dotenv.config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const compression = require('compression');
 const mongoSanitize = require('express-mongo-sanitize');
 
 const connectDB = require('./src/config/db');
@@ -21,10 +22,14 @@ const reviewRoutes = require('./src/routes/review.route');
 
 // ── App ──────────────────────────────────────────────────────────────────────
 const app = express();
+// ── Trust proxy — required for correct IP behind DigitalOcean LB ─────────────
+app.set('trust proxy', 1);
 
 // ── Security middleware ───────────────────────────────────────────────────────
 app.use(helmet());
 app.disable('x-powered-by');
+// ── Compression (gzip) ────────────────────────────────────────────────────────
+app.use(compression());
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
@@ -81,9 +86,23 @@ if (require.main === module) {
   const PORT = process.env.PORT || 5000;
 
   connectDB().then(() => {
-    app.listen(PORT, () =>
+    const server = app.listen(PORT, () =>
       console.log(` VSRMS API running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`),
     );
+
+    // ── Graceful shutdown (DigitalOcean sends SIGTERM before stopping containers)
+    const shutdown = (signal) => {
+      console.log(`[server] ${signal} received — closing HTTP server gracefully`);
+      server.close(() => {
+        console.log('[server] HTTP server closed. Exiting.');
+        process.exit(0);
+      });
+      // Force-exit if connections don't close within 10 s
+      setTimeout(() => process.exit(1), 10_000).unref();
+    };
+
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
+    process.on('SIGINT',  () => shutdown('SIGINT'));
   });
 }
 

@@ -60,21 +60,25 @@ const login = async (req, res, next) => {
     console.error('[auth/login] Asgardeo error:', asgardeoErr ?? err.message);
     // ⚠️ DEVELOPMENT BYPASS: Allow login for mock staff if Asgardeo fails
     if (process.env.NODE_ENV !== 'production' && (asgardeoErr?.error === 'invalid_grant' || asgardeoErr?.error === 'invalid_client' || err.code === 'ENOTFOUND')) {
-      // Need to include password in selection since it's hidden by default
-      const dbUser = await User.findOne({ email: req.body.email.toLowerCase() }).select('+password');
-      
-      if (dbUser && dbUser.asgardeoSub.startsWith('mock-staff-')) {
-        // Verify the password set during creation
-        if (!dbUser.comparePassword(req.body.password)) {
-          return res.status(401).json({ error: 'Incorrect email or password (Development Mode)' });
-        }
+      try {
+        // Need to include password in selection since it's hidden by default
+        const dbUser = await User.findOne({ email: req.body.email.toLowerCase() }).select('+password');
+        
+        if (dbUser && dbUser.asgardeoSub.startsWith('mock-staff-')) {
+          // Verify the password set during creation
+          if (!dbUser.comparePassword(req.body.password)) {
+            return res.status(401).json({ error: 'Incorrect email or password (Development Mode)' });
+          }
 
-        console.log(`[DEBUG] Logging in mock staff: ${dbUser.email}`);
-        return res.status(200).json({
-          access_token: dbUser.asgardeoSub,
-          expires_in: 3600,
-          user: { email: dbUser.email, sub: dbUser.asgardeoSub, given_name: dbUser.fullName.split(' ')[0] },
-        });
+          console.log(`[DEBUG] Logging in mock staff: ${dbUser.email}`);
+          return res.status(200).json({
+            access_token: dbUser.asgardeoSub,
+            expires_in: 3600,
+            user: { email: dbUser.email, sub: dbUser.asgardeoSub, given_name: dbUser.fullName.split(' ')[0] },
+          });
+        }
+      } catch (bypassErr) {
+        console.error('[auth/login] Mock bypass DB lookup failed:', bypassErr.message);
       }
     }
 

@@ -57,6 +57,14 @@
 | 2026-04-16 | Shared | `{/* @ts-expect-error */}` in JSX ternaries broke syntax in garages, users, logs, tracker | **FIXED** | Claude |
 | 2026-04-16 | M4 | `AppointmentCard` had no `isTechnician`/`onFinalize` props — Technician tracker had type errors | **FIXED** | Claude |
 | 2026-04-16 | M1 | `SettingsScreen` `phone` prop caused `Partial<User>` type error | **FIXED** | Claude |
+| 2026-04-21 | M3 Workshops | Backend: `getWorkshopById` dangerous "universal self-healing" reassigned users randomly | **FIXED** | Claude |
+| 2026-04-21 | M3 Workshops | Backend: `?name=` query parameter vulnerable to regex injection / ReDoS | **FIXED** | Claude |
+| 2026-04-21 | M3 Workshops | Backend: `.includes()` used on ObjectIds causing duplicate technicians | **FIXED** | Claude |
+| 2026-04-21 | M5 Records | Backend: `createRecord` bypassed state machine and overwrote cancelled appointments | **FIXED** | Claude |
+| 2026-04-21 | M1 Auth | Backend: Unhandled async rejection in mock login bypass | **FIXED** | Claude |
+| 2026-04-21 | M3 Workshops | Mobile: `MapUtils` destructuring bug caused 0-sized map regions on Android/iOS | **FIXED** | Claude |
+| 2026-04-21 | M3 Workshops | Mobile: `WorkshopMapMarker` `tracksViewChanges=true` caused severe Android CPU drain | **FIXED** | Claude |
+| 2026-04-21 | M3 Workshops | Mobile: Map Callout used unistyles causing invisible tooltips/missing styles | **FIXED** | Claude |
 
 ---
 

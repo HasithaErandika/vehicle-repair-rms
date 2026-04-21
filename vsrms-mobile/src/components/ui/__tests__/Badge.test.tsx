@@ -12,20 +12,17 @@ describe('Badge Component', () => {
     const { getByText } = render(<Badge label="VSRMS" />);
     const text = getByText('VSRMS');
     
-    // Check that style is an array and contains color property
-    const styleObj = text.props.style.find((s: any) => s?.color);
-    expect(styleObj?.color).toBe('#F56E0F');
+    console.log(JSON.stringify(text.props.style, null, 2));
+    expect(text).toHaveStyle({ color: '#F56E0F' });
   });
 
   test('renders different variants correctly', () => {
     const { getByText: getSuccess } = render(<Badge label="Success" variant="success" />);
     const successText = getSuccess('Success');
-    const successStyle = successText.props.style.find((s: any) => s?.color);
-    expect(successStyle?.color).toBe('#15803D');
+    expect(successText).toHaveStyle({ color: '#15803D' });
 
     const { getByText: getError } = render(<Badge label="Error" variant="error" />);
     const errorText = getError('Error');
-    const errorStyle = errorText.props.style.find((s: any) => s?.color);
-    expect(errorStyle?.color).toBe('#DC2626');
+    expect(errorText).toHaveStyle({ color: '#DC2626' });
   });
 });
