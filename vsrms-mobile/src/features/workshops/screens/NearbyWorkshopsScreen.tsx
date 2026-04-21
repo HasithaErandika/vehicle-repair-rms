@@ -18,8 +18,6 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { WorkshopMapMarker } from '../components/WorkshopMapMarker';
 import { Workshop } from '../types/workshops.types';
 
-// ─────────────────────────────────────────────────────────────────────────────
-
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH * 0.76;
 const CARD_SPACING = 12;
@@ -184,8 +182,6 @@ export function NearbyWorkshopsScreen() {
     })();
   }, []);
 
-  // ── Data ────────────────────────────────────────────────────────────────────
-
   // Nearby query (map mode) — larger 50 km radius for the map view
   const nearbyParams = location
     ? {
@@ -222,7 +218,6 @@ export function NearbyWorkshopsScreen() {
       edgePadding: { top: 140, right: 50, bottom: 260, left: 50 },
       animated: true,
     });
-    // Pre-select the closest (first) workshop
     setSelectedId(workshops[0]._id ?? workshops[0].id ?? null);
   }, [nearbyData]);
 
@@ -247,8 +242,6 @@ export function NearbyWorkshopsScreen() {
     }).start();
   }, [panelY]);
 
-  // ── Focus a specific workshop on the map + scroll carousel ──────────────────
-
   const focusWorkshop = useCallback((workshop: Workshop, index: number) => {
     setSelectedId(workshop._id ?? workshop.id ?? null);
     mapRef.current?.animateToRegion({
@@ -260,7 +253,6 @@ export function NearbyWorkshopsScreen() {
     carouselRef.current?.scrollTo({ x: index * (CARD_WIDTH + CARD_SPACING), animated: true });
   }, []);
 
-  // When carousel snaps to a new card, focus its marker on the map
   const onCarouselSnap = useCallback((e: any) => {
     const idx = Math.round(e.nativeEvent.contentOffset.x / (CARD_WIDTH + CARD_SPACING));
     const w = (nearbyData ?? [])[idx];
@@ -273,8 +265,6 @@ export function NearbyWorkshopsScreen() {
       longitudeDelta: 0.025,
     }, 300);
   }, [nearbyData]);
-
-  // ─────────────────────────────────────────────────────────────────────────────
 
   const mapWorkshops = nearbyData ?? [];
   const initialRegion = location
@@ -472,8 +462,6 @@ export function NearbyWorkshopsScreen() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create((theme) => ({
   root: { flex: 1 },
 
@@ -555,7 +543,6 @@ const styles = StyleSheet.create((theme) => ({
   },
   statsBadgeText: { fontSize: 12, fontWeight: '700', color: '#374151' },
 
-  // Location denied banner
   locationBanner: {
     position: 'absolute',
     left: 16,
@@ -645,7 +632,6 @@ const styles = StyleSheet.create((theme) => ({
   chipText: { fontSize: 13, fontWeight: '700', color: '#6B7280' },
   chipTextActive: { color: '#FFFFFF' },
 
-  // Count row
   countRow: {
     paddingHorizontal: 20,
     paddingBottom: 8,

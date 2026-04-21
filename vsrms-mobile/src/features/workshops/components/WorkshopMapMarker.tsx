@@ -1,7 +1,6 @@
-import React from 'react';
-import { View, Text } from 'react-native';
+import React, { memo } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { Marker, Callout } from 'react-native-maps';
-import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { Ionicons } from '@expo/vector-icons';
 import { Workshop } from '../types/workshops.types';
 import { useRouter } from 'expo-router';
@@ -12,130 +11,240 @@ interface WorkshopMapMarkerProps {
   onMarkerPress?: () => void;
 }
 
-export function WorkshopMapMarker({ workshop, selected = false, onMarkerPress }: WorkshopMapMarkerProps) {
-  const { theme } = useUnistyles();
+
+// Map marker for a workshop.
+
+export const WorkshopMapMarker = memo(function WorkshopMapMarker({
+  workshop,
+  selected = false,
+  onMarkerPress,
+}: WorkshopMapMarkerProps) {
   const router = useRouter();
 
-  const latitude = workshop.location.coordinates[1];
+  const latitude  = workshop.location.coordinates[1];
   const longitude = workshop.location.coordinates[0];
+  const workshopId = workshop._id ?? workshop.id;
 
   return (
     <Marker
       coordinate={{ latitude, longitude }}
-      tracksViewChanges={selected}
+      tracksViewChanges={false}
       onPress={onMarkerPress}
+      anchor={{ x: 0.5, y: 1 }}
     >
-      <View style={styles.markerContainer}>
-        <View style={[styles.markerPin, selected && styles.markerPinSelected]}>
-          <Ionicons name="car-sport" size={selected ? 20 : 16} color="#FFFFFF" />
+      {/* ── Custom pin ─────────────────────────────────────────────────────── */}
+      <View style={markerStyles.container}>
+        <View style={[markerStyles.pin, selected && markerStyles.pinSelected]}>
+          <Ionicons
+            name="car-sport"
+            size={selected ? 20 : 15}
+            color="#FFFFFF"
+          />
+          {selected && (
+            <View style={markerStyles.selectedRing} />
+          )}
         </View>
-        <View style={[styles.markerTail, selected && styles.markerTailSelected]} />
+        {/* Downward-pointing tail */}
+        <View style={[markerStyles.tail, selected && markerStyles.tailSelected]} />
       </View>
 
       <Callout
-        onPress={() => router.push(`/customer/workshops/${workshop._id ?? workshop.id}` as any)}
+        onPress={() => workshopId && router.push(`/customer/workshops/${workshopId}` as any)}
         tooltip
       >
-        <View style={styles.calloutContainer}>
-          <Text style={styles.calloutName}>{workshop.name}</Text>
-          <View style={styles.calloutRow}>
-            <Ionicons name="star" size={12} color="#F59E0B" />
-            <Text style={styles.calloutRating}>
-              {workshop.averageRating?.toFixed(1) ?? '—'}
-            </Text>
-            <Text style={styles.calloutDistrict}>• {workshop.district}</Text>
+        <View style={calloutStyles.container}>
+          {/* Header row */}
+          <View style={calloutStyles.headerRow}>
+            <View style={calloutStyles.iconBox}>
+              <Ionicons name="business" size={14} color="#F56E0F" />
+            </View>
+            <Text style={calloutStyles.name} numberOfLines={2}>{workshop.name}</Text>
           </View>
-          <Text style={styles.calloutAction}>View Details →</Text>
+
+          {/* Rating + district */}
+          <View style={calloutStyles.metaRow}>
+            <View style={calloutStyles.ratingPill}>
+              <Ionicons name="star" size={10} color="#F59E0B" />
+              <Text style={calloutStyles.ratingText}>
+                {(workshop.averageRating ?? 0) > 0
+                  ? (workshop.averageRating ?? 0).toFixed(1)
+                  : '—'}
+              </Text>
+            </View>
+            <Text style={calloutStyles.dot}>·</Text>
+            <Text style={calloutStyles.district} numberOfLines={1}>
+              {workshop.district}
+            </Text>
+          </View>
+
+          {/* Distance badge (only available in nearby/map mode) */}
+          {workshop.distance != null && (
+            <View style={calloutStyles.distRow}>
+              <Ionicons name="navigate-outline" size={10} color="#F56E0F" />
+              <Text style={calloutStyles.distText}>
+                {workshop.distance.toFixed(1)} km away
+              </Text>
+            </View>
+          )}
+
+          {/* CTA */}
+          <View style={calloutStyles.cta}>
+            <Text style={calloutStyles.ctaText}>View Details</Text>
+            <Ionicons name="arrow-forward" size={11} color="#FFFFFF" />
+          </View>
         </View>
       </Callout>
     </Marker>
   );
-}
+});
 
-const styles = StyleSheet.create((theme) => ({
-  markerContainer: {
+// ── Marker pin styles (plain StyleSheet — safe in any RN context) ─────────────
+
+const BRAND = '#F56E0F';
+
+const markerStyles = StyleSheet.create({
+  container: {
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  markerPin: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: theme.colors.brand,
+  pin: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: BRAND,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
+    borderWidth: 2.5,
     borderColor: '#FFFFFF',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.28,
+    shadowRadius: 5,
+    elevation: 6,
   },
-  markerPinSelected: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+  pinSelected: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     borderWidth: 3,
-    borderColor: '#FFFFFF',
-    elevation: 10,
     shadowOpacity: 0.45,
-    shadowRadius: 6,
+    shadowRadius: 8,
+    elevation: 12,
+    backgroundColor: '#D95C00',
   },
-  markerTail: {
+  selectedRing: {
+    position: 'absolute',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 2,
+    borderColor: 'rgba(245, 110, 15, 0.35)',
+  },
+  tail: {
     width: 0,
     height: 0,
-    backgroundColor: 'transparent',
-    borderStyle: 'solid',
     borderLeftWidth: 6,
     borderRightWidth: 6,
-    borderBottomWidth: 8,
+    borderTopWidth: 9,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
-    borderBottomColor: theme.colors.brand,
-    transform: [{ rotate: '180deg' }],
-    marginTop: -2,
+    borderTopColor: BRAND,
+    marginTop: -1,
   },
-  markerTailSelected: {
+  tailSelected: {
     borderLeftWidth: 8,
     borderRightWidth: 8,
-    borderBottomWidth: 11,
-    marginTop: -3,
+    borderTopWidth: 12,
+    borderTopColor: '#D95C00',
   },
-  calloutContainer: {
+});
+
+// ── Callout styles (plain static values ONLY — no theme tokens) ───────────────
+const calloutStyles = StyleSheet.create({
+  container: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 12,
-    width: 200,
+    width: 210,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 10,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#F3F4F6',
   },
-  calloutName: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#111827',
-    marginBottom: 4,
-  },
-  calloutRow: {
+  headerRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+    alignItems: 'flex-start',
+    gap: 8,
     marginBottom: 8,
   },
-  calloutRating: {
-    fontSize: 12,
-    fontWeight: '700',
+  iconBox: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: '#FFF7ED',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  name: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#111827',
+    lineHeight: 18,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 6,
+  },
+  ratingPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#FFFBEB',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  ratingText: {
+    fontSize: 11,
+    fontWeight: '800',
     color: '#D97706',
   },
-  calloutDistrict: {
-    fontSize: 12,
+  dot: { fontSize: 12, color: '#D1D5DB' },
+  district: {
+    fontSize: 11,
     color: '#6B7280',
     fontWeight: '500',
+    flex: 1,
   },
-  calloutAction: {
+  distRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginBottom: 10,
+  },
+  distText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#F56E0F',
+  },
+  cta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    backgroundColor: '#F56E0F',
+    borderRadius: 10,
+    paddingVertical: 7,
+  },
+  ctaText: {
     fontSize: 12,
     fontWeight: '800',
-    color: theme.colors.brand,
-    textAlign: 'right',
+    color: '#FFFFFF',
   },
-}));
+});
