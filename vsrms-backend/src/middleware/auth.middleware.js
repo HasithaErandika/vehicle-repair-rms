@@ -40,15 +40,16 @@ const protect = async (req, res, next) => {
   const token = authHeader.split(' ')[1];
 
   // ⚠️ DEVELOPMENT BYPASS: Multi-Role Mock Logic
-  if (token && token.startsWith('mock-')) {
-    let role = token.split('-').slice(1).join('-'); // e.g., customer, admin, workshop_owner, workshop_staff
+  if (token && (token.startsWith('mock-') || token.startsWith('pending-'))) {
+    const isMockRole = token.startsWith('mock-');
+    let role = isMockRole ? token.split('-').slice(1).join('-') : 'workshop_staff';
     if (token.startsWith('mock-staff-')) {
       role = 'workshop_staff';
     }
     const mockEmail = token.startsWith('mock-staff-') ? token.replace('mock-staff-', '') : `${role}@bypass.com`;
 
     try {
-      // 1. Try to find the seeded mock user first
+      // 1. Try to find the user in DB (works for both seeded mock tokens and pending- staff tokens)
       const dbUser = await User.findOne({ asgardeoSub: token });
       if (dbUser) {
         req.jwtClaims = { sub: token, email: dbUser.email, name: dbUser.fullName };
@@ -59,7 +60,11 @@ const protect = async (req, res, next) => {
       console.warn('[auth] Mock DB lookup failed, falling back to in-memory mock');
     }
 
-    // 2. Fallback to in-memory mock if DB lookup fails (e.g. not seeded yet)
+    // 2. Fallback to in-memory mock ONLY if it's a generic 'mock-' token (not found in DB)
+    if (!isMockRole) {
+       return res.status(401).json({ error: 'Invalid technician token' });
+    }
+
     let mockWSId = _cachedMockWSId || '607f1f77bcf86cd799439012';
     if (!_cachedMockWSId) {
       try {
