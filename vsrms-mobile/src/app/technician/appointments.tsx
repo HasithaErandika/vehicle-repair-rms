@@ -16,11 +16,13 @@ import { EmptyState } from '@/components/ui/EmptyState';
 function ApptCard({
   appt,
   onStart,
-  onFinalize
+  onFinalize,
+  onFinish
 }: {
   appt: Appointment;
   onStart: (id: string) => void;
   onFinalize: (id: string) => void;
+  onFinish: (id: string) => void;
 }) {
   const customerName = appt.userId && typeof appt.userId === 'object' ? appt.userId.fullName : 'Customer';
   const vehicleName = appt.vehicleId && typeof appt.vehicleId === 'object' ? `${appt.vehicleId.make} ${appt.vehicleId.model}` : 'Vehicle';
@@ -29,8 +31,8 @@ function ApptCard({
     <View style={styles.card}>
       <View style={styles.cardBody}>
         <View style={styles.statusRow}>
-          <View style={[styles.pill, { backgroundColor: appt.status === 'confirmed' ? '#ECFDF5' : '#FFFBEB' }]}>
-            <Text style={[styles.pillText, { color: appt.status === 'confirmed' ? '#059669' : '#D97706' }]}>
+          <View style={[styles.pill, { backgroundColor: appt.status === 'confirmed' ? '#ECFDF5' : '#F3F4F6' }]}>
+            <Text style={[styles.pillText, { color: appt.status === 'confirmed' ? '#059669' : '#6B7280' }]}>
               {appt.status.toUpperCase()}
             </Text>
           </View>
@@ -52,6 +54,13 @@ function ApptCard({
         <TouchableOpacity style={styles.finalizeBtn} onPress={() => onFinalize((appt.id || appt._id)!)}>
           <Ionicons name="checkmark-done-circle-outline" size={18} color="#FFFFFF" />
           <Text style={styles.finalizeText}>Finalize Job</Text>
+        </TouchableOpacity>
+      )}
+
+      {appt.status === 'completed' && (
+        <TouchableOpacity style={[styles.startBtn, { backgroundColor: '#F3F4F6' }]} onPress={() => onFinish((appt.id || appt._id)!)}>
+          <Ionicons name="document-text-outline" size={18} color="#6B7280" />
+          <Text style={[styles.startText, { color: '#6B7280' }]}>View Record</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -137,19 +146,20 @@ export default function TechnicianAppointmentsScreen() {
           <ErrorScreen onRetry={refetch} variant="inline" />
         ) : (
           <FlashList<Appointment>
-            data={data || []}
+            data={appointments}
             renderItem={({ item }) => (
               <ApptCard 
                 appt={item} 
                 onStart={handleStart} 
                 onFinalize={handleFinalize} 
+                onFinish={handleFinalize} 
               />
             )}
             // @ts-expect-error - FlashList requires estimatedItemSize dynamically
             estimatedItemSize={140}
             onRefresh={refetch}
             refreshing={isLoading}
-            keyExtractor={(a) => a._id || a.id || Math.random().toString()}
+            keyExtractor={(a) => a.id || a._id || Math.random().toString()}
             contentContainerStyle={styles.list}
             ListEmptyComponent={<EmptyState message={`No ${status} tasks assigned yet.`} />}
           />

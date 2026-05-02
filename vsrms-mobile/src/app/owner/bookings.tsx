@@ -164,13 +164,13 @@ export default function BookingsScreen() {
           <ErrorScreen onRetry={refetch} variant="inline" />
         ) : (
           <FlashList
-            data={(data || []) as Appointment[]}
+            data={appointments}
             renderItem={({ item }) => <BookingCard appt={item as Appointment} onStatusChange={handleStatusUpdate} />}
             // @ts-expect-error - FlashList requires estimatedItemSize dynamically
             estimatedItemSize={140}
             onRefresh={refetch}
             refreshing={isLoading}
-            keyExtractor={(a: Appointment) => a._id || a.id || Math.random().toString()}
+            keyExtractor={(a: Appointment) => a.id || a._id || Math.random().toString()}
             contentContainerStyle={styles.list}
             ListEmptyComponent={<EmptyState message={`No ${status} bookings found.`} />}
           />

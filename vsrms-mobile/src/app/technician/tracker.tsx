@@ -30,10 +30,21 @@ export default function StaffTrackerScreen() {
     } as any);
   };
 
+  // Deduplicate by id — guards against duplicate keys
+  const appointments = React.useMemo(() => {
+    const seen = new Set<string>();
+    return ((data as Appointment[]) ?? []).filter((a) => {
+      const key = a._id || a.id;
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [data]);
+
   const list = (
     <FlashList
-      data={(data ?? []) as Appointment[]}
-      keyExtractor={(a: Appointment) => a._id || a.id || Math.random().toString()}
+      data={appointments}
+      keyExtractor={(a: Appointment) => a.id || a._id || Math.random().toString()}
       renderItem={({ item }) => (
         <AppointmentCard 
           appointment={item} 
