@@ -205,6 +205,17 @@ export function NearbyWorkshopsScreen() {
     data: listData, isLoading: listLoading, isError: listError, refetch: listRefetch,
   } = useWorkshops(Object.keys(listParams).length ? listParams : undefined);
 
+  // Deduplicate workshops to prevent duplicate key errors
+  const workshops = React.useMemo(() => {
+    const seen = new Set<string>();
+    return ((listData as Workshop[]) ?? []).filter((w) => {
+      const key = w._id || w.id;
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [listData]);
+
   // ── Map auto-fit ────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -437,7 +448,7 @@ export function NearbyWorkshopsScreen() {
             <ErrorScreen onRetry={listRefetch} variant="inline" />
           ) : (
             <FlashList
-              data={listData || []}
+              data={workshops}
               renderItem={({ item }) => <WorkshopCard workshop={item} />}
               estimatedItemSize={140}
               onRefresh={listRefetch}
