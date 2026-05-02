@@ -87,7 +87,7 @@ export default function AdminGaragesScreen() {
         {
           text: 'Deactivate',
           style: 'destructive',
-          onPress: () => deactivate(workshop._id ?? workshop.id!),
+          onPress: () => deactivate(workshop.id || workshop._id!),
         },
       ],
     );

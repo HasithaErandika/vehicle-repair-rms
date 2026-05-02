@@ -132,10 +132,10 @@ export default function DashboardScreen() {
                 )
                 : (vehicles ?? []).slice(0, 2).map((v: Vehicle) => (
                   <TouchableOpacity
-                    key={v._id || v.id}
+                    key={v.id || v._id}
                     style={styles.vehicleCard}
                     activeOpacity={0.7}
-                    onPress={() => router.push(`/customer/vehicles/${v._id}` as any)}
+                    onPress={() => router.push(`/customer/vehicles/${v.id || v._id}` as any)}
                   >
                     <View style={styles.vehicleIconBox}>
                       <Ionicons

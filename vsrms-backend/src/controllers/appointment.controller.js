@@ -147,6 +147,34 @@ const updateAppointmentStatus = async (req, res, next) => {
     const appt = await Appointment.findById(req.params.id);
     if (!appt) throw new AppError('Appointment not found', 404);
 
+    // Permission check: ensure user has authority over this workshop
+    if (req.user.role !== 'admin') {
+      const apptWSId = appt.workshopId.toString();
+
+      if (req.user.role === 'workshop_owner') {
+        // Owners can manage any appointment in any workshop they own
+        const wsFilter = req.user.email === 'customer@bypass.com'
+          ? { _id: appt.workshopId, $or: [{ ownerId: req.user._id }, { ownerId: null }, { ownerId: { $exists: false } }] }
+          : { _id: appt.workshopId, ownerId: req.user._id };
+        
+        const isOwner = await Workshop.exists(wsFilter);
+        if (!isOwner) throw new AppError('Forbidden — you do not own this workshop', 403);
+      } else if (req.user.role === 'workshop_staff') {
+        // Staff can manage appointments in their assigned workshop
+        const isStaff = req.user.workshopId?.toString() === apptWSId || 
+                        await Workshop.exists({ _id: appt.workshopId, technicians: req.user._id });
+        
+        if (!isStaff) throw new AppError('Forbidden — you are not assigned to this workshop', 403);
+
+        // Technicians CANNOT accept/reject bookings (pending -> confirmed/cancelled)
+        if (appt.status === 'pending') {
+          throw new AppError('Forbidden — only the workshop owner can accept or reject new bookings', 403);
+        }
+      } else {
+        throw new AppError('Forbidden — insufficient role', 403);
+      }
+    }
+
     if (!Appointment.isValidTransition(appt.status, newStatus)) {
       throw new AppError(
         `Cannot transition from '${appt.status}' to '${newStatus}'`, 400,

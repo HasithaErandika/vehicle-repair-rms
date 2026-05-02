@@ -67,7 +67,7 @@ export default function StaffRecordScreen() {
 
     createRecord({
       vehicleId:        getVehicleId(selectedAppt),
-      appointmentId:    selectedAppt._id ?? selectedAppt.id,
+      appointmentId:    selectedAppt.id || selectedAppt._id,
       serviceDate:      new Date().toISOString(),
       workDone:         workDone.trim(),
       partsReplaced:    partsArray,
@@ -134,7 +134,7 @@ export default function StaffRecordScreen() {
                     inProgressAppts?.map((a, idx) => (
                       <TouchableOpacity
                         key={a._id || a.id || `appt-${idx}`}
-                        style={[styles.pickerItem, selectedAppt?._id === a._id && styles.pickerItemActive]}
+                        style={[styles.pickerItem, (selectedAppt?.id || selectedAppt?._id) === (a.id || a._id) && styles.pickerItemActive]}
                         onPress={() => { setSelectedAppt(a); setShowPicker(false); }}
                       >
                         <Text style={styles.pickerItemText}>{getVehicleLabel(a)}</Text>

@@ -47,7 +47,7 @@ export default function OwnerCreateRecordScreen() {
   // Handle pre-selected appointment if passed in params
   React.useEffect(() => {
     if (params.appointmentId && inProgressAppts) {
-      const found = inProgressAppts.find(a => (a._id || a.id) === params.appointmentId);
+      const found = inProgressAppts.find(a => (a.id || a._id) === params.appointmentId);
       if (found) setSelectedAppt(found);
     }
   }, [params.appointmentId, inProgressAppts]);
@@ -63,7 +63,7 @@ export default function OwnerCreateRecordScreen() {
 
     createRecord({
       vehicleId:        getVehicleId(selectedAppt),
-      appointmentId:    selectedAppt._id ?? selectedAppt.id,
+      appointmentId:    selectedAppt.id || selectedAppt._id,
       serviceDate:      new Date().toISOString(),
       workDone:         workDone.trim(),
       partsReplaced:    partsArray,
@@ -130,7 +130,7 @@ export default function OwnerCreateRecordScreen() {
                     inProgressAppts?.map((a, idx) => (
                       <TouchableOpacity
                         key={a._id || a.id || `appt-${idx}`}
-                        style={[styles.pickerItem, (selectedAppt?._id || selectedAppt?.id) === (a._id || a.id) && styles.pickerItemActive]}
+                        style={[styles.pickerItem, (selectedAppt?.id || selectedAppt?._id) === (a.id || a._id) && styles.pickerItemActive]}
                         onPress={() => { setSelectedAppt(a); setShowPicker(false); }}
                       >
                         <Text style={styles.pickerItemText}>{getVehicleLabel(a)}</Text>
