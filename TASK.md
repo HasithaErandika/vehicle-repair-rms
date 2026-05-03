@@ -222,20 +222,32 @@
 - [x] `app/technician/index.tsx` — technician dashboard (today's jobs summary)
 
 ### M5 — Service Records (Mobile)
-- [x] `features/records/types/records.types.ts`
-- [x] `features/records/api/records.api.ts`
-- [x] `features/records/queries/records.keys.ts, mutations.ts, queries.ts`
-- [x] `features/records/components/RecordCard.tsx` — uses `workDone` + `totalCost`, left accent border, parts chips
-- [x] `features/records/screens/RecordListScreen.tsx` — uses `useVehicleRecords(vehicleId)` with vehicleId prop
-- [x] `features/records/screens/RecordDetailScreen.tsx`
-- [x] `features/records/screens/AddRecordScreen.tsx`
-- [x] `app/owner/jobs.tsx` — staff/owner view of service jobs for their workshop
-- [x] `app/owner/create-record.tsx` — route wrapper for AddRecordScreen
-- [x] `app/owner/index.tsx` — garage dashboard (summary stats, quick actions)
-- [x] `app/owner/bookings.tsx` — garage: view/manage bookings (appointments)
-- [x] `app/owner/workshops/` — owner workshop management (Integrated Map selection)
-- [x] `app/owner/staff.tsx` — technician management list for owners
-- [x] `app/owner/logs.tsx` — system/activity logs for the workshop
+- [x] features/records/types/records.types.ts → records.types.ts (Record Type Definitions)
+- [x] features/records/api/records.api.ts → records.api.ts (Record Service Layer)
+- [x] features/records/queries/records.keys.ts, mutations.ts, queries.ts 
+      → Query Keys, Mutations, and Query Handlers for Records
+- [x] features/records/components/RecordCard.tsx 
+      → Record Summary Card Component (with Work Details & Cost Breakdown)
+- [x] features/records/screens/RecordListScreen.tsx 
+      → Record Listing Screen (Vehicle-Based Records View)
+- [x] features/records/screens/RecordDetailScreen.tsx 
+      → Record Detail Screen (Full Record Information View)
+- [x] features/records/screens/AddRecordScreen.tsx 
+      → Create Record Screen (Add New Service Record)
+- [x] app/owner/jobs.tsx 
+      → Service Jobs Management (Workshop Job Tracking View)
+- [x] app/owner/create-record.tsx 
+      → Record Creation Route (Wrapper for Add Record Screen)
+- [x] app/owner/index.tsx 
+      → Owner Dashboard (Workshop Overview & Quick Actions)
+- [x] app/owner/bookings.tsx 
+      → Appointment Management (Booking Handling Interface)
+- [x] app/owner/workshops/ 
+      → Workshop Management Module (Map Integration Enabled)
+- [x] app/owner/staff.tsx 
+      → Staff Management (Technician Administration Panel)
+- [x] app/owner/logs.tsx 
+      → Activity & System Logs (Workshop Event Tracking)
 
 ### M6 — Reviews (Mobile)
 - [x] `features/reviews/types/reviews.types.ts` — `userId` typed as union; `reviewText` field (corrected from `comment`)
