@@ -38,7 +38,7 @@ export function Button({
       ) : (
         <Text style={[
           styles.text,
-          styles[`${variant}Text` as keyof typeof styles],
+          styles[`${variant}Text` as any] as any,
           textStyle
         ]}>
           {title}

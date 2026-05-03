@@ -5,7 +5,6 @@ import { StyleSheet } from 'react-native-unistyles';
 /**
  * Re-exports the professionally structured tabs or provides a wrapper
  */
-export { default as TabsLayout } from '@/app/tabs/_layout';
 
 export function TabBar({ children }: { children: React.ReactNode }) {
   return (

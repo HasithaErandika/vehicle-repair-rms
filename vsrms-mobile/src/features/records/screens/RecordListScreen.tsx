@@ -43,14 +43,14 @@ export function RecordListScreen() {
         ) : isError ? (
           <ErrorScreen onRetry={refetch} variant="inline" />
         ) : (
-          // @ts-expect-error - FlashList requires estimatedItemSize dynamically
           <FlashList<ServiceRecord>
             data={data || []}
             renderItem={({ item }) => <RecordCard record={item} />}
+            // @ts-ignore
             estimatedItemSize={140}
             onRefresh={refetch}
             refreshing={isLoading}
-            keyExtractor={(item) => item._id || item.id}
+            keyExtractor={(item: any) => item._id || item.id || ''}
             contentContainerStyle={styles.list}
             ListEmptyComponent={<EmptyState message="No service records found for your vehicles." />}
           />

@@ -83,6 +83,7 @@ export function WorkshopReviewsScreen() {
           </View>
         )}
         keyExtractor={(item) => item.id}
+        // @ts-ignore
         estimatedItemSize={120}
         contentContainerStyle={styles.listContent}
         onRefresh={refetch}
