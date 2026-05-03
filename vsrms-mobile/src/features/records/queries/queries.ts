@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { recordKeys } from './records.keys';
-import { fetchRecordsByVehicle, fetchRecord, fetchWorkshopRecords } from '../api/records.api';
+import { fetchRecordsByVehicle, fetchRecord, fetchWorkshopRecords, fetchMyRecords } from '../api/records.api';
 
 /**
  * Fetches all service records for a vehicle.
@@ -42,3 +42,14 @@ export function useWorkshopRecords(workshopId: string, params?: Record<string, a
   });
 }
 
+/**
+ * Fetches ALL service records across all vehicles owned by the current user.
+ * Used by the top-level Service History screen.
+ */
+export function useMyRecords() {
+  return useQuery({
+    queryKey: recordKeys.mine(),
+    queryFn:  fetchMyRecords,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+}

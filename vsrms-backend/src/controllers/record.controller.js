@@ -178,4 +178,34 @@ const getWorkshopRecords = async (req, res, next) => {
   }
 };
 
-module.exports = { getRecordsByVehicle, getRecord, createRecord, updateRecord, deleteRecord, getWorkshopRecords };
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/v1/records/mine — customer: all records across all their vehicles
+// ─────────────────────────────────────────────────────────────────────────────
+const getMyRecords = async (req, res, next) => {
+  try {
+    const { page, limit, skip } = paginate(req.query);
+
+    // Find all vehicle IDs owned by the current user
+    const vehicles = await Vehicle.find({ ownerId: req.user._id, deletedAt: null }).select('_id');
+    const vehicleIds = vehicles.map(v => v._id);
+
+    if (vehicleIds.length === 0) {
+      return res.json({ data: [], page, limit, total: 0, pages: 0 });
+    }
+
+    const filter = { vehicleId: { $in: vehicleIds } };
+    const [data, total] = await Promise.all([
+      ServiceRecord.find(filter)
+        .populate('vehicleId', 'make model registrationNo vehicleType')
+        .populate('appointmentId', 'serviceType scheduledDate status')
+        .skip(skip).limit(limit).sort({ serviceDate: -1 }),
+      ServiceRecord.countDocuments(filter),
+    ]);
+
+    res.json({ data, page, limit, total, pages: Math.ceil(total / limit) });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { getRecordsByVehicle, getRecord, createRecord, updateRecord, deleteRecord, getWorkshopRecords, getMyRecords };

@@ -302,23 +302,23 @@
 - [x] Mock token bypass and dev login buttons COMPLETELY removed from backend and frontend for production readiness.
 
 ### Integration / End-to-End Testing
-- [ ] Register new user → appears in Asgardeo and MongoDB
-- [ ] Login → token stored → sync-profile → dashboard (all 4 roles: customer, workshop_owner, workshop_staff, admin)
+- [x] Register new user → appears in Asgardeo and MongoDB
+- [x] Login → token stored → sync-profile → dashboard (all 4 roles: customer, workshop_owner, workshop_staff, admin)
 - [ ] Customer: add vehicle → edit vehicle → view detail → delete (soft) → vehicle gone from list
 - [ ] Customer: find nearby workshops → view detail → book appointment → view in schedule
 - [ ] Staff: see appointment → advance status (pending→confirmed→in_progress→completed)
 - [ ] Staff: create service record for vehicle
-- [ ] Customer: view service history for vehicle
+- [x] Customer: view service history for vehicle
 - [ ] Customer: write review for workshop → averageRating updates on workshop card
 - [ ] Admin: view all users → deactivate a user → user cannot log in
 - [ ] Admin: create workshop → appears in list + nearby search
 
 ### Deployment
-- [ ] Backend deployed to Render.com — GET /health returns 200
-- [ ] MongoDB Atlas M0 connected and indexed
+- [x] Backend deployed to DigitalOcean — GET /health returns 200
+- [x] MongoDB Atlas M0 connected and indexed
 - [ ] R2 bucket accessible — test image upload end-to-end
-- [ ] `EXPO_PUBLIC_API_URL` points to Render URL
-- [ ] Test entire flow on physical device (not simulator) with Render backend
+- [x] `EXPO_PUBLIC_API_URL` points to DigitalOcean URL
+- [ ] Test entire flow on physical device (not simulator) with DigitalOcean backend
 - [ ] Postman collection covering all endpoints with example requests/responses
 
 ### Documentation & Viva Prep

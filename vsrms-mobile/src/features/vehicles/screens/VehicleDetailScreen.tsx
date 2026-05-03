@@ -28,6 +28,7 @@ const TYPE_ICON: Record<string, string> = {
 export function VehicleDetailScreen({ id }: { id: string }) {
   const router = useRouter();
   const [uploading, setUploading] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const { data: vehicle, isLoading: vLoading } = useVehicle(id);
   const { data: records, isLoading: rLoading } = useVehicleRecords(id);
@@ -59,6 +60,7 @@ export function VehicleDetailScreen({ id }: { id: string }) {
         uri: result.assets[0].uri,
       },
       {
+        onSuccess: () => setImageError(false),
         onSettled: () => setUploading(false),
         onError: (err) => Alert.alert('Image Upload Failed', handleApiError(err)),
       },
@@ -83,8 +85,14 @@ export function VehicleDetailScreen({ id }: { id: string }) {
 
       {/* ── HERO SECTION (Edge-to-Edge) ── */}
       <View style={styles.heroContainer}>
-        {vehicle.imageUrl ? (
-          <Image source={{ uri: vehicle.imageUrl }} style={styles.heroImage} contentFit="cover" transition={300} />
+        {vehicle.imageUrl && !imageError ? (
+          <Image
+            source={{ uri: vehicle.imageUrl }}
+            style={styles.heroImage}
+            contentFit="cover"
+            transition={300}
+            onError={() => setImageError(true)}
+          />
         ) : (
           <View style={styles.heroPlaceholder}>
             <Ionicons name={iconName as any} size={80} color="#D1D5DB" />
