@@ -3,6 +3,8 @@
 const axios   = require('axios');
 const User    = require('../models/User');
 const { AppError } = require('../middleware/errorHandler');
+const jwt        = require('jsonwebtoken');
+const jwksClient = require('jwks-rsa');
 
 const ASGARDEO_BASE = `https://api.asgardeo.io/t/${process.env.ASGARDEO_ORG_NAME}`;
 
@@ -58,30 +60,6 @@ const login = async (req, res, next) => {
   } catch (err) {
     const asgardeoErr = err?.response?.data;
     console.error('[auth/login] Asgardeo error:', asgardeoErr ?? err.message);
-    // ⚠️ DEVELOPMENT BYPASS: Allow login for mock staff if Asgardeo fails
-    if (process.env.NODE_ENV !== 'production' && (asgardeoErr?.error === 'invalid_grant' || asgardeoErr?.error === 'invalid_client' || err.code === 'ENOTFOUND')) {
-      try {
-        // Need to include password in selection since it's hidden by default
-        const dbUser = await User.findOne({ email: req.body.email.toLowerCase() }).select('+password');
-        
-        if (dbUser && dbUser.asgardeoSub.startsWith('mock-staff-')) {
-          // Verify the password set during creation
-          if (!dbUser.comparePassword(req.body.password)) {
-            return res.status(401).json({ error: 'Incorrect email or password (Development Mode)' });
-          }
-
-          console.log(`[DEBUG] Logging in mock staff: ${dbUser.email}`);
-          return res.status(200).json({
-            access_token: dbUser.asgardeoSub,
-            expires_in: 3600,
-            user: { email: dbUser.email, sub: dbUser.asgardeoSub, given_name: dbUser.fullName.split(' ')[0] },
-          });
-        }
-      } catch (bypassErr) {
-        console.error('[auth/login] Mock bypass DB lookup failed:', bypassErr.message);
-      }
-    }
-
     let message = 'Authentication failed';
     if (asgardeoErr?.error === 'invalid_grant')  message = 'Incorrect email or password';
     if (asgardeoErr?.error === 'invalid_client') message = 'Server configuration error';
@@ -89,10 +67,23 @@ const login = async (req, res, next) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// POST /api/v1/auth/register
-// Creates user in Asgardeo via SCIM2.
-// ─────────────────────────────────────────────────────────────────────────────
+const getManagementToken = async () => {
+  const params = new URLSearchParams();
+  params.append('grant_type',    'client_credentials');
+  params.append('client_id',     process.env.ASGARDEO_CLIENT_ID);
+  params.append('client_secret', process.env.ASGARDEO_CLIENT_SECRET);
+  params.append('scope',         'internal_user_mgt_create');
+
+  const res = await axios.post(
+    `${ASGARDEO_BASE}/oauth2/token`,
+    params.toString(),
+    { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } },
+  );
+
+  return res.data.access_token;
+};
+
+
 const register = async (req, res, next) => {
   try {
     const { firstName, lastName, email, phone, password, role } = req.body;
@@ -106,28 +97,26 @@ const register = async (req, res, next) => {
     };
     const internalRole = roleMapping[role] || 'customer';
 
-    // Self-registration via /me endpoint — no management token required.
-    // Requires "Self Registration" to be enabled in the Asgardeo console
-    const mePayload = {
-      user: {
-        username: email,
-        realm: "PRIMARY",
-        password: password
-      },
-      properties: [
-        { key: "http://wso2.org/claims/givenname", value: firstName },
-        { key: "http://wso2.org/claims/lastname", value: lastName },
-        { key: "http://wso2.org/claims/emailaddress", value: email },
-        ...(phone ? [{ key: "http://wso2.org/claims/mobile", value: phone }] : [])
-      ]
+    const mgmToken = await getManagementToken();
+
+   
+    const scimUser = {
+      schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+      userName: `DEFAULT/${email}`,
+      password,
+      name: { givenName: firstName, familyName: lastName },
+      emails: [{ primary: true, value: email }],
+      ...(phone && { phoneNumbers: [{ type: 'mobile', value: phone }] }),
     };
 
-    const scimRes = await axios.post(`${ASGARDEO_BASE}/api/identity/user/v1.0/me`, mePayload, {
-      headers: { 'Content-Type': 'application/json' },
+    const scimRes = await axios.post(`${ASGARDEO_BASE}/scim2/Users`, scimUser, {
+      headers: { 'Content-Type': 'application/scim+json',
+                  'Authorization': `Bearer ${mgmToken}`,
+       },
     });
 
-    // The /me endpoint does not return the user ID directly in the same way, but it works
-    const asgardeoSub = scimRes.data?.userId ?? email;
+    // Pre-create MongoDB document so role and profile are ready before first login.
+    const asgardeoSub = scimRes.data?.id ?? email;
     await User.findOneAndUpdate(
       { email: email.toLowerCase() },
       {
@@ -147,14 +136,19 @@ const register = async (req, res, next) => {
   } catch (err) {
     const asgardeoErr = err?.response?.data;
     console.error('[auth/register] Asgardeo error:', asgardeoErr ?? err.message);
+   
     let message = 'Registration failed';
+    const status = err?.response?.status;
     const detail = asgardeoErr?.detail ?? asgardeoErr?.message ?? '';
+   
     if (detail.toLowerCase().includes('already exists') || err?.response?.status === 409) {
       message = 'An account with this email already exists';
     } else if (err?.response?.status === 400) {
       message = `Invalid registration data: ${detail}`;
     } else if (err?.response?.status === 403) {
       message = 'Self-registration is disabled — enable it in the Asgardeo console under User Management → Self Registration';
+    } else if (status === 401) {
+      message = 'Management token failed — check ASGARDEO_CLIENT_SECRET in your .env';
     }
     return res.status(err?.response?.status ?? 500).json({ error: message });
   }
@@ -173,6 +167,13 @@ const syncProfile = async (req, res, next) => {
     // Match by asgardeoSub first, then fall back to email.
     // The email fallback links pre-created records (e.g. staff registered by owner)
     // to the Asgardeo account on first login.
+
+     if (!email) {
+      return res.status(400).json({
+        error: 'Token is missing the email claim. Ensure the "email" scope is granted in Asgardeo.',
+      });
+    }
+
     const user = await User.findOneAndUpdate(
       { $or: [{ asgardeoSub: decoded.sub }, ...(email ? [{ email }] : [])] },
       {
@@ -186,7 +187,7 @@ const syncProfile = async (req, res, next) => {
           active: true,
         },
       },
-      { upsert: true, new: true, runValidators: true },
+      { upsert: true, new: true, runValidators: false },
     );
     return res.status(200).json({ user });
   } catch (err) {
@@ -254,121 +255,49 @@ const deactivateUser = async (req, res, next) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// POST /api/v1/auth/staff  — workshop_owner only
-// Fully registers a technician in Asgardeo + MongoDB and links them to a workshop.
-// Body: { firstName, lastName, email, password, phone?, workshopId? }
-// If workshopId is omitted, falls back to owner.workshopId.
+// POST /api/v1/auth/staff  — workshop_owner only; registers a technician
+// Creates Asgardeo account + MongoDB user linked to caller's workshopId
 // ─────────────────────────────────────────────────────────────────────────────
 const registerStaff = async (req, res, next) => {
   try {
-    const Workshop = require('../models/Workshop');
     const owner = req.user;
-
-    const { firstName, lastName, email, password, phone, workshopId: bodyWorkshopId } = req.body;
-    if (!firstName || !lastName || !email || !password) {
-      return res.status(400).json({ error: 'firstName, lastName, email, and password are required' });
+    if (!owner.workshopId) {
+      throw new AppError('Your account is not linked to a workshop', 400);
     }
 
-    // Determine target workshop: prefer explicit workshopId, fall back to owner.workshopId
-    const targetWorkshopId = bodyWorkshopId || owner.workshopId;
-    if (!targetWorkshopId) {
-      throw new AppError('workshopId is required — specify which workshop to assign this technician to', 400);
+    const { firstName, lastName, email, phone } = req.body;
+    if (!firstName || !lastName || !email) {
+      return res.status(400).json({ error: 'firstName, lastName, and email are required' });
     }
 
-    // Verify the owner actually owns that workshop
-    const workshop = await Workshop.findById(targetWorkshopId);
-    if (!workshop) {
-      console.warn(`[DEBUG] Workshop ${targetWorkshopId} not found`);
-      throw new AppError('Workshop not found', 404);
-    }
-    
-    if (!workshop.ownerId || workshop.ownerId.toString() !== owner._id.toString()) {
-      console.warn(`[DEBUG] Ownership mismatch: workshop.ownerId=${workshop.ownerId}, requester._id=${owner._id}`);
-      throw new AppError('Forbidden — you do not own this workshop', 403);
-    }
-    
-    const isMock = owner.asgardeoSub && owner.asgardeoSub.startsWith('mock-');
-    const safeEmail = (email || '').toLowerCase();
-    let asgardeoSub = isMock ? `mock-staff-${safeEmail}` : `pending-${Date.now()}`;
-    
-    if (!isMock) {
-      try {
-      const mePayload = {
-        user: {
-          username: email,
-          realm: 'PRIMARY',
-          password,
+    // Create (or update) the MongoDB record so role + workshopId are ready.
+    // No Asgardeo account is created here — the technician must register via
+    // the app's normal register screen. On their first login, sync-profile
+    // matches by email and links their Asgardeo account to this record.
+    const staffUser = await User.findOneAndUpdate(
+      { email: email.toLowerCase() },
+      {
+        $set: {
+          role:       'workshop_staff',
+          workshopId: owner.workshopId,
+          fullName:   `${firstName} ${lastName}`.trim(),
+          active:     true,
+          ...(phone && { phone }),
         },
-        properties: [
-          { key: 'http://wso2.org/claims/givenname',    value: firstName },
-          { key: 'http://wso2.org/claims/lastname',     value: lastName },
-          { key: 'http://wso2.org/claims/emailaddress', value: email },
-          ...(phone ? [{ key: 'http://wso2.org/claims/mobile', value: phone }] : []),
-        ],
-      };
-      
-      const scimRes = await axios.post(
-        `${ASGARDEO_BASE}/api/identity/user/v1.0/me`,
-        mePayload,
-        { headers: { 'Content-Type': 'application/json' } },
-      );
-      asgardeoSub = scimRes.data?.userId ?? asgardeoSub;
-    } catch (asgErr) {
-      const errData = asgErr?.response?.data;
-      const status  = asgErr?.response?.status;
-      console.error('[auth/staff] Asgardeo registration failed:', {
-        status,
-        data: errData,
-        message: asgErr.message,
-        url: asgErr.config?.url
-      });
-      
-      if (status === 409) {
-        return res.status(409).json({ error: 'An Asgardeo account with this email already exists' });
-      }
-      if (status === 401 || status === 403) {
-        // We return 400 instead of passing through 401 to prevent the mobile app 
-        // from logging the owner out (thinking their own token is invalid).
-        return res.status(400).json({ 
-          error: `Asgardeo Registration Failed: ${errData?.detail || errData?.message || 'Self-registration might be disabled in the Asgardeo Console.'}` 
-        });
-      }
-      return res.status(status ?? 500).json({ error: errData?.detail ?? errData?.message ?? 'Could not create Asgardeo account' });
-    }
-}
-
-    // Upsert the MongoDB staff record, now with the real asgardeoSub
-    let staffUser = await User.findOne({ email: email.toLowerCase() });
-    
-    if (!staffUser) {
-      staffUser = new User({ email: email.toLowerCase() });
-    }
-
-    staffUser.role = 'workshop_staff';
-    staffUser.workshopId = targetWorkshopId;
-    staffUser.fullName = `${firstName} ${lastName}`.trim();
-    staffUser.active = true;
-    staffUser.asgardeoSub = asgardeoSub;
-    if (phone) staffUser.phone = phone;
-    
-    // Save password for mock accounts to allow verification during login bypass
-    if (isMock) {
-      staffUser.password = password;
-    }
-
-    await staffUser.save();
-
-    // Also add to workshop.technicians array if not already there
-    if (!workshop.technicians.some(t => t.toString() === staffUser._id.toString())) {
-      workshop.technicians.push(staffUser._id);
-      await workshop.save();
-    }
+        $setOnInsert: {
+          email:       email.toLowerCase(),
+          asgardeoSub: `pending-${Date.now()}`, // placeholder until first login
+        },
+      },
+      { upsert: true, new: true },
+    );
 
     return res.status(201).json({
-      message: 'Technician account created successfully. They can now log in with their email and password.',
+      message: 'Technician profile created. Ask them to register with this email in the app to activate their account.',
       user: staffUser,
     });
   } catch (err) {
+    console.error('[auth/staff] error:', err.message);
     if (err.code === 11000) {
       return res.status(409).json({ error: 'An account with this email already exists' });
     }
@@ -377,18 +306,16 @@ const registerStaff = async (req, res, next) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /api/v1/auth/staff  — workshop_owner: list staff for a specific workshop
-// Optional ?workshopId= query param; falls back to owner.workshopId.
+// GET /api/v1/auth/staff  — workshop_owner: list their own staff
 // ─────────────────────────────────────────────────────────────────────────────
 const getWorkshopStaff = async (req, res, next) => {
   try {
     const owner = req.user;
-    const targetWorkshopId = req.query.workshopId || owner.workshopId;
-    if (!targetWorkshopId) {
+    if (!owner.workshopId) {
       return res.json({ data: [], total: 0 });
     }
     const { page, limit, skip } = paginate(req.query);
-    const filter = { role: 'workshop_staff', workshopId: targetWorkshopId };
+    const filter = { role: 'workshop_staff', workshopId: owner.workshopId };
     const [data, total] = await Promise.all([
       User.find(filter).skip(skip).limit(limit).sort({ createdAt: -1 }),
       User.countDocuments(filter),
@@ -398,5 +325,15 @@ const getWorkshopStaff = async (req, res, next) => {
     next(err);
   }
 };
+
+
+const client = jwksClient({
+  jwksUri: process.env.ASGARDEO_JWKS_URL,
+  cache: true,
+  rateLimit: true,
+  jwksRequestsPerMinute: 5,
+});
+
+
 
 module.exports = { login, register, syncProfile, getMe, updateMe, listUsers, deactivateUser, registerStaff, getWorkshopStaff };

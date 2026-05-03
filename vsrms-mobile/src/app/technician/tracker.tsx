@@ -33,7 +33,7 @@ export default function StaffTrackerScreen() {
   const list = (
     <FlashList
       data={(data ?? []) as Appointment[]}
-      keyExtractor={(a: Appointment) => a._id || a.id || Math.random().toString()}
+      keyExtractor={(a: Appointment) => a._id || a.id || `appt-unknown`}
       renderItem={({ item }) => (
         <AppointmentCard 
           appointment={item} 

@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { useRouter } from 'expo-router';
+import { Image } from 'expo-image';
 import { Vehicle } from '../types/vehicles.types';
 
 const TYPE_ICON: Record<string, string> = {
@@ -10,6 +11,10 @@ const TYPE_ICON: Record<string, string> = {
   motorcycle: 'bicycle-outline',
   tuk:        'car-outline',
   van:        'bus-outline',
+  suv:        'car-sport-outline',
+  truck:      'car-outline',
+  bus:        'bus-outline',
+  other:      'construct-outline',
 };
 
 export function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
@@ -20,59 +25,77 @@ export function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
     <TouchableOpacity
       style={styles.card}
       activeOpacity={0.8}
-      onPress={() => router.push(`/tabs/vehicles/${vehicle._id ?? vehicle.id}` as any)}
+      onPress={() => router.push(`/customer/vehicles/${vehicle._id ?? vehicle.id}` as any)}
     >
       <View style={styles.content}>
-        <View style={styles.iconBox}>
-          <Ionicons name={(TYPE_ICON[vehicle.vehicleType] ?? 'car-outline') as any} size={24} color={theme.colors.text} />
-        </View>
+        {vehicle.imageUrl ? (
+          <Image
+            source={{ uri: vehicle.imageUrl }}
+            style={styles.imageBox}
+            contentFit="cover"
+            transition={300}
+          />
+        ) : (
+          <View style={styles.iconBox}>
+            <Ionicons name={(TYPE_ICON[vehicle.vehicleType] ?? 'car-outline') as any} size={28} color="#F56E0F" />
+          </View>
+        )}
         <View style={styles.info}>
           <Text style={styles.name}>{vehicle.make} {vehicle.model}</Text>
           <Text style={styles.details}>{vehicle.year} · {vehicle.registrationNo}</Text>
-        </View>
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>{vehicle.vehicleType.toUpperCase()}</Text>
-        </View>
-      </View>
-
-      {vehicle.mileage ? (
-        <>
-          <View style={styles.divider} />
-          <View style={styles.footer}>
-            <Text style={styles.footerLabel}>Mileage:</Text>
-            <Text style={styles.footerValue}>{vehicle.mileage.toLocaleString()} km</Text>
+          
+          {/* Tags row */}
+          <View style={styles.tagsRow}>
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{vehicle.vehicleType.toUpperCase()}</Text>
+            </View>
+            {vehicle.mileage ? (
+              <View style={styles.mileageBadge}>
+                <Ionicons name="speedometer-outline" size={12} color="#6B7280" />
+                <Text style={styles.mileageText}>{vehicle.mileage.toLocaleString()} km</Text>
+              </View>
+            ) : null}
           </View>
-        </>
-      ) : null}
+        </View>
+        
+        <Ionicons name="chevron-forward" size={20} color="#D1D5DB" />
+      </View>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create((theme) => ({
   card: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 14,
+    marginBottom: 16,
     borderWidth: 1.5,
-    borderColor: theme.colors.border,
-    elevation: 2,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8,
+    borderColor: '#F3F4F6',
+    elevation: 4,
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 4 }, 
+    shadowOpacity: 0.05, 
+    shadowRadius: 12,
   },
   content: { flexDirection: 'row', alignItems: 'center' },
-  iconBox: {
-    width: 48, height: 48, borderRadius: 12,
-    backgroundColor: theme.colors.background, alignItems: 'center', justifyContent: 'center', marginRight: 14,
+  imageBox: {
+    width: 72, height: 72, borderRadius: 14,
+    marginRight: 16, backgroundColor: '#F3F4F6',
   },
-  info: { flex: 1 },
-  name: { fontSize: 16, fontWeight: '800', color: theme.colors.text },
-  details: { fontSize: 13, color: theme.colors.muted, fontWeight: '600', marginTop: 2 },
-
-  badge: { backgroundColor: theme.colors.brandSoft, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  badgeText: { fontSize: 10, fontWeight: '800', color: theme.colors.brand },
-
-  divider: { height: 1, backgroundColor: theme.colors.border, marginVertical: 12 },
-  footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  footerLabel: { fontSize: 12, color: theme.colors.muted, fontWeight: '600' },
-  footerValue: { fontSize: 13, fontWeight: '800', color: theme.colors.text },
+  iconBox: {
+    width: 72, height: 72, borderRadius: 14,
+    backgroundColor: '#FFF7ED', alignItems: 'center', justifyContent: 'center', 
+    marginRight: 16, borderWidth: 1, borderColor: '#FFEDD5',
+  },
+  info: { flex: 1, justifyContent: 'center' },
+  name: { fontSize: 17, fontWeight: '900', color: '#1A1A2E', letterSpacing: -0.3 },
+  details: { fontSize: 13, color: '#6B7280', fontWeight: '600', marginTop: 4 },
+  
+  tagsRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 8 },
+  badge: { backgroundColor: '#FFF7ED', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  badgeText: { fontSize: 10, fontWeight: '900', color: '#C2410C' },
+  
+  mileageBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#F3F4F6', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  mileageText: { fontSize: 10, fontWeight: '700', color: '#4B5563' },
 }));

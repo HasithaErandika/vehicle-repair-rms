@@ -26,8 +26,8 @@ const validateCreateVehicle = [
     .isInt({ min: 1990, max: new Date().getFullYear() + 1 })
     .withMessage(`Year must be between 1990 and ${new Date().getFullYear() + 1}`),
   body('vehicleType')
-    .isIn(['car', 'motorcycle', 'tuk', 'van'])
-    .withMessage('Vehicle type must be car, motorcycle, tuk, or van'),
+    .isIn(['car', 'motorcycle', 'tuk', 'van', 'suv', 'truck', 'bus', 'other'])
+    .withMessage('Vehicle type must be car, motorcycle, tuk, van, suv, truck, bus, or other'),
   handleValidationErrors,
 ];
 
@@ -40,8 +40,8 @@ const validateUpdateVehicle = [
     .withMessage(`Year must be between 1990 and ${new Date().getFullYear() + 1}`),
   body('vehicleType')
     .optional()
-    .isIn(['car', 'motorcycle', 'tuk', 'van'])
-    .withMessage('Vehicle type must be car, motorcycle, tuk, or van'),
+    .isIn(['car', 'motorcycle', 'tuk', 'van', 'suv', 'truck', 'bus', 'other'])
+    .withMessage('Vehicle type must be car, motorcycle, tuk, van, suv, truck, bus, or other'),
   handleValidationErrors,
 ];
 

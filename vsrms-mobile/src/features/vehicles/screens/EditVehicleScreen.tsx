@@ -13,9 +13,13 @@ import { VehicleType } from './AddVehicleScreen';
 
 const VEHICLE_TYPES = [
   { value: 'car',        label: 'Car',        icon: 'car-outline' },
-  { value: 'motorcycle', label: 'Motorcycle',  icon: 'bicycle-outline' },
+  { value: 'motorcycle', label: 'Motorcycle', icon: 'bicycle-outline' },
   { value: 'tuk',        label: 'Tuk Tuk',    icon: 'car-outline' },
-  { value: 'van',        label: 'Van / SUV',  icon: 'bus-outline' },
+  { value: 'van',        label: 'Van',        icon: 'bus-outline' },
+  { value: 'suv',        label: 'SUV',        icon: 'car-sport-outline' },
+  { value: 'truck',      label: 'Truck',      icon: 'car-outline' },
+  { value: 'bus',        label: 'Bus',        icon: 'bus-outline' },
+  { value: 'other',      label: 'Other',      icon: 'construct-outline' },
 ] as const;
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -213,15 +217,12 @@ function FieldInput({
 }
 
 const fieldStyles = StyleSheet.create(() => ({
-  group: { marginBottom: 16 },
-  label: { fontSize: 12, fontWeight: '700', color: '#1A1A2E', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 },
-  optional: { fontWeight: '400', color: '#9CA3AF', textTransform: 'none' },
-  input: {
-    borderWidth: 1.5, borderColor: '#E5E7EB', borderRadius: 12,
-    paddingHorizontal: 14, height: 48, fontSize: 14, color: '#1A1A2E', backgroundColor: '#FAFAFA',
-  },
-  inputError: { borderColor: '#EF4444' },
-  errorText: { fontSize: 11, color: '#DC2626', fontWeight: '600', marginTop: 4 },
+  group: { marginBottom: 20 },
+  label: { fontSize: 11, fontWeight: '800', color: '#6B7280', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
+  optional: { fontWeight: '600', color: '#D1D5DB', textTransform: 'none' },
+  input: { borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 14, paddingHorizontal: 16, height: 52, fontSize: 15, color: '#1A1A2E', backgroundColor: '#F8FAFC', fontWeight: '500', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 4, elevation: 1 },
+  inputError: { borderColor: '#FECACA', backgroundColor: '#FEF2F2' },
+  errorText: { fontSize: 11, color: '#DC2626', fontWeight: '700', marginTop: 4, marginLeft: 4 },
 }));
 
 const styles = StyleSheet.create(() => ({
@@ -248,30 +249,22 @@ const styles = StyleSheet.create(() => ({
   lockedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#F3F4F6', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   lockedText: { fontSize: 10, color: '#9CA3AF', fontWeight: '600' },
 
-  section: { marginBottom: 28 },
-  sectionLabel: { fontSize: 13, fontWeight: '800', color: '#1A1A2E', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
+  section: { marginBottom: 32 },
+  sectionLabel: { fontSize: 13, fontWeight: '900', color: '#1A1A2E', marginBottom: 16, textTransform: 'uppercase', letterSpacing: 0.5 },
 
-  typeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  typeCard: {
-    flex: 1, minWidth: '45%', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 8,
-    borderWidth: 1.5, borderColor: '#E5E7EB', borderRadius: 14,
-    backgroundColor: '#FFFFFF', gap: 6,
-  },
+  typeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  typeCard: { flex: 1, minWidth: '45%', alignItems: 'center', paddingVertical: 20, paddingHorizontal: 8, borderWidth: 1.5, borderColor: '#F3F4F6', borderRadius: 18, backgroundColor: '#FAFAFA', gap: 8 },
   typeCardActive: { borderColor: '#F56E0F', backgroundColor: '#FFF7ED' },
-  typeLabel: { fontSize: 11, fontWeight: '700', color: '#6B7280', textAlign: 'center' },
-  typeLabelActive: { color: '#F56E0F' },
+  typeLabel: { fontSize: 12, fontWeight: '800', color: '#9CA3AF', textAlign: 'center' },
+  typeLabelActive: { color: '#C2410C' },
 
-  card: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20,
-    borderWidth: 1.5, borderColor: '#E5E7EB',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2,
-  },
-  rowFields: { flexDirection: 'row', gap: 12 },
+  card: { backgroundColor: '#FFFFFF' },
+  rowFields: { flexDirection: 'row', gap: 14 },
 
   saveBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
     backgroundColor: '#F56E0F', borderRadius: 16, height: 56,
-    shadowColor: '#F56E0F', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8,
+    shadowColor: '#F56E0F', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 12, elevation: 8, marginTop: 12,
   },
   saveBtnDisabled: { opacity: 0.65 },
   saveBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },

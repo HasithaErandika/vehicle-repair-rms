@@ -24,7 +24,7 @@ export function useUpdateVehicle() {
   const { showToast } = useToast();
 
   return useMutation({
-    mutationFn: ({ id, vehicle }: { id: string; vehicle: Partial<Vehicle> }) => 
+    mutationFn: ({ id, vehicle }: { id: string; vehicle: Partial<Vehicle> }) =>
       updateVehicle(id, vehicle),
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: vehicleKeys.lists() });
@@ -49,13 +49,29 @@ export function useDeleteVehicle() {
   });
 }
 
+/**
+
+ * @param onProgress - Optional callback (0-100) for a progress bar.
+ *                     Called repeatedly as bytes are transmitted to the server.
+ */
 export function useUploadVehicleImage() {
   const qc = useQueryClient();
   const { showToast } = useToast();
 
   return useMutation({
-    mutationFn: ({ id, uri }: { id: string; uri: string }) => uploadVehicleImage(id, uri),
+    // mutationFn receives the variables object passed to .mutate()
+    mutationFn: ({
+      id,
+      uri,
+      onProgress,
+    }: {
+      id: string;
+      uri: string;
+      onProgress?: (percent: number) => void;  // forwarded to the API layer
+    }) => uploadVehicleImage(id, uri, onProgress),
+
     onSuccess: (data) => {
+      // Refresh any cached vehicle lists and the specific vehicle detail
       qc.invalidateQueries({ queryKey: vehicleKeys.lists() });
       qc.invalidateQueries({ queryKey: vehicleKeys.detail(data._id) });
       showToast('Vehicle photo updated', 'success');

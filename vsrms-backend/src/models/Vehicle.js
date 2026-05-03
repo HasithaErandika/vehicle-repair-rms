@@ -11,7 +11,7 @@ const vehicleSchema = new mongoose.Schema(
     make:           { type: String, required: true, trim: true },
     model:          { type: String, required: true, trim: true },
     year:           { type: Number, required: true, min: 1990, max: new Date().getFullYear() + 1 },
-    vehicleType:    { type: String, enum: ['car', 'motorcycle', 'tuk', 'van'], required: true },
+    vehicleType:    { type: String, enum: ['car', 'motorcycle', 'tuk', 'van', 'suv', 'truck', 'bus', 'other'], required: true },
     imageUrl:       { type: String },
     mileage:        { type: Number, min: 0 },
     deletedAt:      { type: Date, default: null },

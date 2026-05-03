@@ -25,3 +25,16 @@ export interface CreateRecordPayload {
   technicianName?: string;
   documents?: string[];
 }
+
+/**
+ * Allowed fields for PUT /api/v1/records/:id
+ * Matches backend's `allowed` array in updateRecord controller.
+ */
+export interface UpdateRecordPayload {
+  serviceDate?: string;
+  workDone?: string;
+  partsReplaced?: string[];
+  totalCost?: number;
+  mileageAtService?: number;
+  technicianName?: string;
+}

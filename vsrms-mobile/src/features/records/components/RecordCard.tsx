@@ -1,17 +1,35 @@
 import React from 'react';
-import { View, Text, StyleSheet as RNStyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { Receipt, Wrench, PenTool, Milestone } from 'lucide-react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
+import { useRouter } from 'expo-router';
 import { ServiceRecord } from '../types/records.types';
 
-export function RecordCard({ record }: { record: ServiceRecord }) {
+interface RecordCardProps {
+  record: ServiceRecord;
+  /** Optional route prefix for the detail navigation (default: no prefix, navigates to root detail route). */
+  detailRoute?: string;
+}
+
+export function RecordCard({ record, detailRoute }: RecordCardProps) {
   const { theme } = useUnistyles();
+  const router = useRouter();
   const dateStr = new Date(record.serviceDate).toLocaleDateString(undefined, {
     day: 'numeric', month: 'short', year: 'numeric',
   });
 
+  const handlePress = () => {
+    const id = record._id || record.id;
+    if (!id) return;
+    router.push({ pathname: detailRoute || '/record/[id]', params: { id } } as any);
+  };
+
   return (
-    <View style={styles.card}>
+    <TouchableOpacity
+      style={styles.card}
+      onPress={handlePress}
+      activeOpacity={0.75}
+    >
       {/* Header row */}
       <View style={styles.headerRow}>
         <View style={styles.iconBox}>
@@ -25,9 +43,11 @@ export function RecordCard({ record }: { record: ServiceRecord }) {
             <Text style={styles.techName}>Staff Log</Text>
           )}
         </View>
-        <View style={styles.costBadge}>
-          <Text style={styles.costText}>LKR {record.totalCost.toLocaleString()}</Text>
-        </View>
+        {record.totalCost != null && (
+          <View style={styles.costBadge}>
+            <Text style={styles.costText}>LKR {record.totalCost.toLocaleString()}</Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.workBox}>
@@ -54,7 +74,7 @@ export function RecordCard({ record }: { record: ServiceRecord }) {
           </View>
         ) : null}
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -105,3 +125,5 @@ const styles = StyleSheet.create((theme) => ({
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   metaText: { fontSize: 12, color: theme.colors.muted, fontWeight: '700' },
 }));
+
+

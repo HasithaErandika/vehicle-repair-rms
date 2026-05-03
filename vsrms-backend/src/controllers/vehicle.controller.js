@@ -1,35 +1,22 @@
 'use strict';
 
-const multer           = require('multer');
-const { PutObjectCommand } = require('@aws-sdk/client-s3');
-const Vehicle          = require('../models/Vehicle');
-const { r2Client, R2_BUCKET, R2_PUBLIC_URL } = require('../config/r2');
-const { AppError }     = require('../middleware/errorHandler');
 
-// ── Multer setup ─────────────────────────────────────────────────────────────
-const storage = multer.memoryStorage();
-const upload  = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
-  fileFilter: (_req, file, cb) => {
-    if (!['image/jpeg', 'image/png'].includes(file.mimetype)) {
-      return cb(new AppError('Only JPEG and PNG files are allowed', 400));
-    }
-    cb(null, true);
-  },
-});
 
-// ── Pagination helper ─────────────────────────────────────────────────────────
+const Vehicle = require('../models/Vehicle');
+const { AppError } = require('../middleware/errorHandler');
+const { uploadToR2, deleteFromR2 } = require('../utils/r2.util');
+
+
 const paginate = (query) => {
-  const page  = Math.max(1, parseInt(query.page)  || 1);
+  const page = Math.max(1, parseInt(query.page) || 1);
   const limit = Math.min(100, parseInt(query.limit) || 20);
-  const skip  = (page - 1) * limit;
+  const skip = (page - 1) * limit;
   return { page, limit, skip };
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// GET /api/v1/vehicles  — list owner's vehicles (soft-deleted excluded)
-// ─────────────────────────────────────────────────────────────────────────────
+
+// GET /api/v1/vehicles  — list owner's vehicles 
+
 const getVehicles = async (req, res, next) => {
   try {
     const { page, limit, skip } = paginate(req.query);
@@ -45,9 +32,8 @@ const getVehicles = async (req, res, next) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
 // GET /api/v1/vehicles/:id
-// ─────────────────────────────────────────────────────────────────────────────
+
 const getVehicle = async (req, res, next) => {
   try {
     const vehicle = await Vehicle.findOne({ _id: req.params.id, deletedAt: null });
@@ -121,33 +107,64 @@ const deleteVehicle = async (req, res, next) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// POST /api/v1/vehicles/:id/image  — Multer + R2
-// ─────────────────────────────────────────────────────────────────────────────
+
+// POST /api/v1/vehicles/:id/image
+
 const uploadVehicleImage = async (req, res, next) => {
   try {
-    if (!req.file) throw new AppError('No image file provided', 400);
+    //  Make sure Multer actually received a file 
+
+    if (!req.file) {
+      throw new AppError('No image file provided. Send the file in a "image" form field.', 400);
+    }
+
+    //  Look up the vehicle and verify ownership 
 
     const vehicle = await Vehicle.findOne({ _id: req.params.id, deletedAt: null });
     if (!vehicle) throw new AppError('Vehicle not found', 404);
+
+    // Security check: only the owner can upload a photo for their vehicle.
     if (vehicle.ownerId.toString() !== req.user._id.toString()) {
       throw new AppError('Forbidden — you do not own this vehicle', 403);
     }
 
-    const key = `vehicles/${vehicle._id}/${Date.now()}-${req.file.originalname}`;
-    await r2Client.send(new PutObjectCommand({
-      Bucket:      R2_BUCKET,
-      Key:         key,
-      Body:        req.file.buffer,
-      ContentType: req.file.mimetype,
-    }));
+    // Clean up old image if it exists
+    if (vehicle.imageUrl) {
+      try {
+        const oldKey = vehicle.imageUrl.split('/').slice(3).join('/'); // Extracts path after domain
+        if (oldKey) {
+          await deleteFromR2(oldKey);
+        }
+      } catch (cleanupErr) {
+        console.error('[Vehicle Image] Failed to delete old image from R2:', cleanupErr);
+        // Continue uploading new image even if cleanup fails
+      }
+    }
 
-    vehicle.imageUrl = `${R2_PUBLIC_URL}/${key}`;
+    // Build a unique file path (key) inside the R2 bucket
+
+    const key = `vehicles/${vehicle._id}/${Date.now()}-${req.file.originalname}`;
+
+    //  Upload the raw bytes (Buffer) to Cloudflare R2 
+
+    const imageUrl = await uploadToR2({
+      buffer: req.file.buffer,
+      mimeType: req.file.mimetype,
+      key,
+    });
+
+    // Persist the public URL in MongoDB
+
+    vehicle.imageUrl = imageUrl;
     await vehicle.save();
+
+    // Send the URL back to the mobile app 
     res.json({ imageUrl: vehicle.imageUrl });
   } catch (err) {
+
     next(err);
   }
 };
 
-module.exports = { getVehicles, getVehicle, createVehicle, updateVehicle, deleteVehicle, uploadVehicleImage, upload };
+
+module.exports = { getVehicles, getVehicle, createVehicle, updateVehicle, deleteVehicle, uploadVehicleImage };
