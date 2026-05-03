@@ -14,6 +14,7 @@ export function useVehicle(id: string) {
   return useQuery({
     queryKey: vehicleKeys.detail(id),
     queryFn:  () => fetchVehicle(id),
+    enabled:  !!id,
     staleTime: 5 * 60 * 1000,
   });
 }

@@ -174,7 +174,7 @@ export function BookAppointmentScreen() {
                     <Text style={[styles.selectCardTitle, workshopId === (w._id ?? w.id) && styles.selectCardTitleActive]}>
                       {w.name}
                     </Text>
-                    <Text style={styles.selectCardSub}>{w.district} · ⭐ {w.averageRating.toFixed(1)}</Text>
+                    <Text style={styles.selectCardSub}>{w.district} · {(w.averageRating ?? 0).toFixed(1)}</Text>
                   </View>
                   {workshopId === (w._id ?? w.id) && <Ionicons name="checkmark-circle" size={20} color="#F56E0F" />}
                 </TouchableOpacity>

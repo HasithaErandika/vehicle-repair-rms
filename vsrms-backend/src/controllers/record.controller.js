@@ -5,14 +5,7 @@ const Vehicle       = require('../models/Vehicle');
 const Appointment   = require('../models/Appointment');
 const Workshop      = require('../models/Workshop');
 const { AppError }  = require('../middleware/errorHandler');
-
-// ── Pagination helper ─────────────────────────────────────────────────────────
-const paginate = (query) => {
-  const page  = Math.max(1, parseInt(query.page)  || 1);
-  const limit = Math.min(100, parseInt(query.limit) || 20);
-  const skip  = (page - 1) * limit;
-  return { page, limit, skip };
-};
+const { paginate }  = require('../utils/paginate');
 
 // ── Ownership helper — owners can only access their own vehicles' records ─────
 const assertVehicleOwnership = async (vehicleId, userId, role) => {

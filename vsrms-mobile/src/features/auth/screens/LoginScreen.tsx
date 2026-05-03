@@ -21,7 +21,7 @@ import { AppLogo } from '@/components/ui/AppLogo';
 const { height: SCREEN_H } = Dimensions.get('window');
 
 export function LoginScreen() {
-  const { loginWithCredentials, bypassLogin } = useAuth();
+  const { loginWithCredentials } = useAuth();
   const router = useRouter();
   
   const [email, setEmail] = useState('');
@@ -188,26 +188,7 @@ export function LoginScreen() {
               <Text style={styles.secondaryBtnText}>Create a new account</Text>
             </TouchableOpacity>
 
-            {/* DEVELOPMENT MOCKS */}
-            <View style={styles.devMockContainer}>
-               <Text style={styles.devMockLabel}>Development Bypasses</Text>
-               <View style={styles.devMockGrid}>
-                  <TouchableOpacity style={styles.devMockBtn} onPress={() => bypassLogin('admin')} activeOpacity={0.8}>
-                     <Text style={styles.devMockBtnText}>Admin</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.devMockBtn} onPress={() => bypassLogin('customer')} activeOpacity={0.8}>
-                     <Text style={styles.devMockBtnText}>Customer</Text>
-                  </TouchableOpacity>
-               </View>
-               <View style={styles.devMockGrid}>
-                  <TouchableOpacity style={styles.devMockBtn} onPress={() => bypassLogin('workshop_owner')} activeOpacity={0.8}>
-                     <Text style={styles.devMockBtnText}>Owner</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.devMockBtn} onPress={() => bypassLogin('workshop_staff')} activeOpacity={0.8}>
-                     <Text style={styles.devMockBtnText}>Technician</Text>
-                  </TouchableOpacity>
-               </View>
-            </View>
+
           </View>
 
           {/* ── FOOTER ── */}

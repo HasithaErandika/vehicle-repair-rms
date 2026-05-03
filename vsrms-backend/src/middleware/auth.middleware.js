@@ -39,52 +39,7 @@ const protect = async (req, res, next) => {
 
   const token = authHeader.split(' ')[1];
 
-  // ⚠️ DEVELOPMENT BYPASS: Multi-Role Mock Logic
-  if (token && token.startsWith('mock-')) {
-    let role = token.split('-').slice(1).join('-'); // e.g., customer, admin, workshop_owner, workshop_staff
-    if (token.startsWith('mock-staff-')) {
-      role = 'workshop_staff';
-    }
-    const mockEmail = token.startsWith('mock-staff-') ? token.replace('mock-staff-', '') : `${role}@bypass.com`;
 
-    try {
-      // 1. Try to find the seeded mock user first
-      const dbUser = await User.findOne({ asgardeoSub: token });
-      if (dbUser) {
-        req.jwtClaims = { sub: token, email: dbUser.email, name: dbUser.fullName };
-        req.user = dbUser;
-        return next();
-      }
-    } catch (e) {
-      console.warn('[auth] Mock DB lookup failed, falling back to in-memory mock');
-    }
-
-    // 2. Fallback to in-memory mock if DB lookup fails (e.g. not seeded yet)
-    let mockWSId = _cachedMockWSId || '607f1f77bcf86cd799439012';
-    if (!_cachedMockWSId) {
-      try {
-        const liveWS = await Workshop.findOne({ active: true }).select('_id');
-        if (liveWS) {
-          _cachedMockWSId = liveWS._id.toString();
-          mockWSId = _cachedMockWSId;
-        }
-      } catch (e) {}
-    }
-
-    const mockUser = {
-      _id: '507f1f77bcf86cd799439011',
-      asgardeoSub: token,
-      email: mockEmail,
-      fullName: `${role.charAt(0).toUpperCase() + role.slice(1)} Bypass`,
-      role: role,
-      active: true,
-      workshopId: (role === 'workshop_owner' || role === 'workshop_staff') ? mockWSId : undefined,
-    };
-    
-    req.jwtClaims = { sub: token, email: mockEmail, name: mockUser.fullName };
-    req.user = mockUser;
-    return next();
-  }
 
   const options = {
     algorithms: ['RS256'],

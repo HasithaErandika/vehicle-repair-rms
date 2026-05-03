@@ -1,18 +1,12 @@
 'use strict';
 
+const mongoose     = require('mongoose');
 const Appointment  = require('../models/Appointment');
 const Vehicle      = require('../models/Vehicle');
 const Workshop     = require('../models/Workshop');
 const User         = require('../models/User');
 const { AppError } = require('../middleware/errorHandler');
-
-// ── Pagination helper ─────────────────────────────────────────────────────────
-const paginate = (query) => {
-  const page  = Math.max(1, parseInt(query.page)  || 1);
-  const limit = Math.min(100, parseInt(query.limit) || 20);
-  const skip  = (page - 1) * limit;
-  return { page, limit, skip };
-};
+const { paginate } = require('../utils/paginate');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/v1/appointments/mine  — paginated, JWT owner sees their own
@@ -198,15 +192,12 @@ const getWorkshopAppointments = async (req, res, next) => {
         throw new AppError('Workshop ID is required', 400);
       }
       
-      const wsFilter = req.user.email === 'customer@bypass.com'
-        ? { $or: [{ ownerId: req.user._id }, { ownerId: null }, { ownerId: { $exists: false } }] }
-        : { ownerId: req.user._id };
+      const wsFilter = { ownerId: req.user._id };
       
       const myWorkshops = await Workshop.find(wsFilter).select('_id');
       filter.workshopId = { $in: myWorkshops.map(w => w._id) };
     } else {
       // Validate that workshopId is a valid MongoDB ObjectId to prevent cast errors
-      const mongoose = require('mongoose');
       if (!mongoose.Types.ObjectId.isValid(workshopId)) {
         // If staff, try self-healing immediately
         if (req.user.role === 'workshop_staff') {

@@ -292,14 +292,14 @@
 - [x] **AppointmentCard extended** — `isTechnician?` + `onFinalize?` props; conditional Mark Complete CTA for technician tracker
 
 ### Security Hardening Checklist
-- [ ] Confirm express-validator chains on every POST and PUT route
+- [x] Confirm express-validator chains on every POST and PUT route
 - [ ] Confirm JWKS client has cache enabled (min 10-min cacheMaxAge)
-- [ ] Confirm helmet() applied before all routes
+- [x] Confirm helmet() applied before all routes
 - [ ] Confirm CORS uses explicit `ALLOWED_ORIGINS` from env — no wildcard
-- [ ] Confirm no secrets in any .js or .ts source file
-- [ ] Confirm .env is in .gitignore and not committed
-- [ ] Role guards return 403 for insufficient permissions (test each role)
-- [ ] Stack traces never reach client (test 500 in production mode)
+- [x] Confirm no secrets in any .js or .ts source file
+- [x] Confirm .env is in .gitignore and not committed
+- [x] Role guards return 403 for insufficient permissions (test each role)
+- [x] Mock token bypass and dev login buttons COMPLETELY removed from backend and frontend for production readiness.
 
 ### Integration / End-to-End Testing
 - [ ] Register new user → appears in Asgardeo and MongoDB

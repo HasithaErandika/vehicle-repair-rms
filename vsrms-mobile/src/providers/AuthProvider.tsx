@@ -16,7 +16,6 @@ interface AuthContextType {
   isLoading: boolean;
   signIn: (token: string) => Promise<void>;
   signOut: () => Promise<void>;
-  bypassLogin: (role: 'admin' | 'workshop_owner' | 'workshop_staff' | 'customer') => void;
   register: (payload: RegisterPayload) => Promise<void>;
   loginWithCredentials: (email: string, password: string) => Promise<void>;
 }
@@ -117,27 +116,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   };
 
-  // ── Development bypass ─────────────────────────────────────────────────────
-  const bypassLogin = async (
-    role: 'admin' | 'workshop_owner' | 'workshop_staff' | 'customer',
-  ) => {
-    setLoading(true);
-    await StorageService.setToken(`mock-${role}`);
-    setUser({
-      id:         `mock-${role}`,
-      email:      `${role}@bypass.com`,
-      fullName:   `${role.charAt(0).toUpperCase() + role.slice(1)} Bypass`,
-      role,
-      workshopId: ['workshop_owner', 'workshop_staff'].includes(role)
-        ? '607f1f77bcf86cd799439012'
-        : undefined,
-    } as any);
-    setLoading(false);
-  };
-
   return (
     <AuthContext.Provider
-      value={{ user, isLoading, signIn, signOut, loginWithCredentials, register, bypassLogin }}
+      value={{ user, isLoading, signIn, signOut, loginWithCredentials, register }}
     >
       {children}
     </AuthContext.Provider>

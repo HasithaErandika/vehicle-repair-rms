@@ -1,18 +1,9 @@
 'use strict';
 
-
-
 const Vehicle = require('../models/Vehicle');
 const { AppError } = require('../middleware/errorHandler');
 const { uploadToR2, deleteFromR2 } = require('../utils/r2.util');
-
-
-const paginate = (query) => {
-  const page = Math.max(1, parseInt(query.page) || 1);
-  const limit = Math.min(100, parseInt(query.limit) || 20);
-  const skip = (page - 1) * limit;
-  return { page, limit, skip };
-};
+const { paginate } = require('../utils/paginate');
 
 
 // GET /api/v1/vehicles  — list owner's vehicles 
@@ -53,6 +44,11 @@ const getVehicle = async (req, res, next) => {
 const createVehicle = async (req, res, next) => {
   try {
     const { registrationNo, make, model, year, vehicleType, mileage } = req.body;
+
+    // Check for existing vehicle with same registration (including soft-deleted)
+    const existing = await Vehicle.findOne({ registrationNo: registrationNo.toUpperCase(), deletedAt: null });
+    if (existing) throw new AppError('A vehicle with this registration number already exists', 409);
+
     const vehicle = await Vehicle.create({
       ownerId: req.user._id,
       registrationNo,
@@ -159,7 +155,7 @@ const uploadVehicleImage = async (req, res, next) => {
     await vehicle.save();
 
     // Send the URL back to the mobile app 
-    res.json({ imageUrl: vehicle.imageUrl });
+    res.json({ vehicle });
   } catch (err) {
 
     next(err);
