@@ -15,8 +15,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StyleSheet } from 'react-native-unistyles';
-import { register } from '../api/auth.api';
 import { AppLogoIcon } from '@/components/ui/AppLogo';
+import { useAuth } from '@/providers/AuthProvider';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -54,7 +54,7 @@ function getStrength(pw: string): { level: number; label: string } {
 // ─── Component ────────────────────────────────────────────────────────────────
 export function RegisterScreen() {
   const router = useRouter();
-
+  const { register } = useAuth();
   const [step, setStep]                   = useState(1);
   const [role, setRole]                   = useState<RoleLabel>('Vehicle Owner');
   const [firstName, setFirstName]         = useState('');
@@ -82,13 +82,12 @@ export function RegisterScreen() {
     }
   };
 
-  // ── Per-step validation ──────────────────────────────────────────────────────
   const validateStep = (): boolean => {
     setError(null);
     let newErrors = { firstName: '', lastName: '', email: '', password: '', confirmPw: '' };
     let isValid = true;
 
-    if (step === 1) return true; // role always has a default
+    if (step === 1) return true; 
     
     if (step === 2) {
       if (!firstName.trim()) { newErrors.firstName = 'First name is required'; isValid = false; }
@@ -126,26 +125,26 @@ export function RegisterScreen() {
     setStep(s => s - 1);
   };
 
-  const handleSubmit = async () => {
-    if (!validateStep()) return;
-    setLoading(true);
-    setError(null);
-    try {
-      await register({
-        firstName,
-        lastName,
-        email: email.trim().toLowerCase(),
-        phone,
-        password,
-        role,
-      });
-      router.replace('/auth/login' as any);
-    } catch (err: any) {
-      setError(err?.message || 'Registration failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+ const handleSubmit = async () => {
+  if (!validateStep()) return;
+  setLoading(true);
+  setError(null);
+  try {
+    await register({
+      firstName,
+      lastName,
+      email: email.trim().toLowerCase(),
+      phone,
+      password,
+      role,
+    });
+    router.replace('/auth/login' as any); 
+  } catch (err: any) {
+    setError(err?.message || 'Registration failed. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const current  = STEPS[step - 1];
   const strength = getStrength(password);

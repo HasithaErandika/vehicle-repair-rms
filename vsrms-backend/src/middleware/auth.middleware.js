@@ -89,6 +89,7 @@ const protect = async (req, res, next) => {
   const options = {
     algorithms: ['RS256'],
     issuer: process.env.ASGARDEO_ISSUER,
+    clockTolerance: 60, 
   };
 
   if (process.env.ASGARDEO_AUDIENCE) {

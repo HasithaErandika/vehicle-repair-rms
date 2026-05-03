@@ -1,49 +1,101 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, ScrollView, KeyboardAvoidingView, Platform, StatusBar } from 'react-native';
+import {
+  View, Text, TextInput, TouchableOpacity, ActivityIndicator,
+  Alert, ScrollView, KeyboardAvoidingView, Platform, StatusBar, Image,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet } from 'react-native-unistyles';
+import * as ImagePicker from 'expo-image-picker';
+
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
-import { useCreateVehicle } from '../queries/mutations';
+import { useCreateVehicle, useUploadVehicleImage } from '../queries/mutations';
 import { handleApiError } from '@/services/error.handler';
 
+
 const VEHICLE_TYPES = [
-  { value: 'car',        label: 'Car',        icon: 'car-outline' },
-  { value: 'motorcycle', label: 'Motorcycle',  icon: 'bicycle-outline' },
-  { value: 'tuk',        label: 'Tuk Tuk',    icon: 'car-outline' },
-  { value: 'van',        label: 'Van / SUV',  icon: 'bus-outline' },
+  { value: 'car', label: 'Car', icon: 'car-outline' },
+  { value: 'motorcycle', label: 'Motorcycle', icon: 'bicycle-outline' },
+  { value: 'tuk', label: 'Tuk Tuk', icon: 'car-outline' },
+  { value: 'van', label: 'Van / SUV', icon: 'bus-outline' },
 ] as const;
 
 export type VehicleType = (typeof VEHICLE_TYPES)[number]['value'];
 const CURRENT_YEAR = new Date().getFullYear();
 
+
 export default function AddVehicleScreen() {
   const router = useRouter();
-  const { mutate: create, isPending } = useCreateVehicle();
 
-  const [form, setForm] = useState({ registrationNo: '', make: '', model: '', year: '', vehicleType: 'car' as VehicleType, mileage: '' });
+  // React Query mutations 
+  const { mutate: createVehicle, isPending: isCreating } = useCreateVehicle();
+  const uploadImage = useUploadVehicleImage();
+
+
+  const [form, setForm] = useState({
+    registrationNo: '',
+    make: '',
+    model: '',
+    year: '',
+    vehicleType: 'car' as VehicleType,
+    mileage: '',
+  });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+
+  const [imageUri, setImageUri] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadPercent, setUploadPercent] = useState(0); // 0–100 for progress bar
+
   const setField = (key: keyof typeof form) => (val: string) => {
-    setForm((f) => ({ ...f, [key]: val }));
+
     if (errors[key]) setErrors(e => { const n = { ...e }; delete n[key]; return n; });
   };
 
   const validate = () => {
     const e: Record<string, string> = {};
     if (!form.registrationNo.trim()) e.registrationNo = 'Registration required';
-    if (!form.make.trim())           e.make = 'Make required';
-    if (!form.model.trim())          e.model = 'Model required';
+    if (!form.make.trim()) e.make = 'Make required';
+    if (!form.model.trim()) e.model = 'Model required';
     const year = parseInt(form.year);
-    if (!form.year || isNaN(year))   e.year = 'Valid year required';
-    else if (year < 1990 || year > CURRENT_YEAR + 1) e.year = `Invalid year`;
+    if (!form.year || isNaN(year)) e.year = 'Valid year required';
+    else if (year < 1990 || year > CURRENT_YEAR + 1) e.year = `Year must be 1990–${CURRENT_YEAR + 1}`;
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
+
+  async function handlePickImage() {
+    // Ask for media library permission 
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(
+        'Permission required',
+        'Please allow photo library access so you can add a vehicle photo.',
+      );
+      return;
+    }
+
+    // Launch the gallery picker
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.85,
+    });
+
+    if (result.canceled || !result.assets[0]) return;
+
+    setImageUri(result.assets[0].uri);
+  }
+
+
   const handleSubmit = () => {
     if (!validate()) return;
-    create({
+
+    //  Create the vehicle ──────────────────────────────────────────
+    createVehicle(
+      {
         registrationNo: form.registrationNo.trim().toUpperCase(),
         make: form.make.trim(),
         model: form.model.trim(),
@@ -51,9 +103,43 @@ export default function AddVehicleScreen() {
         vehicleType: form.vehicleType,
         mileage: form.mileage ? parseInt(form.mileage, 10) : undefined,
       },
-      { onSuccess: () => router.back(), onError: (err) => Alert.alert('Error', handleApiError(err)) }
+      {
+        onSuccess: (newVehicle) => {
+          // check if we have an image to upload.
+          if (!imageUri) {
+
+            router.back();
+            return;
+          }
+
+          // Upload the image to R2 
+          setIsUploading(true);
+          setUploadPercent(0);
+
+          uploadImage.mutate(
+            {
+              id: newVehicle._id ?? (newVehicle as any).id,
+              uri: imageUri,
+
+              onProgress: (pct) => setUploadPercent(pct),
+            },
+            {
+              onSettled: () => {
+
+                setIsUploading(false);
+                setUploadPercent(0);
+                router.back();
+              },
+            },
+          );
+        },
+        onError: (err) => Alert.alert('Error', handleApiError(err)),
+      },
     );
   };
+
+
+  const isBusy = isCreating || isUploading;
 
   return (
     <ScreenWrapper bg="#1A1A2E">
@@ -63,7 +149,7 @@ export default function AddVehicleScreen() {
       <View style={styles.topSection}>
         <View style={styles.headerTextRow}>
           <TouchableOpacity style={styles.backBtn} activeOpacity={0.7} onPress={() => router.back()}>
-             <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+            <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
           <Text style={styles.title}>Add Vehicle</Text>
           <View style={{ width: 44 }} />
@@ -76,14 +162,78 @@ export default function AddVehicleScreen() {
       {/* ── WHITE CARD SECTION ── */}
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <View style={styles.mainCard}>
-          <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          <ScrollView
+            contentContainerStyle={styles.scroll}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+
+
+
+
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>Vehicle Photo <Text style={styles.optionalTag}>(optional)</Text></Text>
+
+              <TouchableOpacity
+                style={styles.photoPicker}
+                onPress={handlePickImage}
+                activeOpacity={0.8}
+                disabled={isBusy}
+              >
+                {imageUri ? (
+                  /* ── Preview: show the picked image ── */
+                  <Image
+                    source={{ uri: imageUri }}
+                    style={styles.photoPreview}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  /* ── Placeholder: no image chosen yet ── */
+                  <View style={styles.photoPlaceholder}>
+                    <View style={styles.cameraIconCircle}>
+                      <Ionicons name="camera-outline" size={32} color="#F56E0F" />
+                    </View>
+                    <Text style={styles.photoPlaceholderText}>Tap to add a photo</Text>
+                    <Text style={styles.photoPlaceholderSub}>JPEG or PNG · max 5 MB</Text>
+                  </View>
+                )}
+
+                {/* Change photo overlay (shown when an image is already picked) */}
+                {imageUri && !isUploading && (
+                  <View style={styles.changeOverlay}>
+                    <Ionicons name="camera-outline" size={14} color="#FFFFFF" />
+                    <Text style={styles.changeOverlayText}>Change photo</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              {isUploading && (
+                <View style={styles.progressContainer}>
+                  <View style={styles.progressHeader}>
+                    <Ionicons name="cloud-upload-outline" size={14} color="#F56E0F" />
+                    <Text style={styles.progressLabel}>Uploading photo…</Text>
+                    <Text style={styles.progressPercent}>{uploadPercent}%</Text>
+                  </View>
+                  {/* Outer track */}
+                  <View style={styles.progressTrack}>
+                    {/* Inner bar — width is a percentage string, e.g. "42%" */}
+                    <View style={[styles.progressBar, { width: `${uploadPercent}%` as any }]} />
+                  </View>
+                </View>
+              )}
+            </View>
 
             {/* VEHICLE TYPE */}
             <View style={styles.section}>
               <Text style={styles.sectionLabel}>Vehicle Type</Text>
               <View style={styles.typeGrid}>
                 {VEHICLE_TYPES.map((t) => (
-                  <TouchableOpacity key={t.value} style={[styles.typeCard, form.vehicleType === t.value && styles.typeCardActive]} onPress={() => setForm(f => ({ ...f, vehicleType: t.value }))} activeOpacity={0.8}>
+                  <TouchableOpacity
+                    key={t.value}
+                    style={[styles.typeCard, form.vehicleType === t.value && styles.typeCardActive]}
+                    onPress={() => setForm(f => ({ ...f, vehicleType: t.value }))}
+                    activeOpacity={0.8}
+                  >
                     <Ionicons name={t.icon as any} size={28} color={form.vehicleType === t.value ? '#F56E0F' : '#9CA3AF'} />
                     <Text style={[styles.typeLabel, form.vehicleType === t.value && styles.typeLabelActive]}>{t.label}</Text>
                   </TouchableOpacity>
@@ -95,28 +245,50 @@ export default function AddVehicleScreen() {
             <View style={styles.section}>
               <Text style={styles.sectionLabel}>Vehicle Details</Text>
               <View style={styles.card}>
-                <FieldInput label="Registration No." placeholder="WP-CAB-1234" value={form.registrationNo} onChangeText={setField('registrationNo')} autoCapitalize="characters" error={errors.registrationNo} />
+                <FieldInput
+                  label="Registration No."
+                  placeholder="WP-CAB-1234"
+                  value={form.registrationNo}
+                  onChangeText={setField('registrationNo')}
+                  autoCapitalize="characters"
+                  error={errors.registrationNo}
+                />
                 <View style={styles.rowFields}>
-                  <View style={{ flex: 1 }}><FieldInput label="Make" placeholder="Toyota" value={form.make} onChangeText={setField('make')} error={errors.make} /></View>
-                  <View style={{ flex: 1 }}><FieldInput label="Model" placeholder="Premio" value={form.model} onChangeText={setField('model')} error={errors.model} /></View>
+                  <View style={{ flex: 1 }}>
+                    <FieldInput label="Make" placeholder="Toyota" value={form.make} onChangeText={setField('make')} error={errors.make} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <FieldInput label="Model" placeholder="Premio" value={form.model} onChangeText={setField('model')} error={errors.model} />
+                  </View>
                 </View>
                 <View style={styles.rowFields}>
-                  <View style={{ flex: 1 }}><FieldInput label="Year" placeholder="2020" value={form.year} onChangeText={setField('year')} keyboardType="numeric" maxLength={4} error={errors.year} /></View>
-                  <View style={{ flex: 1 }}><FieldInput label="Mileage" placeholder="45000" value={form.mileage} onChangeText={setField('mileage')} keyboardType="numeric" optional /></View>
+                  <View style={{ flex: 1 }}>
+                    <FieldInput label="Year" placeholder="2020" value={form.year} onChangeText={setField('year')} keyboardType="numeric" maxLength={4} error={errors.year} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <FieldInput label="Mileage" placeholder="45000" value={form.mileage} onChangeText={setField('mileage')} keyboardType="numeric" optional />
+                  </View>
                 </View>
               </View>
             </View>
 
             {/* SUBMIT */}
-            <TouchableOpacity style={[styles.submitBtn, isPending && styles.submitBtnDisabled]} onPress={handleSubmit} disabled={isPending} activeOpacity={0.85}>
-              {isPending
-                ? <ActivityIndicator color="#FFFFFF" />
-                : <>
-                    <Ionicons name="add-circle-outline" size={20} color="#FFFFFF" />
-                    <Text style={styles.submitBtnText}>Add to My Vehicles</Text>
-                  </>
-              }
+            <TouchableOpacity
+              style={[styles.submitBtn, isBusy && styles.submitBtnDisabled]}
+              onPress={handleSubmit}
+              disabled={isBusy}
+              activeOpacity={0.85}
+            >
+              {isBusy ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <>
+                  <Ionicons name="add-circle-outline" size={20} color="#FFFFFF" />
+                  <Text style={styles.submitBtnText}>Add to My Vehicles</Text>
+                </>
+              )}
             </TouchableOpacity>
+
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
@@ -124,15 +296,27 @@ export default function AddVehicleScreen() {
   );
 }
 
+
 function FieldInput({ label, placeholder, value, onChangeText, error, optional, ...rest }: any) {
   return (
     <View style={fieldStyles.group}>
-      <Text style={fieldStyles.label}>{label}{optional ? <Text style={fieldStyles.optional}> (opt)</Text> : null}</Text>
-      <TextInput style={[fieldStyles.input, error && fieldStyles.inputError]} placeholder={placeholder} placeholderTextColor="#9CA3AF" value={value} onChangeText={onChangeText} {...rest} />
+      <Text style={fieldStyles.label}>
+        {label}
+        {optional ? <Text style={fieldStyles.optional}> (opt)</Text> : null}
+      </Text>
+      <TextInput
+        style={[fieldStyles.input, error && fieldStyles.inputError]}
+        placeholder={placeholder}
+        placeholderTextColor="#9CA3AF"
+        value={value}
+        onChangeText={onChangeText}
+        {...rest}
+      />
       {error ? <Text style={fieldStyles.errorText}>{error}</Text> : null}
     </View>
   );
 }
+
 
 const fieldStyles = StyleSheet.create(() => ({
   group: { marginBottom: 20 },
@@ -148,7 +332,7 @@ const styles = StyleSheet.create(() => ({
   headerTextRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 10, marginTop: 12 },
   backBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
   title: { fontSize: 20, fontWeight: '900', color: '#FFFFFF', letterSpacing: -0.3 },
-  
+
   decCircle1: { position: 'absolute', width: 130, height: 130, borderRadius: 65, backgroundColor: 'rgba(245,110,15,0.13)', top: -25, right: -25 },
   decCircle2: { position: 'absolute', width: 70, height: 70, borderRadius: 35, backgroundColor: 'rgba(245,110,15,0.08)', bottom: 10, right: 90 },
 
@@ -157,6 +341,66 @@ const styles = StyleSheet.create(() => ({
 
   section: { marginBottom: 32 },
   sectionLabel: { fontSize: 13, fontWeight: '900', color: '#1A1A2E', marginBottom: 16, textTransform: 'uppercase', letterSpacing: 0.5 },
+  optionalTag: { fontSize: 11, fontWeight: '600', color: '#9CA3AF', textTransform: 'none' },
+
+
+  photoPicker: {
+    height: 160,
+    borderRadius: 18,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: '#F3F4F6',
+    borderStyle: 'dashed',
+    marginBottom: 12,
+  },
+  photoPreview: { width: '100%', height: '100%' },
+  photoPlaceholder: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: '#FAFAFA',
+  },
+  cameraIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#FFF7ED',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: 'rgba(245,110,15,0.2)',
+  },
+  photoPlaceholderText: { fontSize: 14, fontWeight: '700', color: '#374151' },
+  photoPlaceholderSub: { fontSize: 11, fontWeight: '500', color: '#9CA3AF' },
+  changeOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  changeOverlayText: { fontSize: 12, fontWeight: '700', color: '#FFFFFF' },
+
+
+  progressContainer: {
+    backgroundColor: '#FFF7ED',
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(245,110,15,0.2)',
+  },
+  progressHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
+  progressLabel: { flex: 1, fontSize: 12, fontWeight: '700', color: '#C2410C' },
+  progressPercent: { fontSize: 12, fontWeight: '900', color: '#F56E0F' },
+  progressTrack: { height: 8, backgroundColor: '#FED7AA', borderRadius: 4, overflow: 'hidden' },
+  progressBar: { height: '100%', backgroundColor: '#F56E0F', borderRadius: 4 },
+
 
   typeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   typeCard: { flex: 1, minWidth: '45%', alignItems: 'center', paddingVertical: 20, paddingHorizontal: 8, borderWidth: 1.5, borderColor: '#F3F4F6', borderRadius: 18, backgroundColor: '#FAFAFA', gap: 8 },
@@ -166,6 +410,7 @@ const styles = StyleSheet.create(() => ({
 
   card: { backgroundColor: '#FFFFFF' },
   rowFields: { flexDirection: 'row', gap: 14 },
+
 
   submitBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#F56E0F', borderRadius: 16, height: 56, shadowColor: '#F56E0F', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 12, elevation: 8, marginTop: 12 },
   submitBtnDisabled: { opacity: 0.65 },

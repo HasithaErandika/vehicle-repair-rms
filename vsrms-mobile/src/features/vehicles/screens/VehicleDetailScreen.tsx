@@ -13,15 +13,16 @@ import { ServiceRecord } from '@/features/records/types/records.types';
 import { ErrorScreen } from '@/components/feedback/ErrorScreen';
 
 const TYPE_ICON: Record<string, string> = {
-  car:        'car-outline',
+  car: 'car-outline',
   motorcycle: 'bicycle-outline',
-  tuk:        'car-outline',
-  van:        'bus-outline',
+  tuk: 'car-outline',
+  van: 'bus-outline',
 };
 
 export function VehicleDetailScreen({ id }: { id: string }) {
   const router = useRouter();
   const [uploading, setUploading] = useState(false);
+  const [uploadPercent, setUploadPercent] = useState(0);
 
   const { data: vehicle, isLoading: vLoading } = useVehicle(id);
   const { data: records, isLoading: rLoading } = useVehicleRecords(id);
@@ -30,22 +31,34 @@ export function VehicleDetailScreen({ id }: { id: string }) {
   const iconName = vehicle?.vehicleType ? (TYPE_ICON[vehicle.vehicleType] ?? 'car-outline') : 'car-outline';
 
   async function handlePickImage() {
+
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Permission required', 'Allow photo library access to upload a vehicle photo.');
       return;
     }
+
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [16, 9],
       quality: 0.8,
     });
+
     if (result.canceled || !result.assets[0]) return;
+
     setUploading(true);
+    setUploadPercent(0);
+
     uploadImage.mutate(
-      { id, uri: result.assets[0].uri },
-      { onSettled: () => setUploading(false) },
+      {
+        id,
+        uri: result.assets[0].uri,
+
+        onProgress: setUploadPercent,
+      },
+      { onSettled: () => { setUploading(false); setUploadPercent(0); } },
     );
   }
 
@@ -76,132 +89,132 @@ export function VehicleDetailScreen({ id }: { id: string }) {
       {/* ── WHITE CARD SECTION ── */}
       <View style={[styles.mainCard, { overflow: 'hidden' }]}>
         {vLoading ? (
-            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-               <ActivityIndicator size="large" color="#F56E0F" />
-            </View>
-        ) : !vehicle ? (
-            <ErrorScreen onRetry={() => router.back()} message="Vehicle not found." />
-        ) : (
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} bounces={true}>
-
-          {/* VEHICLE INFO CARD */}
-          <View style={styles.infoCard}>
-            {/* Vehicle photo banner */}
-            <TouchableOpacity style={styles.photoBanner} onPress={handlePickImage} activeOpacity={0.85}>
-              {vehicle.imageUrl ? (
-                <Image source={{ uri: vehicle.imageUrl }} style={styles.vehicleImage} resizeMode="cover" />
-              ) : (
-                <View style={styles.photoPlaceholder}>
-                  <Ionicons name={iconName as any} size={48} color="#D1D5DB" />
-                </View>
-              )}
-              <View style={styles.photoOverlay}>
-                {uploading ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <>
-                    <Ionicons name="camera-outline" size={16} color="#FFFFFF" />
-                    <Text style={styles.photoOverlayText}>{vehicle.imageUrl ? 'Change photo' : 'Add photo'}</Text>
-                  </>
-                )}
-              </View>
-            </TouchableOpacity>
-
-            <View style={styles.cardTop}>
-              <View style={styles.infoTextContainer}>
-                <Text style={styles.vehicleName}>{vehicle.make} {vehicle.model}</Text>
-                <Text style={styles.vehicleReg}>{vehicle.registrationNo}</Text>
-              </View>
-              <View style={styles.typeBadge}>
-                <Text style={styles.typeBadgeText}>{vehicle.vehicleType.toUpperCase()}</Text>
-              </View>
-            </View>
-
-            <View style={styles.divider} />
-
-            <View style={styles.metaGrid}>
-              <View style={styles.metaCell}>
-                <Text style={styles.metaLabel}>Year</Text>
-                <Text style={styles.metaValue}>{vehicle.year}</Text>
-              </View>
-              <View style={[styles.metaCell, styles.metaCellBorder]}>
-                <Text style={styles.metaLabel}>Mileage</Text>
-                <Text style={styles.metaValue}>
-                  {vehicle.mileage ? `${vehicle.mileage.toLocaleString()} km` : 'N/A'}
-                </Text>
-              </View>
-              <View style={styles.metaCell}>
-                <Text style={styles.metaLabel}>Added</Text>
-                <Text style={styles.metaValue}>
-                  {vehicle.createdAt
-                    ? new Date(vehicle.createdAt).toLocaleDateString('en-LK', { month: 'short', year: 'numeric' })
-                    : 'N/A'}
-                </Text>
-              </View>
-            </View>
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            <ActivityIndicator size="large" color="#F56E0F" />
           </View>
+        ) : !vehicle ? (
+          <ErrorScreen onRetry={() => router.back()} message="Vehicle not found." />
+        ) : (
+          <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} bounces={true}>
 
-          {/* SERVICE HISTORY */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Service History</Text>
+            {/* VEHICLE INFO CARD */}
+            <View style={styles.infoCard}>
+              {/* Vehicle photo banner */}
+              <TouchableOpacity style={styles.photoBanner} onPress={handlePickImage} activeOpacity={0.85}>
+                {vehicle.imageUrl ? (
+                  <Image source={{ uri: vehicle.imageUrl }} style={styles.vehicleImage} resizeMode="cover" />
+                ) : (
+                  <View style={styles.photoPlaceholder}>
+                    <Ionicons name={iconName as any} size={48} color="#D1D5DB" />
+                  </View>
+                )}
+                <View style={styles.photoOverlay}>
+                  {uploading ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <>
+                      <Ionicons name="camera-outline" size={16} color="#FFFFFF" />
+                      <Text style={styles.photoOverlayText}>{vehicle.imageUrl ? 'Change photo' : 'Add photo'}</Text>
+                    </>
+                  )}
+                </View>
+              </TouchableOpacity>
 
-            {rLoading ? (
-              <ActivityIndicator color="#F56E0F" style={{ marginTop: 12 }} />
-            ) : !records || records.length === 0 ? (
-              <View style={styles.emptyHistory}>
-                <Ionicons name="document-text-outline" size={32} color="#D1D5DB" />
-                <Text style={styles.emptyHistoryText}>No service records yet</Text>
+              <View style={styles.cardTop}>
+                <View style={styles.infoTextContainer}>
+                  <Text style={styles.vehicleName}>{vehicle.make} {vehicle.model}</Text>
+                  <Text style={styles.vehicleReg}>{vehicle.registrationNo}</Text>
+                </View>
+                <View style={styles.typeBadge}>
+                  <Text style={styles.typeBadgeText}>{vehicle.vehicleType.toUpperCase()}</Text>
+                </View>
               </View>
-            ) : (
-              <View style={styles.timeline}>
-                {(records as ServiceRecord[]).map((rec, idx) => (
-                  <View key={rec._id} style={styles.timelineItem}>
-                    <View style={styles.timelineLeft}>
-                      <View style={styles.timelineDot} />
-                      {idx < records.length - 1 && <View style={styles.timelineLine} />}
-                    </View>
-                    <View style={styles.timelineContent}>
-                      <Text style={styles.historyDate}>
-                        {new Date(rec.serviceDate).toLocaleDateString('en-LK', {
-                          day: 'numeric', month: 'short', year: 'numeric',
-                        })}
-                      </Text>
-                      <View style={styles.historyCard}>
-                        <Text style={styles.historyTitle}>{rec.workDone}</Text>
-                        {rec.technicianName ? (
-                          <View style={styles.techRow}>
-                            <Ionicons name="person-outline" size={12} color="#6B7280" />
-                            <Text style={styles.historyGarage}>{rec.technicianName}</Text>
+
+              <View style={styles.divider} />
+
+              <View style={styles.metaGrid}>
+                <View style={styles.metaCell}>
+                  <Text style={styles.metaLabel}>Year</Text>
+                  <Text style={styles.metaValue}>{vehicle.year}</Text>
+                </View>
+                <View style={[styles.metaCell, styles.metaCellBorder]}>
+                  <Text style={styles.metaLabel}>Mileage</Text>
+                  <Text style={styles.metaValue}>
+                    {vehicle.mileage ? `${vehicle.mileage.toLocaleString()} km` : 'N/A'}
+                  </Text>
+                </View>
+                <View style={styles.metaCell}>
+                  <Text style={styles.metaLabel}>Added</Text>
+                  <Text style={styles.metaValue}>
+                    {vehicle.createdAt
+                      ? new Date(vehicle.createdAt).toLocaleDateString('en-LK', { month: 'short', year: 'numeric' })
+                      : 'N/A'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* SERVICE HISTORY */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Service History</Text>
+
+              {rLoading ? (
+                <ActivityIndicator color="#F56E0F" style={{ marginTop: 12 }} />
+              ) : !records || records.length === 0 ? (
+                <View style={styles.emptyHistory}>
+                  <Ionicons name="document-text-outline" size={32} color="#D1D5DB" />
+                  <Text style={styles.emptyHistoryText}>No service records yet</Text>
+                </View>
+              ) : (
+                <View style={styles.timeline}>
+                  {(records as ServiceRecord[]).map((rec, idx) => (
+                    <View key={rec._id} style={styles.timelineItem}>
+                      <View style={styles.timelineLeft}>
+                        <View style={styles.timelineDot} />
+                        {idx < records.length - 1 && <View style={styles.timelineLine} />}
+                      </View>
+                      <View style={styles.timelineContent}>
+                        <Text style={styles.historyDate}>
+                          {new Date(rec.serviceDate).toLocaleDateString('en-LK', {
+                            day: 'numeric', month: 'short', year: 'numeric',
+                          })}
+                        </Text>
+                        <View style={styles.historyCard}>
+                          <Text style={styles.historyTitle}>{rec.workDone}</Text>
+                          {rec.technicianName ? (
+                            <View style={styles.techRow}>
+                              <Ionicons name="person-outline" size={12} color="#6B7280" />
+                              <Text style={styles.historyGarage}>{rec.technicianName}</Text>
+                            </View>
+                          ) : null}
+                          {rec.mileageAtService ? (
+                            <View style={styles.techRow}>
+                              <Ionicons name="speedometer-outline" size={12} color="#6B7280" />
+                              <Text style={styles.historyGarage}>{rec.mileageAtService.toLocaleString()} km</Text>
+                            </View>
+                          ) : null}
+                          {rec.partsReplaced && rec.partsReplaced.length > 0 ? (
+                            <View style={styles.partsWrap}>
+                              {rec.partsReplaced.map(p => (
+                                <View key={p} style={styles.partChip}>
+                                  <Text style={styles.partChipText}>{p}</Text>
+                                </View>
+                              ))}
+                            </View>
+                          ) : null}
+                          <View style={styles.costRow}>
+                            <View style={styles.historyDivider} />
+                            <Text style={styles.historyCost}>LKR {rec.totalCost.toLocaleString()}</Text>
                           </View>
-                        ) : null}
-                        {rec.mileageAtService ? (
-                          <View style={styles.techRow}>
-                            <Ionicons name="speedometer-outline" size={12} color="#6B7280" />
-                            <Text style={styles.historyGarage}>{rec.mileageAtService.toLocaleString()} km</Text>
-                          </View>
-                        ) : null}
-                        {rec.partsReplaced && rec.partsReplaced.length > 0 ? (
-                          <View style={styles.partsWrap}>
-                            {rec.partsReplaced.map(p => (
-                              <View key={p} style={styles.partChip}>
-                                <Text style={styles.partChipText}>{p}</Text>
-                              </View>
-                            ))}
-                          </View>
-                        ) : null}
-                        <View style={styles.costRow}>
-                          <View style={styles.historyDivider} />
-                          <Text style={styles.historyCost}>LKR {rec.totalCost.toLocaleString()}</Text>
                         </View>
                       </View>
                     </View>
-                  </View>
-                ))}
-              </View>
-            )}
-          </View>
+                  ))}
+                </View>
+              )}
+            </View>
 
-        </ScrollView>
+          </ScrollView>
         )}
       </View>
     </ScreenWrapper>
@@ -217,7 +230,7 @@ const styles = StyleSheet.create((theme) => ({
   backBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontSize: 20, fontWeight: '900', color: '#FFFFFF', letterSpacing: -0.3 },
   editBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(245,110,15,0.15)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(245,110,15,0.3)' },
-  
+
   decCircle1: { position: 'absolute', width: 130, height: 130, borderRadius: 65, backgroundColor: 'rgba(245,110,15,0.13)', top: -25, right: -25 },
   decCircle2: { position: 'absolute', width: 70, height: 70, borderRadius: 35, backgroundColor: 'rgba(245,110,15,0.08)', bottom: 10, right: 90 },
 
