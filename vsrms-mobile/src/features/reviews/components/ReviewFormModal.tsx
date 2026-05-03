@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, TouchableOpacity, TextInput, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, TextInput, ActivityIndicator, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useUnistyles } from 'react-native-unistyles';
 import { Review } from '../types/reviews.types';
@@ -46,59 +46,71 @@ export function ReviewFormModal({
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
       <View style={styles.reviewModalBg}>
-        <View style={styles.reviewModalContent}>
-          <View style={styles.reviewModalHandle} />
-          <View style={styles.reviewModalHeader}>
-            <View>
-              <Text style={styles.reviewModalTitle}>{initialData ? 'Edit Your Review' : 'Write a Review'}</Text>
-              {workshopName && <Text style={styles.reviewModalSub}>{workshopName}</Text>}
-            </View>
-            <TouchableOpacity onPress={handleClose}>
-              <Ionicons name="close" size={24} color="#6B7280" />
-            </TouchableOpacity>
-          </View>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ width: '100%' }}
+        >
+          <View style={styles.reviewModalContent}>
+            <View style={styles.reviewModalHandle} />
+            
+            <ScrollView 
+              bounces={false} 
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 20 }}
+            >
+              <View style={styles.reviewModalHeader}>
+                <View>
+                  <Text style={styles.reviewModalTitle}>{initialData ? 'Edit Your Review' : 'Write a Review'}</Text>
+                  {workshopName && <Text style={styles.reviewModalSub}>{workshopName}</Text>}
+                </View>
+                <TouchableOpacity onPress={handleClose}>
+                  <Ionicons name="close" size={24} color="#6B7280" />
+                </TouchableOpacity>
+              </View>
 
-          {/* Star picker */}
-          <View style={styles.starPicker}>
-            {[1, 2, 3, 4, 5].map(i => (
-              <TouchableOpacity key={i} onPress={() => setRating(i)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                <Ionicons
-                  name={i <= rating ? 'star' : 'star-outline'}
-                  size={36}
-                  color={i <= rating ? '#F59E0B' : '#D1D5DB'}
+              {/* Star picker */}
+              <View style={styles.starPicker}>
+                {[1, 2, 3, 4, 5].map(i => (
+                  <TouchableOpacity key={i} onPress={() => setRating(i)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <Ionicons
+                      name={i <= rating ? 'star' : 'star-outline'}
+                      size={36}
+                      color={i <= rating ? '#F59E0B' : '#D1D5DB'}
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <Text style={styles.starLabel}>
+                {rating === 0 ? 'Tap to rate' : ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][rating]}
+              </Text>
+
+              <View style={styles.reviewInputGroup}>
+                <Text style={styles.reviewInputLabel}>Your Review (optional)</Text>
+                <TextInput
+                  style={[styles.reviewInput, { borderColor: theme.colors.border, color: theme.colors.text, backgroundColor: theme.colors.surface }]}
+                  placeholder="Share your experience..."
+                  placeholderTextColor="#9CA3AF"
+                  value={text}
+                  onChangeText={setText}
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
                 />
+              </View>
+
+              <TouchableOpacity
+                style={[styles.reviewSubmitBtn, { backgroundColor: theme.colors.brand }, (rating === 0 || isSubmitting) && { opacity: 0.5 }]}
+                onPress={handleSubmit}
+                disabled={rating === 0 || isSubmitting}
+              >
+                {isSubmitting
+                  ? <ActivityIndicator color="#FFF" />
+                  : <><Ionicons name="send-outline" size={18} color="#FFF" /><Text style={styles.reviewSubmitBtnText}>Submit Review</Text></>
+                }
               </TouchableOpacity>
-            ))}
+            </ScrollView>
           </View>
-          <Text style={styles.starLabel}>
-            {rating === 0 ? 'Tap to rate' : ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][rating]}
-          </Text>
-
-          <View style={styles.reviewInputGroup}>
-            <Text style={styles.reviewInputLabel}>Your Review (optional)</Text>
-            <TextInput
-              style={[styles.reviewInput, { borderColor: theme.colors.border, color: theme.colors.text, backgroundColor: theme.colors.surface }]}
-              placeholder="Share your experience..."
-              placeholderTextColor="#9CA3AF"
-              value={text}
-              onChangeText={setText}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-            />
-          </View>
-
-          <TouchableOpacity
-            style={[styles.reviewSubmitBtn, { backgroundColor: theme.colors.brand }, (rating === 0 || isSubmitting) && { opacity: 0.5 }]}
-            onPress={handleSubmit}
-            disabled={rating === 0 || isSubmitting}
-          >
-            {isSubmitting
-              ? <ActivityIndicator color="#FFF" />
-              : <><Ionicons name="send-outline" size={18} color="#FFF" /><Text style={styles.reviewSubmitBtnText}>Submit Review</Text></>
-            }
-          </TouchableOpacity>
-        </View>
+        </KeyboardAvoidingView>
       </View>
     </Modal>
   );
