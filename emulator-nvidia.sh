@@ -4,7 +4,7 @@
 # falls back to the emulator's own auto-detection if it is not.
 
 EMULATOR="$HOME/Android/Sdk/emulator/emulator"
-AVD_NAME="Pixel_5"
+AVD_NAME="Pixel_6_Pro"
 
 if [ ! -f "$EMULATOR" ]; then
   echo "[emulator] ERROR: Emulator binary not found at $EMULATOR"
