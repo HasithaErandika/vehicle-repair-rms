@@ -188,7 +188,8 @@ export function LoginScreen() {
               <Text style={styles.secondaryBtnText}>Create a new account</Text>
             </TouchableOpacity>
 
-            {/* DEVELOPMENT MOCKS */}
+            {/* DEVELOPMENT MOCKS — only visible in dev builds */}
+            {__DEV__ && (
             <View style={styles.devMockContainer}>
                <Text style={styles.devMockLabel}>Development Bypasses</Text>
                <View style={styles.devMockGrid}>
@@ -208,6 +209,7 @@ export function LoginScreen() {
                   </TouchableOpacity>
                </View>
             </View>
+            )}
           </View>
 
           {/* ── FOOTER ── */}

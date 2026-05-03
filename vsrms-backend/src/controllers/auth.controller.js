@@ -4,17 +4,9 @@ const axios   = require('axios');
 const User    = require('../models/User');
 const { AppError } = require('../middleware/errorHandler');
 const jwt        = require('jsonwebtoken');
-const jwksClient = require('jwks-rsa');
+const { paginate } = require('../utils/paginate');
 
 const ASGARDEO_BASE = `https://api.asgardeo.io/t/${process.env.ASGARDEO_ORG_NAME}`;
-
-// ── Pagination helper ─────────────────────────────────────────────────────────
-const paginate = (query) => {
-  const page  = Math.max(1, parseInt(query.page)  || 1);
-  const limit = Math.min(100, parseInt(query.limit) || 20);
-  const skip  = (page - 1) * limit;
-  return { page, limit, skip };
-};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/v1/auth/login
@@ -325,15 +317,4 @@ const getWorkshopStaff = async (req, res, next) => {
     next(err);
   }
 };
-
-
-const client = jwksClient({
-  jwksUri: process.env.ASGARDEO_JWKS_URL,
-  cache: true,
-  rateLimit: true,
-  jwksRequestsPerMinute: 5,
-});
-
-
-
 module.exports = { login, register, syncProfile, getMe, updateMe, listUsers, deactivateUser, registerStaff, getWorkshopStaff };

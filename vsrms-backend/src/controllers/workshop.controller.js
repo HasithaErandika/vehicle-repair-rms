@@ -1,33 +1,11 @@
 'use strict';
 
-const multer               = require('multer');
-const { PutObjectCommand } = require('@aws-sdk/client-s3');
 const mongoose             = require('mongoose');
 const Workshop             = require('../models/Workshop');
 const User                 = require('../models/User');
-const { r2Client, R2_BUCKET, R2_PUBLIC_URL } = require('../config/r2');
 const { AppError }         = require('../middleware/errorHandler');
-
-// ── Multer setup ─────────────────────────────────────────────────────────────
-const storage = multer.memoryStorage();
-const upload  = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
-    if (!['image/jpeg', 'image/png'].includes(file.mimetype)) {
-      return cb(new AppError('Only JPEG and PNG files are allowed', 400));
-    }
-    cb(null, true);
-  },
-});
-
-// ── Pagination helper ─────────────────────────────────────────────────────────
-const paginate = (query) => {
-  const page  = Math.max(1, parseInt(query.page)  || 1);
-  const limit = Math.min(100, parseInt(query.limit) || 20);
-  const skip  = (page - 1) * limit;
-  return { page, limit, skip };
-};
+const { uploadToR2, deleteFromR2 } = require('../utils/r2.util');
+const { paginate }         = require('../utils/paginate');
 
 // ── Ownership helper — checks caller owns the workshop ────────────────────────
 const assertWorkshopOwner = async (workshopId, userId) => {
@@ -116,9 +94,9 @@ const getMyWorkshops = async (req, res, next) => {
   try {
     const { page, limit, skip } = paginate(req.query);
     
-    // Bypass account can see "orphaned" workshops created during early testing
-    // We check for ownerId being null, missing, or matching the current user.
-    const filter = req.user.email === 'customer@bypass.com'
+    // In development, bypass account can see orphaned workshops from testing
+    const isBypass = process.env.NODE_ENV !== 'production' && req.user.email === 'customer@bypass.com';
+    const filter = isBypass
       ? { $or: [{ ownerId: req.user._id }, { ownerId: null }, { ownerId: { $exists: false } }] }
       : { ownerId: req.user._id };
 
@@ -232,17 +210,26 @@ const uploadWorkshopImage = async (req, res, next) => {
       workshop = await assertWorkshopOwner(req.params.id, req.user._id);
     }
 
-    const key = `workshops/${workshop._id}/${Date.now()}-${req.file.originalname}`;
-    await r2Client.send(new PutObjectCommand({
-      Bucket:      R2_BUCKET,
-      Key:         key,
-      Body:        req.file.buffer,
-      ContentType: req.file.mimetype,
-    }));
+    // Clean up old image from R2 before uploading new one
+    if (workshop.imageUrl) {
+      try {
+        const oldKey = workshop.imageUrl.split('/').slice(3).join('/');
+        if (oldKey) await deleteFromR2(oldKey);
+      } catch (cleanupErr) {
+        console.error('[Workshop Image] Failed to delete old image from R2:', cleanupErr);
+      }
+    }
 
-    workshop.imageUrl = `${R2_PUBLIC_URL}/${key}`;
+    const key = `workshops/${workshop._id}/${Date.now()}-${req.file.originalname}`;
+    const imageUrl = await uploadToR2({
+      buffer:   req.file.buffer,
+      mimeType: req.file.mimetype,
+      key,
+    });
+
+    workshop.imageUrl = imageUrl;
     await workshop.save();
-    res.json({ imageUrl: workshop.imageUrl });
+    res.json({ workshop });
   } catch (err) {
     next(err);
   }
@@ -356,5 +343,4 @@ module.exports = {
   createWorkshop, updateWorkshop, deleteWorkshop,
   uploadWorkshopImage,
   getWorkshopTechnicians, addTechnician, removeTechnician,
-  upload,
 };

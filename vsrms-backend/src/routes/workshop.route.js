@@ -5,6 +5,7 @@ const router  = express.Router();
 
 const { protect }     = require('../middleware/auth.middleware');
 const { requireRole } = require('../middleware/roles');
+const { upload }      = require('../middleware/upload.middleware');
 const {
   validateCreateWorkshop,
   validateUpdateWorkshop,
@@ -22,7 +23,6 @@ const {
   getWorkshopTechnicians,
   addTechnician,
   removeTechnician,
-  upload,
 } = require('../controllers/workshop.controller');
 
 // ── Public routes ─────────────────────────────────────────────────────────────

@@ -39,8 +39,8 @@ const protect = async (req, res, next) => {
 
   const token = authHeader.split(' ')[1];
 
-  // ⚠️ DEVELOPMENT BYPASS: Multi-Role Mock Logic
-  if (token && token.startsWith('mock-')) {
+  // ⚠️ DEVELOPMENT BYPASS: Multi-Role Mock Logic — disabled in production
+  if (process.env.NODE_ENV !== 'production' && token && token.startsWith('mock-')) {
     let role = token.split('-').slice(1).join('-'); // e.g., customer, admin, workshop_owner, workshop_staff
     if (token.startsWith('mock-staff-')) {
       role = 'workshop_staff';

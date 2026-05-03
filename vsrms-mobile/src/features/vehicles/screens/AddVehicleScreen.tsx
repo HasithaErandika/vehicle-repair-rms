@@ -53,7 +53,7 @@ export default function AddVehicleScreen() {
   const [uploadPercent, setUploadPercent] = useState(0); // 0–100 for progress bar
 
   const setField = (key: keyof typeof form) => (val: string) => {
-
+    setForm(f => ({ ...f, [key]: val }));
     if (errors[key]) setErrors(e => { const n = { ...e }; delete n[key]; return n; });
   };
 
