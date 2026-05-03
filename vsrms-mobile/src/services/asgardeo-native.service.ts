@@ -32,10 +32,15 @@ async function generateCodeChallenge(verifier: string): Promise<string> {
 
 // ─── Safe JSON parse helper ───────────────────────────────────────────────────
 async function safeJson(res: Response): Promise<any> {
+  const text = await res.text();
+  if (!text) {
+    throw new Error(`Empty response from Asgardeo (status ${res.status}). Check endpoint and config.`);
+  }
   try {
-    return await res.json();
+    return JSON.parse(text);
   } catch {
-    throw new Error(`Server returned non-JSON (status ${res.status}). Check your Asgardeo config.`);
+    console.error('[Asgardeo] Non-JSON response body:', text.substring(0, 200));
+    throw new Error(`Server returned non-JSON (status ${res.status}). Check your Asgardeo config and endpoints.`);
   }
 }
 
