@@ -18,6 +18,8 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   register: (payload: RegisterPayload) => Promise<void>;
   loginWithCredentials: (email: string, password: string) => Promise<void>;
+  /** Re-fetches the user profile from the backend and updates local state. */
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -119,6 +121,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // ── Refresh user from backend ─────────────────────────────────────────────
+  const refreshUser = async () => {
+    try {
+      const userData = await getMe();
+      setUser(userData);
+    } catch (err) {
+      console.warn('[AuthProvider] refreshUser failed:', err);
+    }
+  };
+
   // ── Sign out ───────────────────────────────────────────────────────────────
   const signOut = async () => {
     await StorageService.removeToken();
@@ -128,7 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, isLoading, signIn, signOut, loginWithCredentials, register }}
+      value={{ user, isLoading, signIn, signOut, loginWithCredentials, register, refreshUser }}
     >
       {children}
     </AuthContext.Provider>

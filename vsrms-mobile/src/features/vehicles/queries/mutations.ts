@@ -71,11 +71,15 @@ export function useUploadVehicleImage() {
     }) => uploadVehicleImage(id, uri, onProgress),
 
     onSuccess: (data) => {
-      // Refresh any cached vehicle lists and the specific vehicle detail
+      // Directly inject the updated vehicle (with new imageUrl) into the cache.
+      // This is instant — no background re-fetch delay — fixing the "photo not
+      // displayed after upload" bug (C4). We also invalidate lists so the
+      // thumbnail on the VehicleCard updates on next list render.
+      qc.setQueryData(vehicleKeys.detail(data._id), data);
       qc.invalidateQueries({ queryKey: vehicleKeys.lists() });
-      qc.invalidateQueries({ queryKey: vehicleKeys.detail(data._id) });
       showToast('Vehicle photo updated', 'success');
     },
     onError: (e) => showToast(handleApiError(e), 'error'),
   });
 }
+

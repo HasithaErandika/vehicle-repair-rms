@@ -27,11 +27,15 @@ const TYPE_ICON: Record<string, string> = {
 
 export function VehicleDetailScreen({ id }: { id: string }) {
   const router = useRouter();
-  const [uploading, setUploading] = useState(false);
-  const [imageError, setImageError] = useState(false);
+  const [uploading, setUploading]       = useState(false);
+  const [imageError, setImageError]     = useState(false);
+  // Optimistic local URI — shown immediately after pick while upload is in flight (Bug C4)
+  const [localImageUri, setLocalImageUri] = useState<string | null>(null);
 
   const { data: vehicle, isLoading: vLoading } = useVehicle(id);
-  const { data: records, isLoading: rLoading } = useVehicleRecords(id);
+  const { data: recordsData, isLoading: rLoading } = useVehicleRecords(id);
+  // useVehicleRecords returns a paginated envelope {data, total, ...} — unwrap the array
+  const records: ServiceRecord[] = (recordsData as any)?.data ?? (Array.isArray(recordsData) ? recordsData : []);
   const uploadImage = useUploadVehicleImage();
 
   const iconName = vehicle?.vehicleType ? (TYPE_ICON[vehicle.vehicleType] ?? 'car-outline') : 'car-outline';
@@ -52,17 +56,23 @@ export function VehicleDetailScreen({ id }: { id: string }) {
 
     if (result.canceled || !result.assets[0]) return;
 
+    const pickedUri = result.assets[0].uri;
+    // Show immediately — don't wait for the upload to complete (Bug C4)
+    setLocalImageUri(pickedUri);
     setUploading(true);
 
     uploadImage.mutate(
+      { id, uri: pickedUri },
       {
-        id,
-        uri: result.assets[0].uri,
-      },
-      {
-        onSuccess: () => setImageError(false),
+        onSuccess: () => {
+          setImageError(false);
+          setLocalImageUri(null); // let the server URL (now in cache) take over
+        },
         onSettled: () => setUploading(false),
-        onError: (err) => Alert.alert('Image Upload Failed', handleApiError(err)),
+        onError: (err) => {
+          setLocalImageUri(null); // revert on failure
+          Alert.alert('Image Upload Failed', handleApiError(err));
+        },
       },
     );
   }
@@ -85,13 +95,18 @@ export function VehicleDetailScreen({ id }: { id: string }) {
 
       {/* ── HERO SECTION (Edge-to-Edge) ── */}
       <View style={styles.heroContainer}>
-        {vehicle.imageUrl && !imageError ? (
+        {/* localImageUri is set immediately on pick (optimistic). Once upload
+            completes, the server URL from React Query cache takes over. */}
+        {(localImageUri || (vehicle.imageUrl && !imageError)) ? (
           <Image
-            source={{ uri: vehicle.imageUrl }}
+            source={{ uri: localImageUri ?? vehicle.imageUrl }}
             style={styles.heroImage}
             contentFit="cover"
             transition={300}
-            onError={() => setImageError(true)}
+            // 'none' bypasses expo-image disk cache so the new R2 URL is
+            // always fetched fresh — fixes the "old photo still showing" issue
+            cachePolicy="none"
+            onError={() => { if (!localImageUri) setImageError(true); }}
           />
         ) : (
           <View style={styles.heroPlaceholder}>
@@ -99,7 +114,7 @@ export function VehicleDetailScreen({ id }: { id: string }) {
           </View>
         )}
         <View style={styles.heroOverlay} />
-        
+
         {/* Upload overlay */}
         {uploading && (
           <View style={styles.uploadingOverlay}>
@@ -110,7 +125,7 @@ export function VehicleDetailScreen({ id }: { id: string }) {
         {/* Change Photo Button */}
         <TouchableOpacity style={styles.changePhotoBtn} onPress={handlePickImage} activeOpacity={0.8}>
           <Ionicons name="camera" size={16} color="#FFFFFF" />
-          <Text style={styles.changePhotoText}>{vehicle.imageUrl ? 'Change' : 'Add Photo'}</Text>
+          <Text style={styles.changePhotoText}>{(localImageUri || vehicle.imageUrl) ? 'Change' : 'Add Photo'}</Text>
         </TouchableOpacity>
       </View>
 
@@ -135,7 +150,8 @@ export function VehicleDetailScreen({ id }: { id: string }) {
               <Text style={styles.vehicleReg}>{vehicle.registrationNo}</Text>
             </View>
             <View style={styles.typeBadge}>
-              <Text style={styles.typeBadgeText}>{vehicle.vehicleType.toUpperCase()}</Text>
+              {/* Null-guard: vehicleType may be undefined on older records (Bug C1) */}
+              <Text style={styles.typeBadgeText}>{(vehicle.vehicleType ?? 'unknown').toUpperCase()}</Text>
             </View>
           </View>
 

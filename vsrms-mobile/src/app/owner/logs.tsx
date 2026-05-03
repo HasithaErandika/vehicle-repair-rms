@@ -5,11 +5,13 @@ import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet } from 'react-native-unistyles';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
-import { useAuth } from '@/hooks';
 import { useWorkshopRecords } from '@/features/records/queries/queries';
+import { useMyWorkshops } from '@/features/workshops/queries/queries';
 import { ErrorScreen } from '@/components/feedback/ErrorScreen';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ServiceRecord } from '@/features/records/types/records.types';
+
+// ── Record row card ───────────────────────────────────────────────────────────
 
 function RecordRow({ record }: { record: ServiceRecord }) {
   const vehicle = typeof record.vehicleId === 'object' ? record.vehicleId as any : null;
@@ -57,7 +59,7 @@ function RecordRow({ record }: { record: ServiceRecord }) {
         </View>
       </View>
 
-      {(record.partsReplaced && record.partsReplaced.length > 0) ? (
+      {record.partsReplaced && record.partsReplaced.length > 0 ? (
         <View style={styles.partsRow}>
           {record.partsReplaced.slice(0, 3).map((p, i) => (
             <View key={i} style={styles.partChip}>
@@ -75,28 +77,26 @@ function RecordRow({ record }: { record: ServiceRecord }) {
   );
 }
 
+// ── Main screen ───────────────────────────────────────────────────────────────
+
 export default function OwnerLogsScreen() {
   const router = useRouter();
   const { workshopId: paramWorkshopId } = useLocalSearchParams<{ workshopId: string }>();
-  const { user } = useAuth();
-  
-  const targetWorkshopId = useMemo(() => paramWorkshopId || 'all', [paramWorkshopId]);
-  
-  const { data, isLoading, isError, refetch } = useWorkshopRecords(targetWorkshopId ?? '');
 
-  const list = (
-    <FlashList
-      data={(data?.data ?? []) as any}
-      renderItem={({ item }) => <RecordRow record={item as any} />}
-      // @ts-ignore
-      estimatedItemSize={180}
-      onRefresh={refetch}
-      refreshing={isLoading}
-      keyExtractor={(r: any) => r.id || r._id || Math.random().toString()}
-      contentContainerStyle={styles.list}
-      ListEmptyComponent={<EmptyState message="No service records yet for this workshop." />}
-    />
-  );
+  // Bug O3 fix: when navigated with 'all' (or no ID), resolve the real workshop
+  // by fetching the owner's workshop list. Previously 'all' was passed directly
+  // to GET /records/workshop/all which 404'd (not a valid MongoDB ObjectId).
+  const needsWorkshopResolution = !paramWorkshopId || paramWorkshopId === 'all';
+  const { data: myWorkshops = [], isLoading: wsLoading } = useMyWorkshops();
+
+  const resolvedWorkshopId = useMemo(() => {
+    if (paramWorkshopId && paramWorkshopId !== 'all') return paramWorkshopId;
+    return (myWorkshops[0] as any)?._id ?? (myWorkshops[0] as any)?.id ?? null;
+  }, [paramWorkshopId, myWorkshops]);
+
+  const { data, isLoading, isError, refetch } = useWorkshopRecords(resolvedWorkshopId ?? '');
+
+  const isResolving = needsWorkshopResolution && wsLoading;
 
   return (
     <ScreenWrapper bg="#1A1A2E">
@@ -109,9 +109,12 @@ export default function OwnerLogsScreen() {
             <Text style={styles.headerSub}>Workshop History</Text>
             <Text style={styles.headerTitle}>Service Logs</Text>
           </View>
-          <TouchableOpacity 
-            style={styles.addBtn} 
-            onPress={() => router.push({ pathname: '/owner/create-record', params: { workshopId: targetWorkshopId } } as any)}
+          <TouchableOpacity
+            style={styles.addBtn}
+            onPress={() => router.push({
+              pathname: '/owner/create-record',
+              params: { workshopId: resolvedWorkshopId ?? '' },
+            } as any)}
           >
             <Ionicons name="add" size={24} color="#FFFFFF" />
           </TouchableOpacity>
@@ -122,13 +125,30 @@ export default function OwnerLogsScreen() {
 
       {/* ── WHITE CARD SECTION ── */}
       <View style={styles.mainCard}>
-        {isLoading && !data ? (
+        {isResolving || (isLoading && !data) ? (
           <View style={styles.centered}>
             <ActivityIndicator size="large" color="#F56E0F" />
           </View>
         ) : isError ? (
           <ErrorScreen onRetry={refetch} variant="inline" />
-        ) : list}
+        ) : !resolvedWorkshopId ? (
+          <View style={styles.centered}>
+            <Ionicons name="business-outline" size={40} color="#D1D5DB" />
+            <Text style={styles.noWorkshopText}>No workshop found.</Text>
+          </View>
+        ) : (
+          <FlashList
+            data={(data?.data ?? []) as any}
+            renderItem={({ item }) => <RecordRow record={item as any} />}
+            // @ts-ignore
+            estimatedItemSize={180}
+            onRefresh={refetch}
+            refreshing={isLoading}
+            keyExtractor={(r: any) => r.id || r._id || Math.random().toString()}
+            contentContainerStyle={styles.list}
+            ListEmptyComponent={<EmptyState message="No service records yet for this workshop." />}
+          />
+        )}
       </View>
     </ScreenWrapper>
   );
@@ -141,7 +161,7 @@ const styles = StyleSheet.create((theme) => ({
     paddingBottom: 60,
     position: 'relative',
     overflow: 'hidden',
-    backgroundColor: '#1A1A2E'
+    backgroundColor: '#1A1A2E',
   },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 10, marginBottom: 24, marginTop: 12 },
   headerSub: {
@@ -159,42 +179,22 @@ const styles = StyleSheet.create((theme) => ({
     marginTop: 4,
   },
   addBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: '#F56E0F',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#F56E0F',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    width: 44, height: 44, borderRadius: 12,
+    backgroundColor: '#F56E0F', alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#F56E0F', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3, shadowRadius: 8, elevation: 6,
   },
-  countBadge: {
-    width: 48, height: 48, borderRadius: 14,
-    backgroundColor: 'rgba(245,110,15,0.2)',
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: '#F56E0F',
-  },
-  countText: { fontSize: 18, fontWeight: '900', color: '#F56E0F' },
 
   decCircle1: { position: 'absolute', width: 140, height: 140, borderRadius: 70, backgroundColor: 'rgba(245,110,15,0.12)', top: -30, right: -20 },
   decCircle2: { position: 'absolute', width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(245,110,15,0.06)', bottom: 10, right: 90 },
 
   mainCard: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    marginTop: theme.spacing.cardOverlap,
-    flex: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 16,
+    backgroundColor: '#FFFFFF', borderTopLeftRadius: 32, borderTopRightRadius: 32,
+    marginTop: theme.spacing.cardOverlap, flex: 1,
+    shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 16,
   },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  noWorkshopText: { marginTop: 12, fontSize: 14, color: '#9CA3AF', fontWeight: '600' },
   list: { paddingHorizontal: theme.spacing.screenPadding, paddingTop: 24, paddingBottom: 130 },
 
   card: {

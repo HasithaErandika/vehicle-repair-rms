@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, Platform, TextInput,
-  ScrollView, Animated, Dimensions, ActivityIndicator,
+  ScrollView, Animated, Dimensions, ActivityIndicator, KeyboardAvoidingView,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
@@ -397,7 +397,11 @@ export function NearbyWorkshopsScreen() {
           style={[styles.listPanel, { transform: [{ translateY: panelY }] }]}
           pointerEvents={viewMode === 'list' ? 'auto' : 'none'}
         >
-          {/* Drag handle */}
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          >
+            {/* Drag handle */}
           <TouchableOpacity style={styles.handleArea} onPress={switchToMap} activeOpacity={0.7}>
             <View style={styles.handle} />
           </TouchableOpacity>
@@ -407,6 +411,7 @@ export function NearbyWorkshopsScreen() {
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.chipRow}
+            keyboardShouldPersistTaps="handled"
           >
             <TouchableOpacity
               style={[styles.chip, !selectedDistrict && styles.chipActive]}
@@ -439,11 +444,13 @@ export function NearbyWorkshopsScreen() {
             <FlashList
               data={listData || []}
               renderItem={({ item }) => <WorkshopCard workshop={item} />}
+              // @ts-ignore
               estimatedItemSize={140}
               onRefresh={listRefetch}
               refreshing={listLoading}
               keyExtractor={item => item._id || item.id || ''}
               contentContainerStyle={styles.listContent}
+              keyboardShouldPersistTaps="handled"
               ListEmptyComponent={
                 listLoading ? null : (
                   <EmptyState
@@ -455,6 +462,7 @@ export function NearbyWorkshopsScreen() {
               }
             />
           )}
+          </KeyboardAvoidingView>
         </Animated.View>
 
       </View>
