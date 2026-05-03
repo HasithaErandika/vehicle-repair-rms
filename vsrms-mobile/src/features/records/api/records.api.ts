@@ -6,6 +6,11 @@ export const fetchRecordsByVehicle = async (vehicleId: string, params?: Record<s
   return data.data || data;
 };
 
+export const fetchMyRecords = async (): Promise<ServiceRecord[]> => {
+  const { data } = await client.get('/records/mine');
+  return data.data || data;
+};
+
 export const fetchRecord = async (id: string): Promise<ServiceRecord> => {
   const { data } = await client.get(`/records/${id}`);
   return data.record || data;

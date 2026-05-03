@@ -39,9 +39,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     try {
       await apiRegister(payload);
-    } catch (err) {
+    } catch (err: any) {
       console.error('[AuthProvider] Registration error:', err);
-      throw err;
+      // Re-throw with the message the HTTP interceptor already extracted
+      const msg = err?.message || 'Registration failed. Please try again.';
+      throw new Error(msg);
     } finally {
       setLoading(false);
     }
@@ -54,24 +56,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { flowId, authenticatorId, codeVerifier } = await initiateAuthFlow();
 
-      let code: string;
-
       if (authenticatorId === '__SUCCESS_COMPLETED__') {
         throw new Error(
           'An active session was detected. Please sign out of any existing session and try again.'
         );
       }
 
-      code = await submitCredentials(flowId, authenticatorId, email, password);
+      const code = await submitCredentials(flowId, authenticatorId, email, password);
 
       const { access_token, id_token } = await exchangeCodeForToken(code, codeVerifier);
       const tokenForBackend = id_token ?? access_token;
 
       await signIn(tokenForBackend);
-    } catch (err) {
+    } catch (err: any) {
       console.error('[AuthProvider] Login error:', err);
       setLoading(false);
-      throw err;
+      // Map known error patterns to friendlier messages for the user
+      const raw: string = err?.message ?? '';
+      let friendly = raw;
+      if (raw.includes('callback.not.match')) {
+        friendly = 'Login is temporarily unavailable due to a configuration issue. Please contact support.';
+      } else if (raw.includes('invalid_grant') || raw.includes('Incorrect email or password')) {
+        friendly = 'Incorrect email or password. Please try again.';
+      } else if (!friendly) {
+        friendly = 'Unable to sign in. Please check your connection and try again.';
+      }
+      throw new Error(friendly);
     }
   };
 

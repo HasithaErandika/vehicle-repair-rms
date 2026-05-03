@@ -3,6 +3,9 @@ const path = require('path');
 
 const config = getDefaultConfig(__dirname);
 
+// Add SVG support
+config.resolver.assetExts.push('svg');
+
 // Redirect all imports of react-native-unistyles (v3 requires native Nitro/TurboModules
 // and cannot run in Expo Go) to a zero-native-dependency compatibility shim.
 // This is handled at the Metro resolver level which takes precedence over node_modules.

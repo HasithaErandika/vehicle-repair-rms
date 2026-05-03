@@ -9,6 +9,26 @@ import { ErrorBoundary as GlobalErrorBoundary, GlobalErrorBoundary as RouterErro
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
+import * as Linking from 'expo-linking';
+
+const linking = {
+  prefixes: ['vsrmsmobile://'],
+  config: {
+    screens: {
+      auth: {
+        screens: {
+          'oauth-callback': 'oauth-callback',
+          login: 'login',
+          register: 'register',
+        },
+      },
+      admin: '*',
+      owner: '*',
+      technician: '*',
+      customer: '*',
+    },
+  },
+};
 
 function InitialLayout() {
   const { user, isLoading } = useAuth();
@@ -28,7 +48,7 @@ function InitialLayout() {
       // Logged in, redirect based on role if they are NOT in a dashboard group
       const dashboardGroups = ['admin', 'owner', 'technician', 'customer'];
       const isIntro = !dashboardGroups.includes(segments[0] as string);
-      
+
       if (isIntro) {
         switch (user.role) {
           case 'admin':
@@ -54,12 +74,12 @@ function InitialLayout() {
 
 export default function RootLayout() {
   return (
-    <GlobalErrorBoundary>                          
-      <GestureHandlerRootView style={{ flex: 1 }}>  
-        <SafeAreaProvider>                    
-          <QueryProvider>                     
-            <AuthProvider>                    
-              <ToastProvider>                 
+    <GlobalErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <QueryProvider>
+            <AuthProvider>
+              <ToastProvider>
                 <InitialLayout />
               </ToastProvider>
             </AuthProvider>

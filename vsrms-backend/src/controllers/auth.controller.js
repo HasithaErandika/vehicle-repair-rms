@@ -166,14 +166,35 @@ const syncProfile = async (req, res, next) => {
       });
     }
 
+    // Determine the best display name from the JWT.
+    // Asgardeo SCIM users often have `name` = email, so we only trust it
+    // if it looks like a real name (not containing "@").
+    const jwtName = decoded.name && !decoded.name.includes('@') ? decoded.name : null;
+
+    // Try to find existing user first to preserve their stored fullName
+    const existing = await User.findOne({
+      $or: [{ asgardeoSub: decoded.sub }, ...(email ? [{ email }] : [])],
+    });
+
+    const setFields = {
+      asgardeoSub: decoded.sub,
+      email,
+    };
+
+    // Only overwrite fullName if:
+    // 1. JWT has a real name AND (user doesn't exist yet OR their fullName is empty/email-like)
+    // 2. Always keep the existing fullName if it's already a proper name
+    if (jwtName) {
+      setFields.fullName = jwtName;
+    } else if (!existing || !existing.fullName || existing.fullName.includes('@')) {
+      setFields.fullName = jwtName || email || 'Unknown';
+    }
+    // If existing user has a proper fullName and JWT name is email-like, we keep existing
+
     const user = await User.findOneAndUpdate(
       { $or: [{ asgardeoSub: decoded.sub }, ...(email ? [{ email }] : [])] },
       {
-        $set: {
-          asgardeoSub: decoded.sub,
-          email,
-          fullName: decoded.name ?? decoded.email ?? 'Unknown',
-        },
+        $set: setFields,
         $setOnInsert: {
           role:   'customer',
           active: true,

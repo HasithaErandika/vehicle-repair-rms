@@ -32,10 +32,15 @@ async function generateCodeChallenge(verifier: string): Promise<string> {
 
 // ─── Safe JSON parse helper ───────────────────────────────────────────────────
 async function safeJson(res: Response): Promise<any> {
+  const text = await res.text();
+  if (!text) {
+    throw new Error(`Empty response from Asgardeo (status ${res.status}). Check endpoint and config.`);
+  }
   try {
-    return await res.json();
+    return JSON.parse(text);
   } catch {
-    throw new Error(`Server returned non-JSON (status ${res.status}). Check your Asgardeo config.`);
+    console.error('[Asgardeo] Non-JSON response body:', text.substring(0, 200));
+    throw new Error(`Server returned non-JSON (status ${res.status}). Check your Asgardeo config and endpoints.`);
   }
 }
 
@@ -76,6 +81,22 @@ function extractAuthenticatorId(data: any): string {
   return chosen.authenticatorId;
 }
 
+// ─── Map common Asgardeo error codes to user-friendly messages ────────────────
+function friendlyAsgardeoError(data: any): string {
+  const desc: string = data?.description ?? '';
+  const msg: string  = data?.message ?? '';
+  const code: string = data?.code ?? '';
+
+  // callback.not.match → the redirect_uri registered in Asgardeo doesn't match
+  if (desc.includes('callback.not.match')) {
+    return 'Login configuration error: the app redirect URI is not registered in Asgardeo. ' +
+           `Please add "${ASGARDEO_CONFIG.redirectUri}" as an allowed callback URL in the Asgardeo console.`;
+  }
+
+  // Return the most detailed message available
+  return desc || msg || `Asgardeo error ${code || '(unknown)'}`;
+}
+
 // ─── Step 1: Initiate auth flow (with PKCE) ───────────────────────────────────
 export async function initiateAuthFlow(): Promise<AuthFlowInit> {
   const codeVerifier  = generateCodeVerifier();
@@ -93,6 +114,8 @@ export async function initiateAuthFlow(): Promise<AuthFlowInit> {
     prompt:                'login',
   });
 
+  console.log('[Asgardeo] authorize request redirect_uri:', ASGARDEO_CONFIG.redirectUri);
+
   const res = await fetch(ASGARDEO_ENDPOINTS.authorize, {
     method:  'POST',
     headers: {
@@ -106,7 +129,9 @@ export async function initiateAuthFlow(): Promise<AuthFlowInit> {
   console.log('[Asgardeo] authorize response:', JSON.stringify(data, null, 2));
 
   if (!res.ok) {
-    throw new Error(data?.message ?? 'Failed to initiate auth flow');
+    const friendly = friendlyAsgardeoError(data);
+    console.error('[Asgardeo] authorize failed:', friendly);
+    throw new Error(friendly);
   }
 
   const authenticatorId = extractAuthenticatorId(data);
