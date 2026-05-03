@@ -21,7 +21,7 @@ import { AppLogo } from '@/components/ui/AppLogo';
 const { height: SCREEN_H } = Dimensions.get('window');
 
 export function LoginScreen() {
-  const { login, bypassLogin } = useAuth();
+  const { loginWithCredentials, bypassLogin } = useAuth();
   const router = useRouter();
   
   const [email, setEmail] = useState('');
@@ -54,18 +54,18 @@ export function LoginScreen() {
   };
 
   const handleSignIn = async () => {
-    if (!validate()) return;
-    
-    setLoading(true);
-    setError(null);
-    try {
-      await login({ email: email.trim().toLowerCase(), password });
-    } catch (err: any) {
-      setError(err?.message || 'Invalid credentials. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (!validate()) return;   
+  setLoading(true);
+  setError(null);
+  try {
+    await loginWithCredentials(email.trim().toLowerCase(), password);
+
+  } catch (err: any) {
+    setError(err?.message || 'Invalid credentials. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
