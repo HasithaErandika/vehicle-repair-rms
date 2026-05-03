@@ -1,18 +1,54 @@
 import React from 'react';
-import { View, Text, ScrollView, ActivityIndicator, StatusBar, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, StatusBar, TouchableOpacity, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Calendar, Wrench, DollarSign, FileText, ChevronLeft, Milestone, User } from 'lucide-react-native';
+import { Calendar, Wrench, DollarSign, FileText, ChevronLeft, Milestone, User, Pencil, Trash2 } from 'lucide-react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { useRecord } from '../queries/queries';
+import { useDeleteRecord } from '../queries/mutations';
 import { handleApiError } from '@/services/error.handler';
 import { ErrorScreen } from '@/components/feedback/ErrorScreen';
+import { useAuth } from '@/hooks';
 
 export function RecordDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { theme } = useUnistyles();
+  const { user } = useAuth();
+
   const { data: record, isLoading, isError, error, refetch } = useRecord(id!);
+  const { mutate: deleteRecord, isPending: isDeleting } = useDeleteRecord();
+
+  // Role-based action visibility
+  const canEdit   = user?.role === 'workshop_staff' || user?.role === 'workshop_owner' || user?.role === 'admin';
+  const canDelete = user?.role === 'workshop_owner' || user?.role === 'admin';
+
+  const handleEdit = () => {
+    if (!id) return;
+    // Navigate to role-specific edit route
+    const prefix = user?.role === 'workshop_owner' ? '/owner' : '/technician';
+    router.push({ pathname: `${prefix}/edit-record`, params: { id } } as any);
+  };
+
+  const handleDeleteConfirm = () => {
+    Alert.alert(
+      'Delete Service Record',
+      'This action cannot be undone. The record will be permanently removed from the system.\n\nAre you sure you want to delete this record?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            deleteRecord(id!, {
+              onSuccess: () => router.back(),
+            });
+          },
+        },
+      ],
+      { cancelable: true },
+    );
+  };
 
   return (
     <ScreenWrapper bg="#1A1A2E">
@@ -24,7 +60,7 @@ export function RecordDetailScreen() {
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
             <ChevronLeft size={24} color="#FFFFFF" strokeWidth={2.5} />
           </TouchableOpacity>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={styles.headerSub}>Technical Archive</Text>
             <Text style={styles.headerTitle}>Record Details</Text>
           </View>
@@ -92,7 +128,7 @@ export function RecordDetailScreen() {
                <Text style={styles.descriptionText}>{record.workDone}</Text>
             </View>
 
-            {record.totalCost && (
+            {record.totalCost != null && (
               <View style={styles.costHighlight}>
                  <View style={styles.costHeader}>
                     <DollarSign size={16} color="#059669" />
@@ -121,6 +157,36 @@ export function RecordDetailScreen() {
                 <FileText size={20} color={theme.colors.brand} />
                 <Text style={styles.docBtnText}>View {record.documents.length} Attachments</Text>
               </TouchableOpacity>
+            )}
+
+            {/* ── STAFF ACTION BUTTONS ── */}
+            {(canEdit || canDelete) && (
+              <View style={styles.actionRow}>
+                {canEdit && (
+                  <TouchableOpacity
+                    style={styles.editBtn}
+                    onPress={handleEdit}
+                    activeOpacity={0.8}
+                  >
+                    <Pencil size={18} color="#FFFFFF" strokeWidth={2.5} />
+                    <Text style={styles.editBtnText}>Edit Record</Text>
+                  </TouchableOpacity>
+                )}
+                {canDelete && (
+                  <TouchableOpacity
+                    style={[styles.deleteBtn, isDeleting && { opacity: 0.6 }]}
+                    onPress={handleDeleteConfirm}
+                    disabled={isDeleting}
+                    activeOpacity={0.8}
+                  >
+                    {isDeleting
+                      ? <ActivityIndicator size="small" color="#DC2626" />
+                      : <Trash2 size={18} color="#DC2626" strokeWidth={2.5} />
+                    }
+                    <Text style={styles.deleteBtnText}>Delete</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             )}
             
           </ScrollView>
@@ -204,4 +270,40 @@ const styles = StyleSheet.create((theme) => ({
 
   docBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 16, borderRadius: 16, backgroundColor: theme.colors.brandSoft, marginTop: 32, borderWidth: 1.5, borderColor: 'rgba(245, 110, 15, 0.1)' },
   docBtnText: { fontSize: 14, fontWeight: '800', color: theme.colors.brand },
+
+  // ── Action buttons ──────────────────────────────────────────────────────────
+  actionRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 36,
+  },
+  editBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: theme.colors.brand,
+    borderRadius: 18,
+    height: 54,
+    shadowColor: theme.colors.brand,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  editBtnText: { color: '#FFFFFF', fontWeight: '900', fontSize: 15 },
+  deleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#FEF2F2',
+    borderRadius: 18,
+    height: 54,
+    paddingHorizontal: 20,
+    borderWidth: 1.5,
+    borderColor: '#FECACA',
+  },
+  deleteBtnText: { color: '#DC2626', fontWeight: '900', fontSize: 15 },
 }));

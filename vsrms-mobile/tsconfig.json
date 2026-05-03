@@ -12,7 +12,9 @@
         "./assets/*"
       ]
     },
-    "types": ["jest"],
+    "types": [
+      "jest"
+    ],
     "jsx": "react-native",
     "esModuleInterop": true,
     "noEmit": true
