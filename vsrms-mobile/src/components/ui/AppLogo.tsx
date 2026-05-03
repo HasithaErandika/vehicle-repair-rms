@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Image } from 'react-native';
+import { View } from 'react-native';
+import { Image } from 'expo-image';
 
 interface AppLogoProps {
   size?: number;
@@ -12,7 +13,8 @@ export function AppLogo({ size = 120, showText = false, variant = 'dark' }: AppL
     <View style={{ alignItems: 'center', justifyContent: 'center' }}>
       <Image
         source={require('../../../assets/logo.svg')}
-        style={{ width: size, height: size, resizeMode: 'contain' }}
+        style={{ width: size, height: size }}
+        contentFit="contain"
       />
     </View>
   );
