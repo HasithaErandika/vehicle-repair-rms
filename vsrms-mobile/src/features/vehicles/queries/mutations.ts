@@ -7,15 +7,15 @@ import { Vehicle } from '../types/vehicles.types';
 
 export function useCreateVehicle() {
   const qc = useQueryClient();
-  const { showToast } = useToast();
 
   return useMutation({
     mutationFn: createVehicle,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: vehicleKeys.lists() });
-      showToast('Vehicle added successfully', 'success');
     },
-    onError: (e) => showToast(handleApiError(e), 'error'),
+    onError: (e) => {
+      // Error handling moved to component level for better UX
+    },
   });
 }
 

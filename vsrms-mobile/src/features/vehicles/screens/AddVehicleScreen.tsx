@@ -12,6 +12,7 @@ import { Image } from 'expo-image';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { useCreateVehicle, useUploadVehicleImage } from '../queries/mutations';
 import { handleApiError } from '@/services/error.handler';
+import { useToast } from '@/providers/ToastProvider';
 
 
 const VEHICLE_TYPES = [
@@ -31,6 +32,7 @@ const CURRENT_YEAR = new Date().getFullYear();
 
 export default function AddVehicleScreen() {
   const router = useRouter();
+  const { showToast } = useToast();
 
   // React Query mutations 
   const { mutate: createVehicle, isPending: isCreating } = useCreateVehicle();
@@ -112,7 +114,7 @@ export default function AddVehicleScreen() {
         onSuccess: (newVehicle) => {
           // check if we have an image to upload.
           if (!imageUri) {
-
+            showToast('Vehicle added successfully!', 'success');
             router.back();
             return;
           }
@@ -125,23 +127,25 @@ export default function AddVehicleScreen() {
             {
               id: newVehicle._id ?? (newVehicle as any).id,
               uri: imageUri,
-
               onProgress: (pct) => setUploadPercent(pct),
             },
             {
+              onSuccess: () => {
+                showToast('Vehicle added with photo!', 'success');
+              },
               onSettled: () => {
-
                 setIsUploading(false);
                 setUploadPercent(0);
                 router.back();
               },
               onError: (err) => {
-                Alert.alert('Image Upload Failed', handleApiError(err));
+                showToast('Vehicle added, but photo upload failed', 'error');
+                Alert.alert('Photo Upload Failed', handleApiError(err));
               },
             },
           );
         },
-        onError: (err) => Alert.alert('Error', handleApiError(err)),
+        onError: (err) => Alert.alert('Failed to Add Vehicle', handleApiError(err)),
       },
     );
   };
@@ -200,10 +204,10 @@ export default function AddVehicleScreen() {
                   /* ── Placeholder: no image chosen yet ── */
                   <View style={styles.photoPlaceholder}>
                     <View style={styles.cameraIconCircle}>
-                      <Ionicons name="image-outline" size={32} color="#818CF8" />
+                      <Ionicons name="camera-outline" size={32} color="#F56E0F" />
                     </View>
-                    <Text style={styles.photoPlaceholderText}>Tap to add a photo</Text>
-                    <Text style={styles.photoPlaceholderSub}>JPEG, PNG or HEIC · max 5 MB</Text>
+                    <Text style={styles.photoPlaceholderText}>Add Vehicle Photo</Text>
+                    <Text style={styles.photoPlaceholderSub}>Tap to select from gallery</Text>
                   </View>
                 )}
 
@@ -211,7 +215,7 @@ export default function AddVehicleScreen() {
                 {imageUri && !isUploading && (
                   <View style={styles.changeOverlay}>
                     <Ionicons name="camera-outline" size={14} color="#FFFFFF" />
-                    <Text style={styles.changeOverlayText}>Change photo</Text>
+                    <Text style={styles.changeOverlayText}>Change Photo</Text>
                   </View>
                 )}
               </TouchableOpacity>
@@ -220,7 +224,7 @@ export default function AddVehicleScreen() {
                 <View style={styles.progressContainer}>
                   <View style={styles.progressHeader}>
                     <Ionicons name="cloud-upload-outline" size={14} color="#F56E0F" />
-                    <Text style={styles.progressLabel}>Uploading photo…</Text>
+                    <Text style={styles.progressLabel}>Uploading photo...</Text>
                     <Text style={styles.progressPercent}>{uploadPercent}%</Text>
                   </View>
                   {/* Outer track */}
@@ -228,6 +232,13 @@ export default function AddVehicleScreen() {
                     {/* Inner bar — width is a percentage string, e.g. "42%" */}
                     <View style={[styles.progressBar, { width: `${uploadPercent}%` as any }]} />
                   </View>
+                </View>
+              )}
+
+              {imageUri && !isUploading && (
+                <View style={styles.photoSuccess}>
+                  <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+                  <Text style={styles.photoSuccessText}>Photo selected and ready to upload</Text>
                 </View>
               )}
             </View>
@@ -374,12 +385,14 @@ const styles = StyleSheet.create(() => ({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#FFF7ED',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#FED7AA',
   },
-  photoPlaceholderText: { fontSize: 15, fontWeight: '800', color: '#1E293B' },
-  photoPlaceholderSub: { fontSize: 12, fontWeight: '600', color: '#64748B' },
+  photoPlaceholderText: { fontSize: 16, fontWeight: '800', color: '#1E293B' },
+  photoPlaceholderSub: { fontSize: 13, fontWeight: '600', color: '#64748B' },
   changeOverlay: {
     position: 'absolute',
     bottom: 0,
@@ -393,6 +406,17 @@ const styles = StyleSheet.create(() => ({
     gap: 6,
   },
   changeOverlayText: { fontSize: 12, fontWeight: '700', color: '#FFFFFF' },
+  photoSuccess: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  photoSuccessText: { fontSize: 13, fontWeight: '700', color: '#059669' },
 
 
   progressContainer: {

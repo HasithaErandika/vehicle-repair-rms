@@ -80,7 +80,6 @@ export function ReviewListScreen() {
               onDelete={handleDelete}
             />
           )}
-          estimatedItemSize={120}
           keyExtractor={(r) => r.id || (r as any)._id}
           onRefresh={refetch}
           refreshing={isLoading}

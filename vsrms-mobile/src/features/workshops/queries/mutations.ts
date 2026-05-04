@@ -51,7 +51,7 @@ export function useDeactivateWorkshop() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: workshopKeys.lists() });
       qc.invalidateQueries({ queryKey: workshopKeys.mine() });
-      showToast('Workshop deactivated', 'success');
+      showToast('Garage deactivated', 'success');
     },
     onError: (e: any) => showToast(handleApiError(e), 'error'),
   });
