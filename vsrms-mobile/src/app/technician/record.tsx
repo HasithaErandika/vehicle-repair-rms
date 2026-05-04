@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput,
-  KeyboardAvoidingView, Platform, ActivityIndicator, StatusBar,
+  KeyboardAvoidingView, Platform, ActivityIndicator, StatusBar, Switch
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -30,7 +30,7 @@ export default function StaffRecordScreen() {
   const { user } = useAuth();
 
   const workshopId = user?.workshopId;
-  const { data: inProgressAppts } = useWorkshopAppointments(workshopId, 'in_progress');
+  const { data: inProgressAppts } = useWorkshopAppointments(workshopId, 'confirmed,in_progress');
 
   const { appointmentId } = useLocalSearchParams<{ appointmentId: string }>();
   const [selectedAppt, setSelectedAppt] = useState<Appointment | null>(null);
@@ -52,6 +52,7 @@ export default function StaffRecordScreen() {
   const [totalCost, setTotalCost]       = useState('');
   const [techName, setTechName]         = useState(user?.fullName ?? '');
   const [parts, setParts]               = useState('');
+  const [markCompleted, setMarkCompleted] = useState(true);
   const [error, setError]               = useState('');
 
   const { mutate: createRecord, isPending } = useCreateRecord();
@@ -74,6 +75,7 @@ export default function StaffRecordScreen() {
       totalCost:        costNum,
       mileageAtService: mileage ? parseInt(mileage, 10) : undefined,
       technicianName:   techName.trim() || undefined,
+      markCompleted,
     }, { onSuccess: () => router.back() });
   };
 
@@ -137,8 +139,15 @@ export default function StaffRecordScreen() {
                         style={[styles.pickerItem, selectedAppt?._id === a._id && styles.pickerItemActive]}
                         onPress={() => { setSelectedAppt(a); setShowPicker(false); }}
                       >
-                        <Text style={styles.pickerItemText}>{getVehicleLabel(a)}</Text>
-                        <Text style={styles.pickerItemSub}>{a.serviceType}</Text>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.pickerItemText}>{getVehicleLabel(a)}</Text>
+                          <Text style={styles.pickerItemSub}>{a.serviceType}</Text>
+                        </View>
+                        <View style={[styles.statusBadge, { backgroundColor: a.status === 'in_progress' ? '#E0F2FE' : '#F0FDF4' }]}>
+                          <Text style={[styles.statusBadgeText, { color: a.status === 'in_progress' ? '#0369A1' : '#15803D' }]}>
+                            {a.status === 'in_progress' ? 'Active' : 'Confirmed'}
+                          </Text>
+                        </View>
                       </TouchableOpacity>
                     ))
                   )}
@@ -204,6 +213,19 @@ export default function StaffRecordScreen() {
                 onChangeText={setTechName}
                 placeholder="Enacting staff member"
                 placeholderTextColor="#9CA3AF"
+              />
+            </View>
+
+            <View style={styles.switchGroup}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.switchLabel}>Mark as Completed</Text>
+                <Text style={styles.switchSub}>Finalize this appointment status</Text>
+              </View>
+              <Switch
+                value={markCompleted}
+                onValueChange={setMarkCompleted}
+                trackColor={{ false: '#D1D5DB', true: theme.colors.brand }}
+                thumbColor="#FFFFFF"
               />
             </View>
 
@@ -312,10 +334,26 @@ const styles = StyleSheet.create((theme) => ({
     shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10,
   },
   pickerEmpty: { padding: 16, fontSize: 14, color: '#9CA3AF', textAlign: 'center', fontWeight: '600' },
-  pickerItem: { padding: 16, borderBottomWidth: 1.5, borderBottomColor: '#F9FAFB' },
+  pickerItem: { padding: 16, borderBottomWidth: 1.5, borderBottomColor: '#F9FAFB', flexDirection: 'row', alignItems: 'center', gap: 12 },
   pickerItemActive: { backgroundColor: '#FFF7ED' },
   pickerItemText: { fontSize: 14, fontWeight: '800', color: theme.colors.text },
   pickerItemSub: { fontSize: 12, color: '#9CA3AF', marginTop: 4, fontWeight: '600' },
+
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  statusBadgeText: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
+
+  switchGroup: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: '#F9FAFB', 
+    padding: 16, 
+    borderRadius: 16, 
+    marginBottom: 24,
+    borderWidth: 1.5,
+    borderColor: '#F3F4F6'
+  },
+  switchLabel: { fontSize: 15, fontWeight: '800', color: theme.colors.text },
+  switchSub: { fontSize: 12, color: '#9CA3AF', marginTop: 2, fontWeight: '600' },
 
   submitBtn: { 
     backgroundColor: theme.colors.brand, 

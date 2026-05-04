@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "vsrms-mobile",
+    "name": "VSRMS",
     "slug": "vsrms-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -11,6 +11,7 @@
       "icon": "./assets/expo.icon"
     },
     "android": {
+      "package": "com.vsrms.mobile",
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -46,6 +47,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "1413ccd2-340b-4c8a-a741-7a0cade74dde"
+      }
     }
   }
 }
