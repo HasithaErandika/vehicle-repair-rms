@@ -60,12 +60,6 @@ export const uploadVehicleImage = async (
 
   // POST to the backend with progress tracking 
   const { data } = await client.post(`/vehicles/${id}/image`, formData, {
-    headers: {
-
-
-      'Content-Type': 'multipart/form-data',
-    },
-
     onUploadProgress: (event) => {
       if (onUploadProgress && event.total) {
         const percent = Math.round((event.loaded * 100) / event.total);

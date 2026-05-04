@@ -13,14 +13,14 @@ import { useCreateRecord } from '@/features/records/queries/mutations';
 import { Appointment } from '@/features/appointments/types/appointments.types';
 
 function getVehicleLabel(a: Appointment): string {
-  if (typeof a.vehicleId === 'object') {
+  if (typeof a.vehicleId === 'object' && a.vehicleId !== null) {
     return `${a.vehicleId.make} ${a.vehicleId.model} · ${a.vehicleId.registrationNo}`;
   }
-  return a.vehicleId;
+  return a.vehicleId as string;
 }
 
 function getVehicleId(a: Appointment): string {
-  if (typeof a.vehicleId === 'object') return (a.vehicleId as any).id || (a.vehicleId as any)._id;
+  if (typeof a.vehicleId === 'object' && a.vehicleId !== null) return (a.vehicleId as any).id || (a.vehicleId as any)._id;
   return a.vehicleId as string;
 }
 

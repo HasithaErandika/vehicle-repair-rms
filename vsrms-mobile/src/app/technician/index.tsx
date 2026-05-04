@@ -13,7 +13,7 @@ import client from '@/services/http.client';
 import { useEffect } from 'react';
 
 function getVehicleLabel(a: Appointment): string {
-  if (typeof a.vehicleId === 'object') {
+  if (typeof a.vehicleId === 'object' && a.vehicleId !== null) {
     return `${a.vehicleId.make} ${a.vehicleId.model} (${a.vehicleId.registrationNo})`;
   }
   return 'Vehicle';

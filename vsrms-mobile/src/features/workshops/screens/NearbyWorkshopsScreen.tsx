@@ -410,6 +410,7 @@ export function NearbyWorkshopsScreen() {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
+            style={{ flexGrow: 0, maxHeight: 54 }}
             contentContainerStyle={styles.chipRow}
             keyboardShouldPersistTaps="handled"
           >
@@ -583,7 +584,7 @@ const styles = StyleSheet.create((theme) => ({
   // Bottom carousel
   carouselWrapper: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 34 : 20,
+    bottom: Platform.OS === 'ios' ? 95 : 85,
     left: 0,
     right: 0,
     zIndex: 100,

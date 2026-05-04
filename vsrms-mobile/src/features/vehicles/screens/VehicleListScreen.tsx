@@ -63,10 +63,8 @@ export function VehicleListScreen() {
         ) : (
           <FlashList<Vehicle>                               
             data={vehicles || []}
-            renderItem={({ item, index }) => (
-              <Animated.View entering={FadeInUp.delay(index * 100).springify().damping(15)}>
-                <VehicleCard vehicle={item} />
-              </Animated.View>
+            renderItem={({ item }) => (
+              <VehicleCard vehicle={item} />
             )}
             // @ts-expect-error - FlashList requires estimatedItemSize dynamically
             estimatedItemSize={120}                 

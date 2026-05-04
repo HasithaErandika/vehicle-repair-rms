@@ -14,8 +14,8 @@ import { ServiceRecord } from '@/features/records/types/records.types';
 // ── Record row card ───────────────────────────────────────────────────────────
 
 function RecordRow({ record }: { record: ServiceRecord }) {
-  const vehicle = typeof record.vehicleId === 'object' ? record.vehicleId as any : null;
-  const appt    = typeof record.appointmentId === 'object' ? record.appointmentId as any : null;
+  const vehicle = typeof record.vehicleId === 'object' && record.vehicleId !== null ? record.vehicleId as any : null;
+  const appt    = typeof record.appointmentId === 'object' && record.appointmentId !== null ? record.appointmentId as any : null;
   const dateStr = new Date(record.serviceDate).toLocaleDateString(undefined, {
     day: 'numeric', month: 'short', year: 'numeric',
   });

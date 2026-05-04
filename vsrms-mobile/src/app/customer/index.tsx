@@ -27,17 +27,17 @@ function getGreeting(): string {
 }
 
 function getWorkshopLabel(a: Appointment): string {
-  if (typeof a.workshopId === 'object') return a.workshopId.name;
+  if (typeof a.workshopId === 'object' && a.workshopId !== null) return a.workshopId.name;
   return 'Workshop';
 }
 
 function getWorkshopAddress(a: Appointment): string {
-  if (typeof a.workshopId === 'object') return a.workshopId.address;
+  if (typeof a.workshopId === 'object' && a.workshopId !== null) return a.workshopId.address;
   return '';
 }
 
 function getVehicleLabel(a: Appointment): string {
-  if (typeof a.vehicleId === 'object') {
+  if (typeof a.vehicleId === 'object' && a.vehicleId !== null) {
     return `${a.vehicleId.make} ${a.vehicleId.model} (${a.vehicleId.registrationNo})`;
   }
   return '';
@@ -135,7 +135,7 @@ export default function DashboardScreen() {
                     key={v._id || v.id}
                     style={styles.vehicleCard}
                     activeOpacity={0.7}
-                    onPress={() => router.push(`/customer/vehicles/${v._id}` as any)}
+                    onPress={() => router.push(`/customer/vehicles/${v._id ?? v.id}` as any)}
                   >
                     <View style={styles.vehicleIconBox}>
                       <Ionicons
