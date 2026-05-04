@@ -6,12 +6,14 @@ import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { useCreateRecord } from '../queries/mutations';
 import { handleApiError } from '@/services/error.handler';
+import { useToast } from '@/providers/ToastProvider';
 
 export function AddRecordScreen() {
   const { vehicleId } = useLocalSearchParams<{ vehicleId: string }>();
   const router = useRouter();
   const { theme } = useUnistyles();
   const { mutate: create, isPending } = useCreateRecord();
+  const { showToast } = useToast();
   
   const [form, setForm] = useState({
     workDone: '',
@@ -21,11 +23,11 @@ export function AddRecordScreen() {
 
   const handleSubmit = () => {
     if (!form.workDone || !form.serviceDate) {
-      Alert.alert('Validation', 'Work description and date are required');
+      showToast('Work description and date are required', 'error');
       return;
     }
     if (form.totalCost && isNaN(parseFloat(form.totalCost))) {
-      Alert.alert('Validation', 'Total cost must be a valid number');
+      showToast('Total cost must be a valid number', 'error');
       return;
     }
 
@@ -35,8 +37,11 @@ export function AddRecordScreen() {
       totalCost: form.totalCost ? parseFloat(form.totalCost) : 0,
       serviceDate: form.serviceDate,
     }, {
-      onSuccess: () => router.back(),
-      onError: (err) => Alert.alert('Error', handleApiError(err))
+      onSuccess: () => {
+        showToast('Record added successfully', 'success');
+        router.back();
+      },
+      onError: (err) => showToast(handleApiError(err), 'error')
     });
   };
 

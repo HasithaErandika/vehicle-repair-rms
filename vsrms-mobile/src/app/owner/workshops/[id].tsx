@@ -9,6 +9,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { StyleSheet } from 'react-native-unistyles';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { ErrorScreen } from '@/components/feedback/ErrorScreen';
+import { ConfirmModal } from '@/components/feedback/ConfirmModal';
+import { useToast } from '@/providers/ToastProvider';
 import { useWorkshop, useWorkshopTechnicians } from '@/features/workshops/queries/queries';
 import { useAddTechnician, useRemoveTechnician, useUpdateWorkshop, useUploadWorkshopImage } from '@/features/workshops/queries/mutations';
 import { useWorkshopAppointments } from '@/features/appointments/queries/queries';
@@ -69,10 +71,12 @@ export default function WorkshopManageScreen() {
   // Optimistic local image URI — shown immediately after pick while upload is in flight
   const [localImageUri, setLocalImageUri] = useState<string | null>(null);
 
+  const { showToast } = useToast();
+
   const handlePickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission required', 'Please allow photo access to upload a workshop image.');
+      showToast('Permission required to upload a workshop image', 'error');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -158,15 +162,17 @@ export default function WorkshopManageScreen() {
     );
   };
 
+  const [techToRemove, setTechToRemove] = useState<{ id: string; name: string } | null>(null);
+
   const handleRemoveTech = (userId: string, name: string) => {
-    Alert.alert(
-      'Remove Technician',
-      `Remove ${name} from this workshop?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Remove', style: 'destructive', onPress: () => removeTech(userId) },
-      ],
-    );
+    setTechToRemove({ id: userId, name });
+  };
+
+  const confirmRemoveTech = () => {
+    if (techToRemove) {
+      removeTech(techToRemove.id);
+      setTechToRemove(null);
+    }
   };
 
   if (wLoading) return (
@@ -439,6 +445,16 @@ export default function WorkshopManageScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      <ConfirmModal
+        visible={!!techToRemove}
+        title="Remove Technician"
+        message={`Are you sure you want to remove ${techToRemove?.name} from this workshop?`}
+        confirmText="Remove"
+        type="danger"
+        onConfirm={confirmRemoveTech}
+        onCancel={() => setTechToRemove(null)}
+      />
     </ScreenWrapper>
   );
 }

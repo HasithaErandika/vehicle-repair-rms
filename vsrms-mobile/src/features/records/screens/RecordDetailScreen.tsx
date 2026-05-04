@@ -8,6 +8,7 @@ import { useRecord } from '../queries/queries';
 import { useDeleteRecord } from '../queries/mutations';
 import { handleApiError } from '@/services/error.handler';
 import { ErrorScreen } from '@/components/feedback/ErrorScreen';
+import { ConfirmModal } from '@/components/feedback/ConfirmModal';
 import { useAuth } from '@/hooks';
 
 export function RecordDetailScreen() {
@@ -30,24 +31,17 @@ export function RecordDetailScreen() {
     router.push({ pathname: `${prefix}/edit-record`, params: { id } } as any);
   };
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+
   const handleDeleteConfirm = () => {
-    Alert.alert(
-      'Delete Service Record',
-      'This action cannot be undone. The record will be permanently removed from the system.\n\nAre you sure you want to delete this record?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            deleteRecord(id!, {
-              onSuccess: () => router.back(),
-            });
-          },
-        },
-      ],
-      { cancelable: true },
-    );
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = () => {
+    setShowDeleteConfirm(false);
+    deleteRecord(id!, {
+      onSuccess: () => router.back(),
+    });
   };
 
   return (
@@ -192,6 +186,16 @@ export function RecordDetailScreen() {
           </ScrollView>
         )}
       </View>
+
+      <ConfirmModal
+        visible={showDeleteConfirm}
+        title="Delete Service Record"
+        message="This action cannot be undone. The record will be permanently removed from the system. Are you sure you want to delete this record?"
+        confirmText="Delete"
+        type="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </ScreenWrapper>
   );
 }

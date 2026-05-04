@@ -8,6 +8,7 @@ import { StyleSheet } from 'react-native-unistyles';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { ErrorScreen } from '@/components/feedback/ErrorScreen';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { ConfirmModal } from '@/components/feedback/ConfirmModal';
 import { useUsers } from '@/features/auth/queries/queries';
 import { useDeactivateUser } from '@/features/auth/queries/mutations';
 import { User } from '@/features/auth/types/auth.types';
@@ -66,16 +67,17 @@ export default function UserManagementScreen() {
   const [search, setSearch] = useState('');
   const { data, isLoading, isError, refetch } = useUsers();
   const { mutate: deactivate, isPending: deactivating } = useDeactivateUser();
+  const [userToDeactivate, setUserToDeactivate] = useState<string | null>(null);
 
   const handleDeactivate = (id: string) => {
-    Alert.alert(
-      'Deactivate User',
-      'This user will lose access to the platform immediately.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Deactivate', style: 'destructive', onPress: () => deactivate(id) },
-      ],
-    );
+    setUserToDeactivate(id);
+  };
+
+  const confirmDeactivate = () => {
+    if (userToDeactivate) {
+      deactivate(userToDeactivate);
+      setUserToDeactivate(null);
+    }
   };
 
   const users = (data?.data ?? []).filter(u => 
@@ -140,6 +142,16 @@ export default function UserManagementScreen() {
           <ErrorScreen onRetry={refetch} variant="inline" />
         ) : list}
       </View>
+
+      <ConfirmModal
+        visible={!!userToDeactivate}
+        title="Deactivate User"
+        message="This user will lose access to the platform immediately."
+        confirmText="Deactivate"
+        type="danger"
+        onConfirm={confirmDeactivate}
+        onCancel={() => setUserToDeactivate(null)}
+      />
     </ScreenWrapper>
   );
 }

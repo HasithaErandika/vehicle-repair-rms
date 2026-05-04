@@ -5,11 +5,14 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet } from 'react-native-unistyles';
+import * as ImagePicker from 'expo-image-picker';
+import { Image } from 'expo-image';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { useVehicle } from '../queries/queries';
-import { useUpdateVehicle } from '../queries/mutations';
+import { useUpdateVehicle, useUploadVehicleImage } from '../queries/mutations';
 import { handleApiError } from '@/services/error.handler';
-import { VehicleType } from './AddVehicleScreen';
+import { useToast } from '@/providers/ToastProvider';
+import { VehicleType } from '../types/vehicles.types';
 
 const VEHICLE_TYPES = [
   { value: 'car',        label: 'Car',        icon: 'car-outline' },
@@ -27,8 +30,13 @@ const CURRENT_YEAR = new Date().getFullYear();
 export default function EditVehicleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { showToast } = useToast();
   const { data: vehicle, isLoading } = useVehicle(id!);
   const { mutate: update, isPending } = useUpdateVehicle();
+  const uploadImage = useUploadVehicleImage();
+
+  const [uploading, setUploading] = useState(false);
+  const [localImageUri, setLocalImageUri] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     make: '', model: '', year: '',
@@ -65,6 +73,41 @@ export default function EditVehicleScreen() {
     return Object.keys(e).length === 0;
   };
 
+  async function handlePickImage() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      showToast('Permission required to select a photo', 'error');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.8,
+    });
+
+    if (result.canceled || !result.assets[0]) return;
+
+    const pickedUri = result.assets[0].uri;
+    setLocalImageUri(pickedUri);
+    setUploading(true);
+
+    uploadImage.mutate(
+      { id: id!, uri: pickedUri },
+      {
+        onSuccess: () => {
+          setLocalImageUri(null);
+        },
+        onSettled: () => setUploading(false),
+        onError: (err) => {
+          setLocalImageUri(null);
+          showToast(handleApiError(err), 'error');
+        },
+      }
+    );
+  }
+
   const handleSave = () => {
     if (!validate()) return;
     update(
@@ -80,7 +123,7 @@ export default function EditVehicleScreen() {
       },
       {
         onSuccess: () => router.back(),
-        onError: (err) => Alert.alert('Error', handleApiError(err)),
+        onError: (err) => showToast(handleApiError(err), 'error'),
       }
     );
   };
@@ -106,6 +149,42 @@ export default function EditVehicleScreen() {
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+
+          {/* PHOTO PREVIEW */}
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Vehicle Photo</Text>
+            <View style={styles.photoContainer}>
+              {(localImageUri || vehicle?.imageUrl) ? (
+                <Image
+                  source={{ uri: localImageUri ?? vehicle?.imageUrl }}
+                  style={styles.previewImage}
+                  contentFit="cover"
+                  transition={200}
+                />
+              ) : (
+                <View style={styles.photoPlaceholder}>
+                  <Ionicons name="camera-outline" size={32} color="#D1D5DB" />
+                  <Text style={styles.placeholderText}>No Photo</Text>
+                </View>
+              )}
+              {uploading && (
+                <View style={styles.uploadOverlay}>
+                  <ActivityIndicator color="#F56E0F" />
+                </View>
+              )}
+              <TouchableOpacity
+                style={styles.changeBtn}
+                onPress={handlePickImage}
+                activeOpacity={0.8}
+                disabled={uploading}
+              >
+                <Ionicons name="camera" size={16} color="#FFFFFF" />
+                <Text style={styles.changeBtnText}>
+                  {vehicle?.imageUrl ? 'Change Photo' : 'Add Photo'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
 
           {/* REG NO (read-only) */}
           {vehicle?.registrationNo ? (
@@ -248,6 +327,21 @@ const styles = StyleSheet.create(() => ({
   regText: { flex: 1, fontSize: 15, fontWeight: '800', color: '#1A1A2E', letterSpacing: 1 },
   lockedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#F3F4F6', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   lockedText: { fontSize: 10, color: '#9CA3AF', fontWeight: '600' },
+
+  photoContainer: {
+    height: 180, borderRadius: 20, overflow: 'hidden', backgroundColor: '#F3F4F6',
+    borderWidth: 1, borderColor: '#E5E7EB', position: 'relative',
+  },
+  previewImage: { width: '100%', height: '100%' },
+  photoPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
+  placeholderText: { fontSize: 12, color: '#9CA3AF', fontWeight: '600' },
+  uploadOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(255,255,255,0.7)', alignItems: 'center', justifyContent: 'center' },
+  changeBtn: {
+    position: 'absolute', bottom: 12, right: 12,
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: 'rgba(26,26,46,0.8)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12,
+  },
+  changeBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
 
   section: { marginBottom: 32 },
   sectionLabel: { fontSize: 13, fontWeight: '900', color: '#1A1A2E', marginBottom: 16, textTransform: 'uppercase', letterSpacing: 0.5 },

@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Modal, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import Animated, { FadeInDown, FadeOutDown, FadeIn, FadeOut } from 'react-native-reanimated';
 import { useUnistyles } from 'react-native-unistyles';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -24,12 +26,17 @@ export function ReviewActionSheet({
     <Modal
       visible={visible}
       transparent
-      animationType="slide"
+      animationType="none"
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <View 
+      <Animated.View style={StyleSheet.absoluteFill} entering={FadeIn.duration(300)} exiting={FadeOut.duration(200)}>
+        <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        </BlurView>
+      </Animated.View>
+      <View style={styles.backdrop}>
+        <Animated.View 
           style={[
             styles.sheetContainer, 
             { 
@@ -37,6 +44,8 @@ export function ReviewActionSheet({
               paddingBottom: Math.max(insets.bottom, 24)
             }
           ]}
+          entering={FadeInDown.springify().damping(20).stiffness(200).mass(0.8)}
+          exiting={FadeOutDown.duration(200)}
         >
           <View style={styles.handle} />
           
@@ -84,8 +93,8 @@ export function ReviewActionSheet({
           >
             <Text style={[styles.cancelText, { color: theme.colors.muted }]}>Cancel</Text>
           </TouchableOpacity>
-        </View>
-      </Pressable>
+        </Animated.View>
+      </View>
     </Modal>
   );
 }
@@ -93,7 +102,6 @@ export function ReviewActionSheet({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(26,26,46,0.5)',
     justifyContent: 'flex-end',
   },
   sheetContainer: {

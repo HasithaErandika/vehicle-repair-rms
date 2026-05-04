@@ -9,6 +9,7 @@ import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { useWorkshops } from '@/features/workshops/queries/queries';
 import { useDeactivateWorkshop } from '@/features/workshops/queries/mutations';
 import { ErrorScreen } from '@/components/feedback/ErrorScreen';
+import { ConfirmModal } from '@/components/feedback/ConfirmModal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Workshop } from '@/features/workshops/types/workshops.types';
 
@@ -78,20 +79,17 @@ function WorkshopCard({ workshop, onDeactivate }: { workshop: Workshop; onDeacti
 export default function AdminGaragesScreen() {
   const { data: workshops, isLoading, isError, refetch } = useWorkshops();
   const { mutate: deactivate, isPending: deactivating }   = useDeactivateWorkshop();
+  const [workshopToDeactivate, setWorkshopToDeactivate] = React.useState<Workshop | null>(null);
 
   const handleDeactivate = (workshop: Workshop) => {
-    Alert.alert(
-      'Deactivate Garage',
-      `Deactivating "${workshop.name}" will remove it from customer search and disable new bookings. You can reactivate it later if needed.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Deactivate Garage',
-          style: 'destructive',
-          onPress: () => deactivate(workshop._id ?? workshop.id!),
-        },
-      ],
-    );
+    setWorkshopToDeactivate(workshop);
+  };
+
+  const confirmDeactivate = () => {
+    if (workshopToDeactivate) {
+      deactivate(workshopToDeactivate._id ?? workshopToDeactivate.id!);
+      setWorkshopToDeactivate(null);
+    }
   };
 
   const list = (
@@ -150,6 +148,16 @@ export default function AdminGaragesScreen() {
           <ErrorScreen onRetry={refetch} variant="inline" />
         ) : list}
       </View>
+
+      <ConfirmModal
+        visible={!!workshopToDeactivate}
+        title="Deactivate Garage"
+        message={`Deactivating "${workshopToDeactivate?.name}" will remove it from customer search and disable new bookings. You can reactivate it later if needed.`}
+        confirmText="Deactivate Garage"
+        type="danger"
+        onConfirm={confirmDeactivate}
+        onCancel={() => setWorkshopToDeactivate(null)}
+      />
     </ScreenWrapper>
   );
 }

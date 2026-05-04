@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
 import {
   View, Text, TouchableOpacity, TextInput, ScrollView,
-  ActivityIndicator, StatusBar, Alert,
+  ActivityIndicator, StatusBar, Modal, Pressable,
+  KeyboardAvoidingView, Platform,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
+import Animated, { FadeInDown, FadeOutDown, FadeIn, FadeOut } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet } from 'react-native-unistyles';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
+import { ConfirmModal } from '@/components/feedback/ConfirmModal';
 import { useAuth } from '@/hooks';
 import { useUpdateMe } from '../queries/mutations';
 
@@ -28,6 +32,7 @@ export default function SettingsScreen() {
   const { mutate: update, isPending } = useUpdateMe();
 
   const [editing, setEditing]     = useState(false);
+  const [showPasswordInfo, setShowPasswordInfo] = useState(false);
   const [fullName, setFullName]   = useState(user?.fullName ?? '');
   const [phone, setPhone]         = useState((user as any)?.phone ?? '');
 
@@ -54,11 +59,10 @@ export default function SettingsScreen() {
     );
   };
 
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+
   const handleSignOut = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign Out', style: 'destructive', onPress: signOut },
-    ]);
+    setShowSignOutConfirm(true);
   };
 
   return (
@@ -111,51 +115,70 @@ export default function SettingsScreen() {
               )}
             </View>
 
-            {editing ? (
-              <View style={styles.editCard}>
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Full Name</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={fullName}
-                    onChangeText={setFullName}
-                    placeholder="Your full name"
-                  />
-                </View>
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Phone Number</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={phone}
-                    onChangeText={setPhone}
-                    placeholder="+94 77 000 0000"
-                    keyboardType="phone-pad"
-                  />
-                </View>
-                <View style={styles.editActions}>
-                  <TouchableOpacity
-                    style={styles.cancelBtn}
-                    onPress={() => { setEditing(false); setFullName(user?.fullName ?? ''); setPhone((user as any)?.phone ?? ''); }}
+            <View style={styles.infoCard}>
+              <InfoRow icon="person-outline" label="Full Name" value={user?.fullName ?? 'Not set'} />
+              <InfoRow icon="mail-outline" label="Email" value={user?.email ?? ''} />
+              <InfoRow icon="call-outline" label="Phone" value={(user as any)?.phone ?? 'Not set'} />
+              <InfoRow icon="calendar-outline" label="Member Since" value={memberSince} last />
+            </View>
+          </View>
+
+          {/* Profile Edit Modal */}
+          <Modal visible={editing} animationType="none" transparent onRequestClose={() => setEditing(false)}>
+            <Animated.View style={StyleSheet.absoluteFill} entering={FadeIn.duration(300)} exiting={FadeOut.duration(200)}>
+              <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill}>
+                <Pressable style={StyleSheet.absoluteFill} onPress={() => setEditing(false)} />
+              </BlurView>
+            </Animated.View>
+            <View style={styles.modalBg}>
+              <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ width: '100%' }}>
+                <Animated.View 
+                  style={styles.modalContent}
+                  entering={FadeInDown.springify().damping(20).stiffness(200).mass(0.8)}
+                  exiting={FadeOutDown.duration(200)}
+                >
+                  <View style={styles.modalHandle} />
+                  <View style={styles.modalHeader}>
+                    <Text style={styles.modalTitle}>Edit Profile</Text>
+                    <TouchableOpacity onPress={() => setEditing(false)} style={styles.closeBtn}>
+                      <Ionicons name="close" size={20} color="#6B7280" />
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Full Name</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={fullName}
+                      onChangeText={setFullName}
+                      placeholder="Your full name"
+                    />
+                  </View>
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Phone Number</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={phone}
+                      onChangeText={setPhone}
+                      placeholder="+94 77 000 0000"
+                      keyboardType="phone-pad"
+                    />
+                  </View>
+
+                  <TouchableOpacity 
+                    style={[styles.saveBtn, isPending && { opacity: 0.7 }]} 
+                    onPress={handleSave} 
+                    disabled={isPending}
                   >
-                    <Text style={styles.cancelBtnText}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={[styles.saveBtn, isPending && { opacity: 0.7 }]} onPress={handleSave} disabled={isPending}>
                     {isPending
                       ? <ActivityIndicator color="#FFF" size="small" />
                       : <Text style={styles.saveBtnText}>Save Changes</Text>
                     }
                   </TouchableOpacity>
-                </View>
-              </View>
-            ) : (
-              <View style={styles.infoCard}>
-                <InfoRow icon="person-outline" label="Full Name" value={user?.fullName ?? 'Not set'} />
-                <InfoRow icon="mail-outline" label="Email" value={user?.email ?? ''} />
-                <InfoRow icon="call-outline" label="Phone" value={(user as any)?.phone ?? 'Not set'} />
-                <InfoRow icon="calendar-outline" label="Member Since" value={memberSince} last />
-              </View>
-            )}
-          </View>
+                </Animated.View>
+              </KeyboardAvoidingView>
+            </View>
+          </Modal>
 
           {/* Security */}
           <View style={styles.section}>
@@ -164,13 +187,7 @@ export default function SettingsScreen() {
               <TouchableOpacity
                 style={styles.securityRow}
                 activeOpacity={0.7}
-                onPress={() =>
-                  Alert.alert(
-                    'Change Password',
-                    'Password changes are managed through your identity provider. Please use the "Forgot Password" option on the login screen to reset your password.',
-                    [{ text: 'OK' }],
-                  )
-                }
+                onPress={() => setShowPasswordInfo(true)}
               >
                 <View style={styles.securityIconBox}>
                   <Ionicons name="lock-closed-outline" size={18} color="#F56E0F" />
@@ -194,6 +211,25 @@ export default function SettingsScreen() {
 
         </ScrollView>
       </View>
+
+      <ConfirmModal
+        visible={showSignOutConfirm}
+        title="Sign Out"
+        message="Are you sure you want to sign out?"
+        confirmText="Sign Out"
+        type="danger"
+        onConfirm={signOut}
+        onCancel={() => setShowSignOutConfirm(false)}
+      />
+
+      <ConfirmModal
+        visible={showPasswordInfo}
+        title="Change Password"
+        message="Password changes are managed through your identity provider. Please use the 'Forgot Password' option on the login screen to reset your password."
+        confirmText="OK"
+        onConfirm={() => setShowPasswordInfo(false)}
+        onCancel={() => setShowPasswordInfo(false)}
+      />
     </ScreenWrapper>
   );
 }
@@ -261,8 +297,17 @@ const styles = StyleSheet.create((theme) => ({
   editActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
   cancelBtn: { flex: 1, height: 46, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: '#E5E7EB' },
   cancelBtnText: { fontSize: 14, fontWeight: '700', color: '#6B7280' },
-  saveBtn: { flex: 1, height: 46, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F56E0F' },
-  saveBtnText: { fontSize: 14, fontWeight: '800', color: '#FFFFFF' },
+  saveBtn: { height: 54, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F56E0F', shadowColor: '#F56E0F', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6 },
+  saveBtnText: { fontSize: 16, fontWeight: '800', color: '#FFFFFF' },
+
+  // Modal Styles
+  modalBg: { flex: 1, justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingTop: 12 },
+  modalHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#E5E7EB', alignSelf: 'center', marginBottom: 20 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+  modalTitle: { fontSize: 20, fontWeight: '900', color: '#1A1A2E' },
+  closeBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
+
 
   securityRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, paddingHorizontal: 16 },
   securityIconBox: { width: 38, height: 38, borderRadius: 11, backgroundColor: '#FFF7ED', alignItems: 'center', justifyContent: 'center' },

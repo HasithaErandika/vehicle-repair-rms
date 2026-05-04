@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, TouchableOpacity, TextInput, ActivityIndicator, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, TextInput, ActivityIndicator, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import Animated, { FadeInDown, FadeOutDown, FadeIn, FadeOut } from 'react-native-reanimated';
 import { useUnistyles } from 'react-native-unistyles';
 import { Review } from '../types/reviews.types';
 
@@ -44,13 +46,22 @@ export function ReviewFormModal({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
+    <Modal visible={visible} animationType="none" transparent onRequestClose={handleClose}>
+      <Animated.View style={StyleSheet.absoluteFill} entering={FadeIn.duration(300)} exiting={FadeOut.duration(200)}>
+        <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
+        </BlurView>
+      </Animated.View>
       <View style={styles.reviewModalBg}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={{ width: '100%' }}
         >
-          <View style={styles.reviewModalContent}>
+          <Animated.View 
+            style={styles.reviewModalContent}
+            entering={FadeInDown.springify().damping(20).stiffness(200).mass(0.8)}
+            exiting={FadeOutDown.duration(200)}
+          >
             <View style={styles.reviewModalHandle} />
             
             <ScrollView 
@@ -63,8 +74,8 @@ export function ReviewFormModal({
                   <Text style={styles.reviewModalTitle}>{initialData ? 'Edit Your Review' : 'Write a Review'}</Text>
                   {workshopName && <Text style={styles.reviewModalSub}>{workshopName}</Text>}
                 </View>
-                <TouchableOpacity onPress={handleClose}>
-                  <Ionicons name="close" size={24} color="#6B7280" />
+                <TouchableOpacity onPress={handleClose} style={styles.closeBtn}>
+                  <Ionicons name="close" size={20} color="#6B7280" />
                 </TouchableOpacity>
               </View>
 
@@ -109,7 +120,7 @@ export function ReviewFormModal({
                 }
               </TouchableOpacity>
             </ScrollView>
-          </View>
+          </Animated.View>
         </KeyboardAvoidingView>
       </View>
     </Modal>
@@ -117,13 +128,14 @@ export function ReviewFormModal({
 }
 
 const styles = StyleSheet.create({
-  reviewModalBg: { flex: 1, backgroundColor: 'rgba(26,26,46,0.7)', justifyContent: 'flex-end' },
+  reviewModalBg: { flex: 1, justifyContent: 'flex-end' },
   reviewModalContent: {
     backgroundColor: '#FFFFFF', borderTopLeftRadius: 32, borderTopRightRadius: 32,
     padding: 24, paddingTop: 12,
   },
   reviewModalHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#E5E7EB', alignSelf: 'center', marginBottom: 20 },
   reviewModalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 },
+  closeBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
   reviewModalTitle: { fontSize: 20, fontWeight: '900', color: '#1A1A2E' },
   reviewModalSub: { fontSize: 13, color: '#6B7280', marginTop: 3, fontWeight: '500' },
   starPicker: { flexDirection: 'row', justifyContent: 'center', gap: 12, marginBottom: 8 },

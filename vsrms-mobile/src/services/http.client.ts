@@ -3,7 +3,7 @@ import { StorageService } from './storage.service';
 
 const client = axios.create({
   baseURL: process.env.EXPO_PUBLIC_API_URL,
-  timeout: 15000,
+  timeout: 60000, // Increased to 60s for large photo uploads (Bug C2)
 });
 
 // ── Request interceptor: attach token ────────────────────────────────────────

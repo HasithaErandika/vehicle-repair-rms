@@ -10,35 +10,34 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/feedback/Skeleton';
 import { ErrorScreen } from '@/components/feedback/ErrorScreen';
+import { ConfirmModal } from '@/components/feedback/ConfirmModal';
+import { useToast } from '@/providers/ToastProvider';
 import { formatDate } from '../../../utils/date.utils';
 
 export function AppointmentDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { showToast } = useToast();
+  const [showCancelModal, setShowCancelModal] = React.useState(false);
   
   const { data: appointment, isLoading, isError, refetch } = useAppointment(id as string);
   const { mutate: cancelAppointment, isPending: isCancelling } = useDeleteAppointment();
 
   const handleCancel = () => {
-    Alert.alert(
-      'Cancel Appointment',
-      'Are you sure you want to cancel this booking? This action cannot be undone.',
-      [
-        { text: 'No, Keep it', style: 'cancel' },
-        { 
-          text: 'Yes, Cancel', 
-          style: 'destructive',
-          onPress: () => {
-            cancelAppointment(id as string, {
-              onSuccess: () => {
-                Alert.alert('Success', 'Appointment cancelled successfully');
-                router.back();
-              }
-            });
-          }
-        }
-      ]
-    );
+    setShowCancelModal(true);
+  };
+
+  const onConfirmCancel = () => {
+    setShowCancelModal(false);
+    cancelAppointment(id as string, {
+      onSuccess: () => {
+        showToast('Appointment cancelled successfully', 'success');
+        router.back();
+      },
+      onError: (err) => {
+        showToast('Failed to cancel appointment', 'error');
+      }
+    });
   };
 
   if (isLoading) {
@@ -137,6 +136,17 @@ export function AppointmentDetailScreen() {
           </View>
         )}
       </ScrollView>
+
+      <ConfirmModal
+        visible={showCancelModal}
+        title="Cancel Appointment"
+        message="Are you sure you want to cancel this booking? This action cannot be undone."
+        confirmText="Yes, Cancel"
+        cancelText="No, Keep it"
+        type="danger"
+        onConfirm={onConfirmCancel}
+        onCancel={() => setShowCancelModal(false)}
+      />
     </ScreenWrapper>
   );
 }

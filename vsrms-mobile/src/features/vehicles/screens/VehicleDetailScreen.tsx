@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, StatusBar, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet } from 'react-native-unistyles';
@@ -8,11 +8,14 @@ import { Image } from 'expo-image';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { useVehicle } from '../queries/queries';
-import { useUploadVehicleImage } from '../queries/mutations';
+import { useUploadVehicleImage, useDeleteVehicle } from '../queries/mutations';
 import { useVehicleRecords } from '@/features/records/queries/queries';
 import { ServiceRecord } from '@/features/records/types/records.types';
 import { ErrorScreen } from '@/components/feedback/ErrorScreen';
+import { ConfirmModal } from '@/components/feedback/ConfirmModal';
 import { handleApiError } from '@/services/error.handler';
+import { VehicleFormModal } from '../components/VehicleFormModal';
+import { useToast } from '@/providers/ToastProvider';
 
 const TYPE_ICON: Record<string, string> = {
   car: 'car-outline',
@@ -27,23 +30,27 @@ const TYPE_ICON: Record<string, string> = {
 
 export function VehicleDetailScreen({ id }: { id: string }) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [uploading, setUploading]       = useState(false);
   const [imageError, setImageError]     = useState(false);
   // Optimistic local URI — shown immediately after pick while upload is in flight (Bug C4)
   const [localImageUri, setLocalImageUri] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const { data: vehicle, isLoading: vLoading } = useVehicle(id);
   const { data: recordsData, isLoading: rLoading } = useVehicleRecords(id);
   // useVehicleRecords returns a paginated envelope {data, total, ...} — unwrap the array
   const records: ServiceRecord[] = (recordsData as any)?.data ?? (Array.isArray(recordsData) ? recordsData : []);
   const uploadImage = useUploadVehicleImage();
+  const deleteVehicle = useDeleteVehicle();
 
   const iconName = vehicle?.vehicleType ? (TYPE_ICON[vehicle.vehicleType] ?? 'car-outline') : 'car-outline';
 
   async function handlePickImage() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission required', 'Allow photo library access to upload a vehicle photo.');
+      showToast('Permission required to select a photo', 'error');
       return;
     }
 
@@ -71,11 +78,22 @@ export function VehicleDetailScreen({ id }: { id: string }) {
         onSettled: () => setUploading(false),
         onError: (err) => {
           setLocalImageUri(null); // revert on failure
-          Alert.alert('Image Upload Failed', handleApiError(err));
+          showToast(handleApiError(err), 'error');
         },
       },
     );
   }
+
+  async function handleDelete() {
+    setShowDeleteModal(true);
+  }
+
+  const onConfirmDelete = () => {
+    setShowDeleteModal(false);
+    deleteVehicle.mutate(id, {
+      onSuccess: () => router.back()
+    });
+  };
 
   if (vLoading) {
     return (
@@ -134,9 +152,15 @@ export function VehicleDetailScreen({ id }: { id: string }) {
         <TouchableOpacity style={styles.glassBtn} onPress={() => router.back()} activeOpacity={0.7}>
           <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.glassBtn} onPress={() => router.push(`/customer/vehicles/edit/${id}` as any)} activeOpacity={0.7}>
-          <Ionicons name="create-outline" size={20} color="#FFFFFF" />
-        </TouchableOpacity>
+        
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={styles.glassBtn} onPress={() => setShowEditModal(true)} activeOpacity={0.7}>
+            <Ionicons name="create-outline" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.glassBtn, { backgroundColor: 'rgba(220, 38, 38, 0.5)' }]} onPress={handleDelete} activeOpacity={0.7}>
+            <Ionicons name="trash-outline" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* ── CONTENT (Overlaps Hero slightly) ── */}
@@ -239,6 +263,22 @@ export function VehicleDetailScreen({ id }: { id: string }) {
         </View>
 
       </ScrollView>
+
+      <ConfirmModal
+        visible={showDeleteModal}
+        title="Confirm Deletion"
+        message="Are you sure you want to delete this vehicle? This will also remove its service history from your view."
+        confirmText="Delete"
+        type="danger"
+        onConfirm={onConfirmDelete}
+        onCancel={() => setShowDeleteModal(false)}
+      />
+
+      <VehicleFormModal 
+        visible={showEditModal} 
+        onClose={() => setShowEditModal(false)} 
+        vehicle={vehicle}
+      />
     </View>
   );
 }
@@ -263,6 +303,7 @@ const styles = StyleSheet.create((theme) => ({
   changePhotoText: { fontSize: 12, fontWeight: '700', color: '#FFFFFF' },
 
   floatingHeader: { position: 'absolute', top: 56, left: 20, right: 20, flexDirection: 'row', justifyContent: 'space-between', zIndex: 100 },
+  headerActions: { flexDirection: 'row', gap: 12 },
   glassBtn: {
     width: 44, height: 44, borderRadius: 22,
     backgroundColor: 'rgba(26, 26, 46, 0.5)',
