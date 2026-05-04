@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, Modal, TextInput,
-  ActivityIndicator, StatusBar, Platform,
+  ActivityIndicator, StatusBar, Platform, Pressable
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import Animated, { FadeInDown, FadeOutDown, FadeIn, FadeOut } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import MapView, { Marker, PROVIDER_GOOGLE, MapPressEvent } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -264,9 +266,18 @@ export default function OwnerDashboardScreen() {
       </View>
 
       {/* ── Create workshop modal ── */}
-      <Modal visible={createModalVisible} animationType="fade" transparent>
+      <Modal visible={createModalVisible} animationType="none" transparent>
+        <Animated.View style={StyleSheet.absoluteFill} entering={FadeIn.duration(300)} exiting={FadeOut.duration(200)}>
+          <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setCreateModalVisible(false)} />
+          </BlurView>
+        </Animated.View>
         <View style={styles.modalBg}>
-          <View style={styles.modalContent}>
+          <Animated.View 
+            style={styles.modalContent}
+            entering={FadeInDown.springify().damping(20).stiffness(200).mass(0.8)}
+            exiting={FadeOutDown.duration(200)}
+          >
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Create Workshop</Text>
               <TouchableOpacity onPress={() => setCreateModalVisible(false)}>
@@ -325,7 +336,7 @@ export default function OwnerDashboardScreen() {
             >
               {creating ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveBtnText}>Create Workshop</Text>}
             </TouchableOpacity>
-          </View>
+          </Animated.View>
         </View>
       </Modal>
 
@@ -402,7 +413,7 @@ const styles = StyleSheet.create((theme) => ({
   emptyCreateBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
 
   // Create modal
-  modalBg: { flex: 1, backgroundColor: 'rgba(26,26,46,0.8)', justifyContent: 'flex-end' },
+  modalBg: { flex: 1, justifyContent: 'flex-end' },
   modalContent: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: '90%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   modalTitle: { fontSize: 20, fontWeight: '900', color: '#1A1A2E' },

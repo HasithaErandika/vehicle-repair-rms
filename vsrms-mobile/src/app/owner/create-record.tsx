@@ -30,7 +30,7 @@ export default function OwnerCreateRecordScreen() {
   const params = useLocalSearchParams<{ appointmentId?: string, workshopId?: string }>();
   const { user } = useAuth();
 
-  const targetWorkshopId = params.workshopId || user?.workshopId;
+  const targetWorkshopId = params.workshopId || user?.workshopId || 'all';
   const { data: inProgressAppts } = useWorkshopAppointments(targetWorkshopId, 'in_progress');
 
   const [selectedAppt, setSelectedAppt] = useState<Appointment | null>(null);

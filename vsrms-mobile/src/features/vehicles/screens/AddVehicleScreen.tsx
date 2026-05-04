@@ -13,6 +13,7 @@ import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { useCreateVehicle, useUploadVehicleImage } from '../queries/mutations';
 import { handleApiError } from '@/services/error.handler';
 import { useToast } from '@/providers/ToastProvider';
+import { VehicleType } from '../types/vehicles.types';
 
 
 const VEHICLE_TYPES = [
@@ -26,7 +27,7 @@ const VEHICLE_TYPES = [
   { value: 'other', label: 'Other', icon: 'construct-outline' },
 ] as const;
 
-export type VehicleType = (typeof VEHICLE_TYPES)[number]['value'];
+
 const CURRENT_YEAR = new Date().getFullYear();
 
 
@@ -76,10 +77,7 @@ export default function AddVehicleScreen() {
     // Ask for media library permission 
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert(
-        'Permission required',
-        'Please allow photo library access so you can add a vehicle photo.',
-      );
+      showToast('Permission required to select a photo', 'error');
       return;
     }
 
@@ -139,13 +137,12 @@ export default function AddVehicleScreen() {
                 router.back();
               },
               onError: (err) => {
-                showToast('Vehicle added, but photo upload failed', 'error');
-                Alert.alert('Photo Upload Failed', handleApiError(err));
+                showToast('Photo upload failed, but vehicle was added', 'error');
               },
             },
           );
         },
-        onError: (err) => Alert.alert('Failed to Add Vehicle', handleApiError(err)),
+        onError: (err) => showToast(handleApiError(err), 'error'),
       },
     );
   };

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StatusBar, ActivityIndicator } from 'react-native';
 import { useVehicles } from '../queries/queries';
 import { VehicleCard } from '../components/VehicleCard';
@@ -10,11 +10,13 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Vehicle } from '../types/vehicles.types';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { VehicleFormModal } from '../components/VehicleFormModal';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 
 export function VehicleListScreen() {
   const { data: vehicles, isLoading, isError, refetch } = useVehicles();
   const router = useRouter();
+  const [showAddModal, setShowAddModal] = useState(false);
 
   return (
     <ScreenWrapper bg="#1A1A2E">
@@ -29,7 +31,7 @@ export function VehicleListScreen() {
           </View>
           <TouchableOpacity 
             style={styles.addBtn} 
-            onPress={() => router.push('/customer/vehicles/add')}
+            onPress={() => setShowAddModal(true)}
             activeOpacity={0.8}
           >
             <Ionicons name="add" size={24} color="#FFFFFF" />
@@ -76,6 +78,10 @@ export function VehicleListScreen() {
           />
         )}
       </View>
+      <VehicleFormModal 
+        visible={showAddModal} 
+        onClose={() => setShowAddModal(false)} 
+      />
     </ScreenWrapper>
   );
 }

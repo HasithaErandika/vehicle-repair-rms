@@ -11,7 +11,8 @@ import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { useVehicle } from '../queries/queries';
 import { useUpdateVehicle, useUploadVehicleImage } from '../queries/mutations';
 import { handleApiError } from '@/services/error.handler';
-import { VehicleType } from './AddVehicleScreen';
+import { useToast } from '@/providers/ToastProvider';
+import { VehicleType } from '../types/vehicles.types';
 
 const VEHICLE_TYPES = [
   { value: 'car',        label: 'Car',        icon: 'car-outline' },
@@ -29,6 +30,7 @@ const CURRENT_YEAR = new Date().getFullYear();
 export default function EditVehicleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { showToast } = useToast();
   const { data: vehicle, isLoading } = useVehicle(id!);
   const { mutate: update, isPending } = useUpdateVehicle();
   const uploadImage = useUploadVehicleImage();
@@ -74,7 +76,7 @@ export default function EditVehicleScreen() {
   async function handlePickImage() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission required', 'Allow photo library access to upload a vehicle photo.');
+      showToast('Permission required to select a photo', 'error');
       return;
     }
 
@@ -100,7 +102,7 @@ export default function EditVehicleScreen() {
         onSettled: () => setUploading(false),
         onError: (err) => {
           setLocalImageUri(null);
-          Alert.alert('Upload Failed', handleApiError(err));
+          showToast(handleApiError(err), 'error');
         },
       }
     );
@@ -121,7 +123,7 @@ export default function EditVehicleScreen() {
       },
       {
         onSuccess: () => router.back(),
-        onError: (err) => Alert.alert('Error', handleApiError(err)),
+        onError: (err) => showToast(handleApiError(err), 'error'),
       }
     );
   };

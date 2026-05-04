@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, StatusBar, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet } from 'react-native-unistyles';
@@ -12,7 +12,10 @@ import { useUploadVehicleImage, useDeleteVehicle } from '../queries/mutations';
 import { useVehicleRecords } from '@/features/records/queries/queries';
 import { ServiceRecord } from '@/features/records/types/records.types';
 import { ErrorScreen } from '@/components/feedback/ErrorScreen';
+import { ConfirmModal } from '@/components/feedback/ConfirmModal';
 import { handleApiError } from '@/services/error.handler';
+import { VehicleFormModal } from '../components/VehicleFormModal';
+import { useToast } from '@/providers/ToastProvider';
 
 const TYPE_ICON: Record<string, string> = {
   car: 'car-outline',
@@ -27,10 +30,13 @@ const TYPE_ICON: Record<string, string> = {
 
 export function VehicleDetailScreen({ id }: { id: string }) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [uploading, setUploading]       = useState(false);
   const [imageError, setImageError]     = useState(false);
   // Optimistic local URI — shown immediately after pick while upload is in flight (Bug C4)
   const [localImageUri, setLocalImageUri] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const { data: vehicle, isLoading: vLoading } = useVehicle(id);
   const { data: recordsData, isLoading: rLoading } = useVehicleRecords(id);
@@ -44,7 +50,7 @@ export function VehicleDetailScreen({ id }: { id: string }) {
   async function handlePickImage() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission required', 'Allow photo library access to upload a vehicle photo.');
+      showToast('Permission required to select a photo', 'error');
       return;
     }
 
@@ -72,30 +78,22 @@ export function VehicleDetailScreen({ id }: { id: string }) {
         onSettled: () => setUploading(false),
         onError: (err) => {
           setLocalImageUri(null); // revert on failure
-          Alert.alert('Image Upload Failed', handleApiError(err));
+          showToast(handleApiError(err), 'error');
         },
       },
     );
   }
 
   async function handleDelete() {
-    Alert.alert(
-      'Confirm Deletion',
-      'Are you sure you want to delete this vehicle? This will also remove its service history from your view.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Confirm', 
-          style: 'destructive',
-          onPress: () => {
-            deleteVehicle.mutate(id, {
-              onSuccess: () => router.back()
-            });
-          }
-        },
-      ]
-    );
+    setShowDeleteModal(true);
   }
+
+  const onConfirmDelete = () => {
+    setShowDeleteModal(false);
+    deleteVehicle.mutate(id, {
+      onSuccess: () => router.back()
+    });
+  };
 
   if (vLoading) {
     return (
@@ -156,7 +154,7 @@ export function VehicleDetailScreen({ id }: { id: string }) {
         </TouchableOpacity>
         
         <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.glassBtn} onPress={() => router.push(`/customer/vehicles/edit/${id}` as any)} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.glassBtn} onPress={() => setShowEditModal(true)} activeOpacity={0.7}>
             <Ionicons name="create-outline" size={20} color="#FFFFFF" />
           </TouchableOpacity>
           <TouchableOpacity style={[styles.glassBtn, { backgroundColor: 'rgba(220, 38, 38, 0.5)' }]} onPress={handleDelete} activeOpacity={0.7}>
@@ -265,6 +263,22 @@ export function VehicleDetailScreen({ id }: { id: string }) {
         </View>
 
       </ScrollView>
+
+      <ConfirmModal
+        visible={showDeleteModal}
+        title="Confirm Deletion"
+        message="Are you sure you want to delete this vehicle? This will also remove its service history from your view."
+        confirmText="Delete"
+        type="danger"
+        onConfirm={onConfirmDelete}
+        onCancel={() => setShowDeleteModal(false)}
+      />
+
+      <VehicleFormModal 
+        visible={showEditModal} 
+        onClose={() => setShowEditModal(false)} 
+        vehicle={vehicle}
+      />
     </View>
   );
 }
