@@ -9,6 +9,7 @@ export interface ServiceRecord {
   totalCost: number;
   mileageAtService?: number;
   technicianName?: string;
+  markCompleted?: boolean;
   documents?: string[];
   createdAt?: string;
   updatedAt?: string;
@@ -23,6 +24,7 @@ export interface CreateRecordPayload {
   totalCost: number;
   mileageAtService?: number;
   technicianName?: string;
+  markCompleted?: boolean;
   documents?: string[];
 }
 

@@ -39,6 +39,7 @@ function WorkshopCard({ workshop, onDeactivate }: { workshop: Workshop; onDeacti
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Ionicons name="ban-outline" size={18} color="#EF4444" />
+            <Text style={styles.deactivateBtnText}>Deactivate</Text>
           </TouchableOpacity>
         )}
         {!isActive && (
@@ -80,12 +81,12 @@ export default function AdminGaragesScreen() {
 
   const handleDeactivate = (workshop: Workshop) => {
     Alert.alert(
-      'Deactivate Workshop',
-      `Deactivate "${workshop.name}"? It will be hidden from users. This can be reversed by your database admin.`,
+      'Deactivate Garage',
+      `Deactivating "${workshop.name}" will remove it from customer search and disable new bookings. You can reactivate it later if needed.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Deactivate',
+          text: 'Deactivate Garage',
           style: 'destructive',
           onPress: () => deactivate(workshop._id ?? workshop.id!),
         },
@@ -183,7 +184,8 @@ const styles = StyleSheet.create((theme) => ({
   workshopName: { fontSize: 16, fontWeight: '900', color: '#1A1A2E' },
   workshopLocation: { fontSize: 12, color: '#9CA3AF', fontWeight: '500', marginTop: 1 },
   ownerLabel: { fontSize: 10, color: '#6B7280', fontWeight: '600', marginTop: 3, fontStyle: 'italic' },
-  deactivateBtn: { width: 34, height: 34, borderRadius: 10, backgroundColor: '#FEF2F2', alignItems: 'center', justifyContent: 'center' },
+  deactivateBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, height: 34, borderRadius: 10, backgroundColor: '#FEF2F2', justifyContent: 'center' },
+  deactivateBtnText: { fontSize: 12, fontWeight: '800', color: '#EF4444', textTransform: 'uppercase' },
   inactiveBadge: { width: 34, height: 34, borderRadius: 10, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
 
   cardFooter: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F3F4F6', flexWrap: 'wrap' },

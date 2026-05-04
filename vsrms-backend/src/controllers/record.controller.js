@@ -78,7 +78,7 @@ const createRecord = async (req, res, next) => {
     });
 
     // If linked to an appointment, advance it to 'completed' via the state machine
-    if (appointmentId) {
+    if (appointmentId && req.body.markCompleted !== false) {
       const appt = await Appointment.findById(appointmentId);
       if (appt && Appointment.isValidTransition(appt.status, 'completed')) {
         appt.status = 'completed';

@@ -31,12 +31,12 @@ function getUserInitial(userId: Review['userId']): string {
   return label[0]?.toUpperCase() ?? '?';
 }
 
-export function ReviewCard({ 
-  review, 
-  onEdit, 
-  onDelete 
-}: { 
-  review: Review; 
+export function ReviewCard({
+  review,
+  onEdit,
+  onDelete
+}: {
+  review: Review;
   onEdit?: (review: Review) => void;
   onDelete?: (review: Review) => void;
 }) {
@@ -78,8 +78,8 @@ export function ReviewCard({
             })}
           </Text>
           {isOwner && (
-            <TouchableOpacity 
-              style={styles.optionsBtn} 
+            <TouchableOpacity
+              style={styles.optionsBtn}
               onPress={() => setSheetVisible(true)}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
@@ -127,8 +127,8 @@ const styles = StyleSheet.create((theme) => ({
   reviewerName: { fontSize: 14, fontWeight: '700', color: theme.colors.text },
   rightHeader: { alignItems: 'flex-end', gap: 4 },
   dateText: { fontSize: 11, color: theme.colors.muted, fontWeight: '500' },
-  optionsBtn: { 
-    padding: 4, 
+  optionsBtn: {
+    padding: 4,
     marginRight: -8,
   },
   comment: { fontSize: 13, color: theme.colors.muted, lineHeight: 20, fontStyle: 'italic' },

@@ -47,7 +47,7 @@ export function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
           {/* Tags row */}
           <View style={styles.tagsRow}>
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>{vehicle.vehicleType.toUpperCase()}</Text>
+              <Text style={styles.badgeText}>{(vehicle.vehicleType ?? 'unknown').toUpperCase()}</Text>
             </View>
             {vehicle.mileage ? (
               <View style={styles.mileageBadge}>

@@ -45,6 +45,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="workshops" />
       <Tabs.Screen name="vehicles" />
       <Tabs.Screen name="schedule" />
+      <Tabs.Screen name="reviews" options={{ href: null }} />
       <Tabs.Screen name="settings" />
     </Tabs>
   );

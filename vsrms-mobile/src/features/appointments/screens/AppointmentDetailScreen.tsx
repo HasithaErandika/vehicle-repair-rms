@@ -101,12 +101,12 @@ export function AppointmentDetailScreen() {
           <DetailItem 
             icon="car-outline" 
             label="Vehicle" 
-            value={typeof appointment.vehicleId === 'object' ? `${appointment.vehicleId.make} ${appointment.vehicleId.model} (${appointment.vehicleId.registrationNo})` : 'Vehicle'} 
+            value={typeof appointment.vehicleId === 'object' && appointment.vehicleId !== null ? `${appointment.vehicleId.make} ${appointment.vehicleId.model} (${appointment.vehicleId.registrationNo})` : 'Vehicle'} 
           />
           <DetailItem 
             icon="business-outline" 
             label="Workshop" 
-            value={typeof appointment.workshopId === 'object' ? appointment.workshopId.name : 'Workshop'} 
+            value={typeof appointment.workshopId === 'object' && appointment.workshopId !== null ? appointment.workshopId.name : 'Workshop'} 
           />
           {appointment.notes ? (
             <DetailItem 

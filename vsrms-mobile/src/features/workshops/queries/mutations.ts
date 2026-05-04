@@ -51,7 +51,7 @@ export function useDeactivateWorkshop() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: workshopKeys.lists() });
       qc.invalidateQueries({ queryKey: workshopKeys.mine() });
-      showToast('Workshop deactivated', 'success');
+      showToast('Garage deactivated', 'success');
     },
     onError: (e: any) => showToast(handleApiError(e), 'error'),
   });
@@ -77,8 +77,14 @@ export function useUploadWorkshopImage(workshopId: string) {
 
   return useMutation({
     mutationFn: (imageUri: string) => uploadWorkshopImage(workshopId, imageUri),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: workshopKeys.detail(workshopId) });
+    onSuccess: (data: any) => {
+      // Directly update the cache with the returned workshop (incl. new imageUrl).
+      // This is instant and avoids the stale-image bug (O2) where invalidate
+      // triggers a background refetch but the UI shows the old cached value first.
+      const workshop = data?.workshop ?? data;
+      if (workshop) {
+        qc.setQueryData(workshopKeys.detail(workshopId), workshop);
+      }
       qc.invalidateQueries({ queryKey: workshopKeys.mine() });
       showToast('Workshop photo updated', 'success');
     },

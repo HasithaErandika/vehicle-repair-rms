@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, Modal, TextInput,
-  ActivityIndicator, StatusBar, Alert, Image,
+  ActivityIndicator, StatusBar, Alert, KeyboardAvoidingView, Platform, Image,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,12 +10,11 @@ import { StyleSheet } from 'react-native-unistyles';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { ErrorScreen } from '@/components/feedback/ErrorScreen';
 import { useWorkshop, useWorkshopTechnicians } from '@/features/workshops/queries/queries';
-import { useRemoveTechnician, useUpdateWorkshop, useUploadWorkshopImage } from '@/features/workshops/queries/mutations';
-import { useRegisterStaff } from '@/features/auth/queries/mutations';
+import { useAddTechnician, useRemoveTechnician, useUpdateWorkshop, useUploadWorkshopImage } from '@/features/workshops/queries/mutations';
 import { useWorkshopAppointments } from '@/features/appointments/queries/queries';
 import { User } from '@/features/auth/types/auth.types';
 
-const EMPTY_TECH = { firstName: '', lastName: '', email: '', phone: '', password: '' };
+const EMPTY_TECH = { firstName: '', lastName: '', email: '', phone: '' };
 
 // ── Technician card ───────────────────────────────────────────────────────────
 
@@ -55,15 +54,20 @@ export default function WorkshopManageScreen() {
   const router  = useRouter();
 
   const { data: workshop, isLoading: wLoading, isError: wError, refetch: wRefetch } = useWorkshop(id!);
-  const { data: technicians = [], isLoading: tLoading, refetch: tRefetch } = useWorkshopTechnicians(id!);
+  const { data: technicians = [], isLoading: tLoading } = useWorkshopTechnicians(id!);
   const { data: pending }    = useWorkshopAppointments(id, 'pending');
   const { data: confirmed }  = useWorkshopAppointments(id, 'confirmed');
   const { data: inProgress } = useWorkshopAppointments(id, 'in_progress');
 
-  const { mutate: registerTech, isPending: addPending } = useRegisterStaff();
-  const { mutate: removeTech,   isPending: removePending } = useRemoveTechnician(id!);
-  const { mutate: updateWS,     isPending: updatePending } = useUpdateWorkshop(id!);
-  const { mutate: uploadImage,  isPending: uploadPending } = useUploadWorkshopImage(id!);
+  // ─── Add technician uses the workshop endpoint so they appear in the list
+  //     immediately and get the correct workshopId (Bug O1 + T1 fix)
+  const { mutate: addTech,    isPending: addPending }    = useAddTechnician(id!);
+  const { mutate: removeTech, isPending: removePending } = useRemoveTechnician(id!);
+  const { mutate: updateWS,   isPending: updatePending } = useUpdateWorkshop(id!);
+  const { mutate: uploadImage, isPending: uploadPending } = useUploadWorkshopImage(id!);
+
+  // Optimistic local image URI — shown immediately after pick while upload is in flight
+  const [localImageUri, setLocalImageUri] = useState<string | null>(null);
 
   const handlePickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -78,7 +82,12 @@ export default function WorkshopManageScreen() {
       aspect: [16, 9],
     });
     if (!result.canceled && result.assets[0]) {
-      uploadImage(result.assets[0].uri);
+      const uri = result.assets[0].uri;
+      // Show the local file immediately (optimistic UI — Bug O2 fix)
+      setLocalImageUri(uri);
+      uploadImage(uri, {
+        onError: () => setLocalImageUri(null), // revert on failure
+      });
     }
   };
 
@@ -86,7 +95,6 @@ export default function WorkshopManageScreen() {
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [techForm, setTechForm]               = useState(EMPTY_TECH);
   const [techFormError, setTechFormError]     = useState('');
-  const [showPassword, setShowPassword]       = useState(false);
 
   // Edit workshop modal
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -126,30 +134,26 @@ export default function WorkshopManageScreen() {
 
   const handleAddTech = () => {
     setTechFormError('');
-    if (!techForm.firstName || !techForm.lastName || !techForm.email || !techForm.password) {
-      setTechFormError('First name, last name, email and password are required.');
-      return;
-    }
-    if (techForm.password.length < 8) {
-      setTechFormError('Password must be at least 8 characters.');
+    if (!techForm.firstName || !techForm.lastName || !techForm.email) {
+      setTechFormError('First name, last name, and email are required.');
       return;
     }
     if (!id) {
       setTechFormError('Workshop ID missing.');
       return;
     }
-    registerTech(
+    // POST /workshops/:id/technicians — correctly adds tech to workshop.technicians[]
+    // and sets their workshopId, fixing both the "not displayed" and "not assigned" bugs.
+    addTech(
       {
         firstName: techForm.firstName,
         lastName: techForm.lastName,
         email: techForm.email,
-        password: techForm.password,
-        workshopId: id,
         phone: techForm.phone || undefined,
       },
       {
-        onSuccess: () => { setAddModalVisible(false); setTechForm(EMPTY_TECH); setShowPassword(false); },
-        onError: (e: any) => setTechFormError(e?.response?.data?.message ?? e?.message ?? 'Failed to register technician'),
+        onSuccess: () => { setAddModalVisible(false); setTechForm(EMPTY_TECH); },
+        onError: (e: any) => setTechFormError(e?.response?.data?.message ?? e?.message ?? 'Failed to add technician'),
       },
     );
   };
@@ -204,10 +208,14 @@ export default function WorkshopManageScreen() {
       <View style={styles.mainCard}>
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
-          {/* Workshop photo */}
+          {/* Workshop photo — shows local file immediately after pick (optimistic, Bug O2) */}
           <TouchableOpacity style={styles.imageContainer} onPress={handlePickImage} activeOpacity={0.85} disabled={uploadPending}>
-            {workshop.imageUrl ? (
-              <Image source={{ uri: workshop.imageUrl }} style={styles.workshopImage} resizeMode="cover" />
+            {(localImageUri || workshop.imageUrl) ? (
+              <Image
+                source={{ uri: localImageUri ?? `${workshop.imageUrl}?t=${Date.now()}` }}
+                style={styles.workshopImage}
+                resizeMode="cover"
+              />
             ) : (
               <View style={styles.imagePlaceholder}>
                 <Ionicons name="image-outline" size={36} color="#D1D5DB" />
@@ -218,7 +226,7 @@ export default function WorkshopManageScreen() {
               {uploadPending
                 ? <ActivityIndicator size="small" color="#FFFFFF" />
                 : <Ionicons name="camera" size={18} color="#FFFFFF" />}
-              <Text style={styles.imageOverlayText}>{workshop.imageUrl ? 'Change Photo' : 'Upload Photo'}</Text>
+              <Text style={styles.imageOverlayText}>{(localImageUri || workshop.imageUrl) ? 'Change Photo' : 'Upload Photo'}</Text>
             </View>
           </TouchableOpacity>
 
@@ -310,141 +318,126 @@ export default function WorkshopManageScreen() {
 
       {/* ── Add technician modal ── */}
       <Modal visible={addModalVisible} animationType="slide" transparent>
-        <View style={styles.modalBg}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHandle} />
-            <View style={styles.modalHeader}>
-              <View>
-                <Text style={styles.modalTitle}>Add Technician</Text>
-                <Text style={styles.modalSub}>They'll get an account linked to {workshop.name}</Text>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <View style={styles.modalBg}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHandle} />
+              <View style={styles.modalHeader}>
+                <View>
+                  <Text style={styles.modalTitle}>Add Technician</Text>
+                  <Text style={styles.modalSub}>They'll be linked to {workshop.name} — ask them to register with this email.</Text>
+                </View>
+                <TouchableOpacity onPress={() => setAddModalVisible(false)}>
+                  <Ionicons name="close" size={24} color="#6B7280" />
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity onPress={() => setAddModalVisible(false)}>
-                <Ionicons name="close" size={24} color="#6B7280" />
-              </TouchableOpacity>
+
+              <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+                {!!techFormError && (
+                  <View style={styles.errorBanner}>
+                    <Ionicons name="alert-circle" size={16} color="#DC2626" />
+                    <Text style={styles.errorText}>{techFormError}</Text>
+                  </View>
+                )}
+
+                <View style={styles.nameRow}>
+                  <View style={[styles.inputGroup, { flex: 1 }]}>
+                    <Text style={styles.inputLabel}>First Name *</Text>
+                    <TextInput style={styles.input} placeholder="Kamal" value={techForm.firstName} onChangeText={t => setTechForm(f => ({ ...f, firstName: t }))} />
+                  </View>
+                  <View style={[styles.inputGroup, { flex: 1 }]}>
+                    <Text style={styles.inputLabel}>Last Name *</Text>
+                    <TextInput style={styles.input} placeholder="Perera" value={techForm.lastName} onChangeText={t => setTechForm(f => ({ ...f, lastName: t }))} />
+                  </View>
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Email *</Text>
+                  <TextInput style={styles.input} placeholder="kamal@workshop.lk" keyboardType="email-address" autoCapitalize="none" value={techForm.email} onChangeText={t => setTechForm(f => ({ ...f, email: t }))} />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Phone (optional)</Text>
+                  <TextInput style={styles.input} placeholder="+94 77 123 4567" keyboardType="phone-pad" value={techForm.phone} onChangeText={t => setTechForm(f => ({ ...f, phone: t }))} />
+                </View>
+
+                <View style={styles.infoBox}>
+                  <Ionicons name="information-circle-outline" size={16} color="#2563EB" />
+                  <Text style={styles.infoText}>
+                    The technician profile will be created immediately. Ask them to register in the app with this email — they'll be auto-linked to {workshop.name} on first login.
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  style={[styles.saveBtn, addPending && { opacity: 0.7 }]}
+                  onPress={handleAddTech}
+                  disabled={addPending}
+                >
+                  {addPending
+                    ? <ActivityIndicator color="#FFF" />
+                    : <><Ionicons name="person-add-outline" size={18} color="#FFF" /><Text style={styles.saveBtnText}>Add Technician</Text></>
+                  }
+                </TouchableOpacity>
+              </ScrollView>
             </View>
-
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              {!!techFormError && (
-                <View style={styles.errorBanner}>
-                  <Ionicons name="alert-circle" size={16} color="#DC2626" />
-                  <Text style={styles.errorText}>{techFormError}</Text>
-                </View>
-              )}
-
-              <View style={styles.nameRow}>
-                <View style={[styles.inputGroup, { flex: 1 }]}>
-                  <Text style={styles.inputLabel}>First Name *</Text>
-                  <TextInput style={styles.input} placeholder="Kamal" value={techForm.firstName} onChangeText={t => setTechForm(f => ({ ...f, firstName: t }))} />
-                </View>
-                <View style={[styles.inputGroup, { flex: 1 }]}>
-                  <Text style={styles.inputLabel}>Last Name *</Text>
-                  <TextInput style={styles.input} placeholder="Perera" value={techForm.lastName} onChangeText={t => setTechForm(f => ({ ...f, lastName: t }))} />
-                </View>
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Email *</Text>
-                <TextInput style={styles.input} placeholder="kamal@workshop.lk" keyboardType="email-address" autoCapitalize="none" value={techForm.email} onChangeText={t => setTechForm(f => ({ ...f, email: t }))} />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Phone (optional)</Text>
-                <TextInput style={styles.input} placeholder="+94 77 123 4567" keyboardType="phone-pad" value={techForm.phone} onChangeText={t => setTechForm(f => ({ ...f, phone: t }))} />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Password *</Text>
-                <View style={styles.passwordRow}>
-                  <TextInput
-                    style={[styles.input, { flex: 1 }]}
-                    placeholder="Min. 8 characters"
-                    secureTextEntry={!showPassword}
-                    autoCapitalize="none"
-                    value={techForm.password}
-                    onChangeText={t => setTechForm(f => ({ ...f, password: t }))}
-                  />
-                  <TouchableOpacity
-                    style={styles.eyeBtn}
-                    onPress={() => setShowPassword(v => !v)}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons
-                      name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                      size={20}
-                      color="#9CA3AF"
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              <View style={styles.infoBox}>
-                <Ionicons name="information-circle-outline" size={16} color="#2563EB" />
-                <Text style={styles.infoText}>
-                  The technician can log in immediately with this email and password — no additional registration required. They'll be automatically linked to {workshop.name}.
-                </Text>
-              </View>
-
-              <TouchableOpacity
-                style={[styles.saveBtn, addPending && { opacity: 0.7 }]}
-                onPress={handleAddTech}
-                disabled={addPending}
-              >
-                {addPending
-                  ? <ActivityIndicator color="#FFF" />
-                  : <><Ionicons name="person-add-outline" size={18} color="#FFF" /><Text style={styles.saveBtnText}>Add Technician</Text></>
-                }
-              </TouchableOpacity>
-            </ScrollView>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* ── Edit workshop modal ── */}
       <Modal visible={editModalVisible} animationType="slide" transparent>
-        <View style={styles.modalBg}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHandle} />
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Edit Workshop</Text>
-              <TouchableOpacity onPress={() => setEditModalVisible(false)}>
-                <Ionicons name="close" size={24} color="#6B7280" />
-              </TouchableOpacity>
-            </View>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <View style={styles.modalBg}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHandle} />
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Edit Workshop</Text>
+                <TouchableOpacity onPress={() => setEditModalVisible(false)}>
+                  <Ionicons name="close" size={24} color="#6B7280" />
+                </TouchableOpacity>
+              </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              {(['name', 'address', 'district', 'contactNumber'] as const).map(field => (
-                <View key={field} style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>{field === 'contactNumber' ? 'Contact Number' : field.charAt(0).toUpperCase() + field.slice(1)} *</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={editForm[field]}
-                    onChangeText={t => setEditForm(f => ({ ...f, [field]: t }))}
-                    keyboardType={field === 'contactNumber' ? 'phone-pad' : 'default'}
-                  />
+              <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+                {(['name', 'address', 'district', 'contactNumber'] as const).map(field => (
+                  <View key={field} style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>{field === 'contactNumber' ? 'Contact Number' : field.charAt(0).toUpperCase() + field.slice(1)} *</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={editForm[field]}
+                      onChangeText={t => setEditForm(f => ({ ...f, [field]: t }))}
+                      keyboardType={field === 'contactNumber' ? 'phone-pad' : 'default'}
+                    />
+                  </View>
+                ))}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Description</Text>
+                  <TextInput style={[styles.input, { height: 80 }]} value={editForm.description} onChangeText={t => setEditForm(f => ({ ...f, description: t }))} multiline textAlignVertical="top" />
                 </View>
-              ))}
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Description</Text>
-                <TextInput style={[styles.input, { height: 80 }]} value={editForm.description} onChangeText={t => setEditForm(f => ({ ...f, description: t }))} multiline textAlignVertical="top" />
-              </View>
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Services (comma-separated)</Text>
-                <TextInput style={styles.input} value={editForm.servicesOffered} onChangeText={t => setEditForm(f => ({ ...f, servicesOffered: t }))} placeholder="Oil Change, Brake Service" />
-              </View>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Services (comma-separated)</Text>
+                  <TextInput style={styles.input} value={editForm.servicesOffered} onChangeText={t => setEditForm(f => ({ ...f, servicesOffered: t }))} placeholder="Oil Change, Brake Service" />
+                </View>
 
-              <TouchableOpacity
-                style={[styles.saveBtn, updatePending && { opacity: 0.7 }]}
-                onPress={handleUpdate}
-                disabled={updatePending}
-              >
-                {updatePending
-                  ? <ActivityIndicator color="#FFF" />
-                  : <Text style={styles.saveBtnText}>Save Changes</Text>
-                }
-              </TouchableOpacity>
-            </ScrollView>
+                <TouchableOpacity
+                  style={[styles.saveBtn, updatePending && { opacity: 0.7 }]}
+                  onPress={handleUpdate}
+                  disabled={updatePending}
+                >
+                  {updatePending
+                    ? <ActivityIndicator color="#FFF" />
+                    : <Text style={styles.saveBtnText}>Save Changes</Text>
+                  }
+                </TouchableOpacity>
+              </ScrollView>
+            </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </ScreenWrapper>
   );
@@ -534,7 +527,4 @@ const styles = StyleSheet.create((theme) => ({
   errorText: { flex: 1, fontSize: 13, color: '#DC2626', fontWeight: '700' },
   saveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#F56E0F', borderRadius: 14, height: 54, marginBottom: 12, shadowColor: '#F56E0F', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6 },
   saveBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
-
-  passwordRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  eyeBtn: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#F9FAFB', borderWidth: 1.5, borderColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
 }));

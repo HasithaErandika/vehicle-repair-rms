@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 // Forward-only state machine transitions
 const VALID_TRANSITIONS = {
   pending:     ['confirmed', 'cancelled'],
-  confirmed:   ['in_progress', 'cancelled'],
+  confirmed:   ['in_progress', 'completed', 'cancelled'],
   in_progress: ['completed'],
   completed:   [],
   cancelled:   [],

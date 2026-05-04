@@ -19,12 +19,12 @@ export function WorkshopReviewsScreen() {
   const { theme } = useUnistyles();
   const [activeSort, setActiveSort] = useState<ReviewSortOption>('newest');
 
-  const { 
-    data: reviews, 
-    isLoading, 
-    isError, 
+  const {
+    data: reviews,
+    isLoading,
+    isError,
     refetch,
-    isInitialLoading 
+    isInitialLoading
   } = useWorkshopReviews(workshopId ?? '', { sort: activeSort });
 
   const { mutate: updateReview, isPending: updatingReview } = useUpdateReview();
@@ -65,24 +65,25 @@ export function WorkshopReviewsScreen() {
         </Text>
       </View>
 
-      <ReviewFilterBar 
-        activeSort={activeSort} 
-        onSortChange={setActiveSort} 
-        total={reviews?.length} 
+      <ReviewFilterBar
+        activeSort={activeSort}
+        onSortChange={setActiveSort}
+        total={reviews?.length}
       />
 
       <FlashList
         data={reviews}
         renderItem={({ item }) => (
           <View style={styles.cardWrapper}>
-            <ReviewCard 
-              review={item} 
+            <ReviewCard
+              review={item}
               onEdit={handleEdit}
               onDelete={handleDelete}
             />
           </View>
         )}
         keyExtractor={(item) => item.id}
+        // @ts-ignore
         estimatedItemSize={120}
         contentContainerStyle={styles.listContent}
         onRefresh={refetch}
@@ -96,7 +97,7 @@ export function WorkshopReviewsScreen() {
           </View>
         }
       />
-      <ReviewFormModal 
+      <ReviewFormModal
         visible={!!editingReview}
         onClose={() => setEditingReview(null)}
         onSubmit={handleSubmit}

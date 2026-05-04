@@ -24,7 +24,7 @@ const ROLE_COLORS: Record<string, { bg: string; text: string }> = {
 };
 
 export default function SettingsScreen() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, refreshUser } = useAuth();
   const { mutate: update, isPending } = useUpdateMe();
 
   const [editing, setEditing]     = useState(false);
@@ -43,7 +43,14 @@ export default function SettingsScreen() {
   const handleSave = () => {
     update(
       { fullName: fullName.trim() || undefined, phone: (phone.trim() || undefined) as any } as any,
-      { onSuccess: () => setEditing(false) },
+      {
+        onSuccess: async () => {
+          setEditing(false);
+          // Sync the AuthProvider user state so the name/phone update is
+          // immediately reflected everywhere in the app (header, avatar, etc.)
+          await refreshUser();
+        },
+      },
     );
   };
 

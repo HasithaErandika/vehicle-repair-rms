@@ -13,7 +13,7 @@ import client from '@/services/http.client';
 import { useEffect } from 'react';
 
 function getVehicleLabel(a: Appointment): string {
-  if (typeof a.vehicleId === 'object') {
+  if (typeof a.vehicleId === 'object' && a.vehicleId !== null) {
     return `${a.vehicleId.make} ${a.vehicleId.model} (${a.vehicleId.registrationNo})`;
   }
   return 'Vehicle';
@@ -269,6 +269,7 @@ const styles = StyleSheet.create((theme) => ({
   statusText: { fontSize: 10, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 0.5 },
   taskDate: { fontSize: 12, color: '#9CA3AF', fontWeight: '700' },
   taskTitle: { fontSize: 16, fontWeight: '900', color: '#1A1A2E', marginBottom: 6, letterSpacing: -0.3 },
+  vehicleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   vehicleText: { fontSize: 13, color: '#6B7280', fontWeight: '600' },
 
   warningBanner: {

@@ -77,6 +77,7 @@ export function WorkshopListScreen() {
           <FlashList
              data={(data || []) as Workshop[]}
              renderItem={({ item }) => <WorkshopCard workshop={item as Workshop} />}
+             // @ts-ignore
              estimatedItemSize={280}
              onRefresh={refetch}
              refreshing={isLoading}

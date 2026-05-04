@@ -151,7 +151,7 @@ const styles = StyleSheet.create((theme) => ({
 
   fab: {
     position: 'absolute',
-    bottom: 30,
+    bottom: 90,
     right: 20,
     width: 60,
     height: 60,
@@ -164,6 +164,6 @@ const styles = StyleSheet.create((theme) => ({
     shadowOpacity: 0.35,
     shadowRadius: 15,
     elevation: 8,
-    zIndex: 100,
+    zIndex: 999,
   },
 }));
