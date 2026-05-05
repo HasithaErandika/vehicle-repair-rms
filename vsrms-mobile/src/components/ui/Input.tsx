@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TextInput, TextInputProps } from 'react-native';
-import { StyleSheet } from 'react-native-unistyles';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -9,6 +9,7 @@ interface InputProps extends TextInputProps {
 }
 
 export function Input({ label, error, containerStyle, ...props }: InputProps) {
+  const { theme } = useUnistyles();
   return (
     <View style={[styles.container, containerStyle]}>
       {label && <Text style={styles.label}>{label}</Text>}
@@ -18,7 +19,7 @@ export function Input({ label, error, containerStyle, ...props }: InputProps) {
           error && styles.inputError,
           props.multiline && styles.multiline
         ]}
-        placeholderTextColor="#94A3B8"
+        placeholderTextColor={theme.colors.mutedLight}
         {...props}
       />
       {error && <Text style={styles.errorText}>{error}</Text>}
@@ -28,7 +29,7 @@ export function Input({ label, error, containerStyle, ...props }: InputProps) {
 
 const styles = StyleSheet.create((theme) => ({
   container: { width: '100%', gap: 6 },
-  label: { fontSize: theme.fonts.sizes.sm, fontWeight: '700', color: theme.colors.text },
+  label: { fontSize: theme.fonts.sizes.caption, fontWeight: '700', color: theme.colors.text },
   input: {
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
@@ -38,7 +39,7 @@ const styles = StyleSheet.create((theme) => ({
     fontSize: theme.fonts.sizes.md,
     color: theme.colors.text,
   },
-  inputError: { borderColor: theme.colors.error || '#EF4444' },
+  inputError: { borderColor: theme.colors.error },
   multiline: { minHeight: 100, textAlignVertical: 'top' },
-  errorText: { color: theme.colors.error || '#EF4444', fontSize: 12 },
+  errorText: { color: theme.colors.error, fontSize: 12, fontWeight: '600', marginTop: 2 },
 }));

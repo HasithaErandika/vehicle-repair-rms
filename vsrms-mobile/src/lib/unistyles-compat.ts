@@ -19,8 +19,7 @@ if (Platform.OS === 'web') {
         g.StyleSheet = RNStyleSheet;
     }
 }
-import { colors, spacing, radii } from '@/theme/tokens';
-import { typography } from '@/theme/typography';
+import { colors, spacing, radii, typography } from '@/theme/tokens';
 
 // ─── Static theme object (matches AppThemes['light'] from unistyles.ts) ────────
 export const theme = {
@@ -38,9 +37,6 @@ type StyleInput<T> = T | ThemeFactory<T>;
 
 function _create<T extends Record<string, any>>(input: StyleInput<T>): T {
   const styles = typeof input === 'function' ? (input as ThemeFactory<T>)(theme) : input;
-
-  // Separate any variant functions (e.g. Unistyles dynamic variant `(arg) => ({})`)
-  // from plain style objects before passing to RN StyleSheet.create.
   const staticStyles: Record<string, any> = {};
   const dynamicFns: Record<string, (...args: any[]) => any> = {};
 
@@ -65,7 +61,6 @@ function _create<T extends Record<string, any>>(input: StyleInput<T>): T {
 
 export const StyleSheet = {
   create: _create,
-  // configure() is a no-op — the theme is always the static light theme above.
   configure: (_config: any) => {},
   hairlineWidth: RNStyleSheet.hairlineWidth,
   flatten: RNStyleSheet.flatten,

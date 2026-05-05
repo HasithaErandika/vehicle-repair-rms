@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StatusBar } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet } from 'react-native-unistyles';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { useAppointment } from '../queries/queries';
 import { useDeleteAppointment } from '../queries/mutations';
@@ -15,6 +15,7 @@ import { useToast } from '@/providers/ToastProvider';
 import { formatDate } from '../../../utils/date.utils';
 
 export function AppointmentDetailScreen() {
+  const { theme } = useUnistyles();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { showToast } = useToast();
@@ -39,8 +40,7 @@ export function AppointmentDetailScreen() {
   // ── Loading state ─────────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <ScreenWrapper bg="#1A1A2E">
-        <StatusBar barStyle="light-content" backgroundColor="#1A1A2E" />
+      <ScreenWrapper bg={theme.colors.text}>
         <View style={styles.topSection}>
           <View style={styles.header}>
             <View style={styles.backBtn} />
@@ -60,20 +60,24 @@ export function AppointmentDetailScreen() {
   }
 
   if (isError || !appointment) {
-    return <ErrorScreen onRetry={refetch} />;
+    return <ErrorScreen onRetry={() => { refetch(); }} />;
   }
 
   const canModify = appointment.status === 'pending' || appointment.status === 'confirmed';
 
   return (
-    <ScreenWrapper bg="#1A1A2E">
-      <StatusBar barStyle="light-content" backgroundColor="#1A1A2E" />
-
+    <ScreenWrapper bg={theme.colors.text}>
       {/* ── DARK TOP SECTION ── */}
       <View style={styles.topSection}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
-            <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+          <TouchableOpacity 
+            style={styles.backBtn} 
+            onPress={() => router.back()} 
+            activeOpacity={0.7}
+            accessibilityLabel="Go back"
+            accessibilityRole="button"
+          >
+            <Ionicons name="chevron-back" size={24} color={theme.colors.white} />
           </TouchableOpacity>
           <View>
             <Text style={styles.headerSub}>Appointment</Text>
@@ -155,6 +159,7 @@ export function AppointmentDetailScreen() {
                 onPress={() => router.push(`/customer/schedule/edit/${id}`)}
                 variant="outline"
                 style={styles.actionBtn}
+                accessibilityLabel="Reschedule appointment"
               />
               <Button
                 title="Cancel Appointment"
@@ -162,6 +167,7 @@ export function AppointmentDetailScreen() {
                 variant="danger"
                 loading={isCancelling}
                 style={styles.actionBtn}
+                accessibilityLabel="Cancel appointment"
               />
             </View>
           )}
@@ -175,7 +181,6 @@ export function AppointmentDetailScreen() {
         confirmText="Yes, Cancel"
         cancelText="No, Keep it"
         type="danger"
-        theme="light"
         onConfirm={onConfirmCancel}
         onCancel={() => setShowCancelModal(false)}
       />
@@ -184,10 +189,11 @@ export function AppointmentDetailScreen() {
 }
 
 function DetailItem({ icon, label, value, isLast }: { icon: any; label: string; value: string; isLast?: boolean }) {
+  const { theme } = useUnistyles();
   return (
     <View style={[styles.detailItem, isLast && { borderBottomWidth: 0 }]}>
       <View style={styles.iconContainer}>
-        <Ionicons name={icon} size={18} color="#F56E0F" />
+        <Ionicons name={icon} size={18} color={theme.colors.brand} />
       </View>
       <View style={styles.detailText}>
         <Text style={styles.detailLabel}>{label}</Text>
@@ -205,6 +211,7 @@ const styles = StyleSheet.create((theme) => ({
     paddingBottom: 56,
     position: 'relative',
     overflow: 'hidden',
+    backgroundColor: theme.colors.text,
   },
   header: {
     flexDirection: 'row',
@@ -215,12 +222,12 @@ const styles = StyleSheet.create((theme) => ({
   },
   backBtn: {
     width: 44, height: 44, borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: theme.colors.whiteAlpha10,
     alignItems: 'center', justifyContent: 'center',
   },
   headerSub: {
     fontSize: theme.fonts.sizes.caption,
-    color: 'rgba(255,255,255,0.7)',
+    color: theme.colors.whiteAlpha70,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -229,7 +236,7 @@ const styles = StyleSheet.create((theme) => ({
   headerTitle: {
     fontSize: theme.fonts.sizes.pageTitle,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: theme.colors.white,
     letterSpacing: -0.5,
     marginTop: 4,
     textAlign: 'center',
@@ -245,29 +252,29 @@ const styles = StyleSheet.create((theme) => ({
   serviceTypeText: {
     fontSize: 18,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: theme.colors.white,
     flex: 1,
     marginRight: 12,
     letterSpacing: -0.3,
   },
 
   decCircle1: {
-    position: 'absolute', width: 130, height: 130, borderRadius: 65,
-    backgroundColor: 'rgba(245,110,15,0.13)', top: -25, right: -25,
+    zIndex: 0, position: 'absolute', width: 130, height: 130, borderRadius: 65,
+    backgroundColor: theme.colors.brandMuted, top: -25, right: -25,
   },
   decCircle2: {
-    position: 'absolute', width: 70, height: 70, borderRadius: 35,
-    backgroundColor: 'rgba(245,110,15,0.08)', bottom: 10, right: 90,
+    zIndex: 0, position: 'absolute', width: 70, height: 70, borderRadius: 35,
+    backgroundColor: theme.colors.brandSoft, bottom: 10, right: 90,
   },
 
   /* ── White card ── */
   mainCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.background,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     marginTop: theme.spacing.cardOverlap,
     flex: 1,
-    shadowColor: '#000',
+    shadowColor: theme.colors.black,
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.1,
     shadowRadius: 20,
@@ -285,10 +292,10 @@ const styles = StyleSheet.create((theme) => ({
 
   /* ── Details list ── */
   detailsList: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.background,
     borderRadius: 24,
     borderWidth: 1.5,
-    borderColor: '#F3F4F6',
+    borderColor: theme.colors.borderLight,
     marginBottom: 28,
     overflow: 'hidden',
   },
@@ -296,18 +303,18 @@ const styles = StyleSheet.create((theme) => ({
     flexDirection: 'row',
     padding: 18,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: theme.colors.borderLight,
     alignItems: 'center',
   },
   iconContainer: {
     width: 42, height: 42, borderRadius: 12,
-    backgroundColor: '#FFF7ED',
+    backgroundColor: theme.colors.warningBackground,
     alignItems: 'center', justifyContent: 'center',
     marginRight: 16,
   },
   detailText: { flex: 1 },
-  detailLabel: { fontSize: 11, fontWeight: '700', color: '#9CA3AF', marginBottom: 3, textTransform: 'uppercase', letterSpacing: 0.3 },
-  detailValue: { fontSize: 15, fontWeight: '700', color: '#1A1A2E', lineHeight: 20 },
+  detailLabel: { fontSize: 11, fontWeight: '700', color: theme.colors.mutedLight, marginBottom: 3, textTransform: 'uppercase', letterSpacing: 0.3 },
+  detailValue: { fontSize: 15, fontWeight: '700', color: theme.colors.text, lineHeight: 20 },
 
   /* ── Actions ── */
   actions: { gap: 12 },

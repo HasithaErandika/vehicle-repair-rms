@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
-import { View, Text, ActivityIndicator, StatusBar, TouchableOpacity } from 'react-native';
+import { View, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet } from 'react-native-unistyles';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { useWorkshopRecords } from '@/features/records/queries/queries';
 import { useMyWorkshops } from '@/features/workshops/queries/queries';
@@ -11,9 +11,13 @@ import { ErrorScreen } from '@/components/feedback/ErrorScreen';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ServiceRecord } from '@/features/records/types/records.types';
 
+// Type assertion for FlashList to resolve environment-specific type issues
+const TypedFlashList = FlashList as any;
+
 // ── Record row card ───────────────────────────────────────────────────────────
 
 function RecordRow({ record }: { record: ServiceRecord }) {
+  const { theme } = useUnistyles();
   const vehicle = typeof record.vehicleId === 'object' && record.vehicleId !== null ? record.vehicleId as any : null;
   const appt    = typeof record.appointmentId === 'object' && record.appointmentId !== null ? record.appointmentId as any : null;
   const dateStr = new Date(record.serviceDate).toLocaleDateString(undefined, {
@@ -24,7 +28,7 @@ function RecordRow({ record }: { record: ServiceRecord }) {
     <View style={styles.card}>
       <View style={styles.cardTop}>
         <View style={styles.iconBox}>
-          <Ionicons name="document-text-outline" size={22} color="#F56E0F" />
+          <Ionicons name="document-text-outline" size={22} color={theme.colors.brand} />
         </View>
         <View style={styles.cardMain}>
           <Text style={styles.vehicleName} numberOfLines={1}>
@@ -44,13 +48,13 @@ function RecordRow({ record }: { record: ServiceRecord }) {
       <View style={styles.metaRow}>
         {record.technicianName ? (
           <View style={styles.metaChip}>
-            <Ionicons name="person-outline" size={11} color="#6B7280" />
+            <Ionicons name="person-outline" size={11} color={theme.colors.muted} />
             <Text style={styles.metaChipText}>{record.technicianName}</Text>
           </View>
         ) : null}
         {appt?.serviceType ? (
           <View style={styles.metaChip}>
-            <Ionicons name="construct-outline" size={11} color="#6B7280" />
+            <Ionicons name="construct-outline" size={11} color={theme.colors.muted} />
             <Text style={styles.metaChipText}>{appt.serviceType}</Text>
           </View>
         ) : null}
@@ -81,11 +85,9 @@ function RecordRow({ record }: { record: ServiceRecord }) {
 
 export default function OwnerLogsScreen() {
   const router = useRouter();
+  const { theme } = useUnistyles();
   const { workshopId: paramWorkshopId } = useLocalSearchParams<{ workshopId: string }>();
 
-  // Bug O3 fix: when navigated with 'all' (or no ID), resolve the real workshop
-  // by fetching the owner's workshop list. Previously 'all' was passed directly
-  // to GET /records/workshop/all which 404'd (not a valid MongoDB ObjectId).
   const needsWorkshopResolution = !paramWorkshopId || paramWorkshopId === 'all';
   const { data: myWorkshops = [], isLoading: wsLoading } = useMyWorkshops();
 
@@ -98,16 +100,19 @@ export default function OwnerLogsScreen() {
 
   const isResolving = needsWorkshopResolution && wsLoading;
 
-  return (
-    <ScreenWrapper bg="#1A1A2E">
-      <StatusBar barStyle="light-content" backgroundColor="#1A1A2E" />
+  const workshopName = useMemo(() => {
+    if (!resolvedWorkshopId) return 'Service Logs';
+    const ws = myWorkshops.find(w => ((w as any)._id || (w as any).id) === resolvedWorkshopId);
+    return ws ? (ws as any).name : 'Service Logs';
+  }, [resolvedWorkshopId, myWorkshops]);
 
-      {/* ── DARK TOP SECTION ── */}
+  return (
+    <ScreenWrapper bg={theme.colors.text}>
       <View style={styles.topSection}>
         <View style={styles.headerRow}>
           <View style={{ flex: 1 }}>
             <Text style={styles.headerSub}>Workshop History</Text>
-            <Text style={styles.headerTitle}>Service Logs</Text>
+            <Text style={styles.headerTitle} numberOfLines={1}>{workshopName}</Text>
           </View>
           <TouchableOpacity
             style={styles.addBtn}
@@ -115,36 +120,36 @@ export default function OwnerLogsScreen() {
               pathname: '/owner/create-record',
               params: { workshopId: resolvedWorkshopId ?? '' },
             } as any)}
+            accessibilityLabel="Add new service record"
+            accessibilityRole="button"
           >
-            <Ionicons name="add" size={24} color="#FFFFFF" />
+            <Ionicons name="add" size={24} color={theme.colors.white} />
           </TouchableOpacity>
         </View>
         <View style={styles.decCircle1} />
         <View style={styles.decCircle2} />
       </View>
 
-      {/* ── WHITE CARD SECTION ── */}
       <View style={styles.mainCard}>
         {isResolving || (isLoading && !data) ? (
           <View style={styles.centered}>
-            <ActivityIndicator size="large" color="#F56E0F" />
+            <ActivityIndicator size="large" color={theme.colors.brand} />
           </View>
         ) : isError ? (
-          <ErrorScreen onRetry={refetch} variant="inline" />
+          <ErrorScreen onRetry={() => { refetch(); }} variant="inline" />
         ) : !resolvedWorkshopId ? (
           <View style={styles.centered}>
-            <Ionicons name="business-outline" size={40} color="#D1D5DB" />
+            <Ionicons name="business-outline" size={40} color={theme.colors.mutedLight} />
             <Text style={styles.noWorkshopText}>No workshop found.</Text>
           </View>
         ) : (
-          <FlashList
-            data={(data?.data ?? []) as any}
-            renderItem={({ item }) => <RecordRow record={item as any} />}
-            // @ts-ignore
+          <TypedFlashList
+            data={data || []}
+            renderItem={({ item }: any) => <RecordRow record={item} />}
             estimatedItemSize={180}
-            onRefresh={refetch}
+            onRefresh={() => { refetch(); }}
             refreshing={isLoading}
-            keyExtractor={(r: any) => r.id || r._id || Math.random().toString()}
+            keyExtractor={(r: any) => r._id ?? r.id ?? Math.random().toString()}
             contentContainerStyle={styles.list}
             ListEmptyComponent={<EmptyState message="No service records yet for this workshop." />}
           />
@@ -161,65 +166,65 @@ const styles = StyleSheet.create((theme) => ({
     paddingBottom: 60,
     position: 'relative',
     overflow: 'hidden',
-    backgroundColor: '#1A1A2E',
+    backgroundColor: theme.colors.text,
   },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 10, marginBottom: 24, marginTop: 12 },
   headerSub: {
     fontSize: theme.fonts.sizes.caption,
-    color: 'rgba(255,255,255,0.7)',
+    color: theme.colors.whiteAlpha70,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
   headerTitle: {
     fontSize: theme.fonts.sizes.pageTitle,
-    color: '#FFFFFF',
+    color: theme.colors.white,
     fontWeight: '900',
     letterSpacing: -0.5,
     marginTop: 4,
   },
   addBtn: {
     width: 44, height: 44, borderRadius: 12,
-    backgroundColor: '#F56E0F', alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#F56E0F', shadowOffset: { width: 0, height: 4 },
+    backgroundColor: theme.colors.brand, alignItems: 'center', justifyContent: 'center',
+    shadowColor: theme.colors.brand, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3, shadowRadius: 8, elevation: 6,
   },
 
-  decCircle1: { position: 'absolute', width: 140, height: 140, borderRadius: 70, backgroundColor: 'rgba(245,110,15,0.12)', top: -30, right: -20 },
-  decCircle2: { position: 'absolute', width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(245,110,15,0.06)', bottom: 10, right: 90 },
+  decCircle1: { zIndex: 0, position: 'absolute', width: 140, height: 140, borderRadius: 70, backgroundColor: theme.colors.brandMuted, top: -30, right: -20 },
+  decCircle2: { zIndex: 0, position: 'absolute', width: 80, height: 80, borderRadius: 40, backgroundColor: theme.colors.brandFaint, bottom: 10, right: 90 },
 
   mainCard: {
-    backgroundColor: '#FFFFFF', borderTopLeftRadius: 32, borderTopRightRadius: 32,
+    backgroundColor: theme.colors.background, borderTopLeftRadius: 32, borderTopRightRadius: 32,
     marginTop: theme.spacing.cardOverlap, flex: 1,
-    shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 16,
+    shadowColor: theme.colors.black, shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 16,
   },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  noWorkshopText: { marginTop: 12, fontSize: 14, color: '#9CA3AF', fontWeight: '600' },
-  list: { paddingHorizontal: theme.spacing.screenPadding, paddingTop: 24, paddingBottom: 130 },
+  noWorkshopText: { marginTop: 12, fontSize: 14, color: theme.colors.mutedLight, fontWeight: '600' },
+  list: { paddingHorizontal: theme.spacing.screenPadding, paddingTop: 24, paddingBottom: theme.spacing.listBottomPadding },
 
   card: {
-    backgroundColor: '#FFFFFF', borderRadius: 24, padding: 18, marginBottom: 16,
-    borderWidth: 1.5, borderColor: '#F3F4F6',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2,
+    backgroundColor: theme.colors.background, borderRadius: 24, padding: 18, marginBottom: 16,
+    borderWidth: 1.5, borderColor: theme.colors.borderLight,
+    shadowColor: theme.colors.black, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2,
   },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
-  iconBox: { width: 46, height: 46, borderRadius: 13, backgroundColor: '#FFF7ED', alignItems: 'center', justifyContent: 'center' },
+  iconBox: { width: 46, height: 46, borderRadius: 13, backgroundColor: theme.colors.warningBackground, alignItems: 'center', justifyContent: 'center' },
   cardMain: { flex: 1 },
-  vehicleName: { fontSize: 16, fontWeight: '900', color: '#1A1A2E' },
-  vehicleReg: { fontSize: 12, color: '#9CA3AF', fontWeight: '700', marginTop: 2, letterSpacing: 0.5 },
-  dateBadge: { backgroundColor: '#F3F4F6', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10 },
-  dateText: { fontSize: 11, fontWeight: '800', color: '#6B7280' },
+  vehicleName: { fontSize: 16, fontWeight: '900', color: theme.colors.text },
+  vehicleReg: { fontSize: 12, color: theme.colors.mutedLight, fontWeight: '700', marginTop: 2, letterSpacing: 0.5 },
+  dateBadge: { backgroundColor: theme.colors.borderLight, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10 },
+  dateText: { fontSize: 11, fontWeight: '800', color: theme.colors.muted },
 
-  divider: { height: 1.5, backgroundColor: '#F9FAFB', marginBottom: 12 },
-  workDone: { fontSize: 14, color: '#374151', fontWeight: '600', lineHeight: 20, marginBottom: 12 },
+  divider: { height: 1.5, backgroundColor: theme.colors.surface, marginBottom: 12 },
+  workDone: { fontSize: 14, color: theme.colors.textDim, fontWeight: '600', lineHeight: 20, marginBottom: 12 },
 
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 10 },
-  metaChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#F9FAFB', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-  metaChipText: { fontSize: 11, fontWeight: '700', color: '#6B7280' },
-  costChip: { backgroundColor: '#ECFDF5', marginLeft: 'auto' },
-  costText: { fontSize: 12, fontWeight: '900', color: '#059669' },
+  metaChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: theme.colors.surface, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  metaChipText: { fontSize: 11, fontWeight: '700', color: theme.colors.muted },
+  costChip: { backgroundColor: theme.colors.successBackground, marginLeft: 'auto' },
+  costText: { fontSize: 12, fontWeight: '900', color: theme.colors.successText },
 
   partsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  partChip: { backgroundColor: '#EFF6FF', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
-  partText: { fontSize: 10, fontWeight: '700', color: '#2563EB' },
+  partChip: { backgroundColor: theme.colors.infoBackground, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  partText: { fontSize: 10, fontWeight: '700', color: theme.colors.infoText },
 }));

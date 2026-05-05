@@ -1,5 +1,7 @@
 'use strict';
 
+const logger = require('../utils/logger');
+
 class AppError extends Error {
   constructor(message, statusCode) {
     super(message);
@@ -8,7 +10,7 @@ class AppError extends Error {
 }
 
 const globalErrorHandler = (err, _req, res, _next) => {
-  console.error(`[ERROR] ${err.stack || err.message}`);
+  logger.error(`[ERROR] ${err.stack || err.message}`);
 
   // Mongoose validation error
   if (err.name === 'ValidationError') {

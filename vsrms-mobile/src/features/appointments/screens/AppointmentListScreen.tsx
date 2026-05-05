@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, StatusBar } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
-import { StyleSheet } from 'react-native-unistyles';
+import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { FlashList, FlashListProps } from '@shopify/flash-list';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { useMyAppointments } from '../queries/queries';
 import { AppointmentCard } from '../components/AppointmentCard';
-import { Button } from '@/components/ui/Button';
 import { ErrorScreen } from '@/components/feedback/ErrorScreen';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Appointment } from '../types/appointments.types';
@@ -15,6 +14,9 @@ import { ConfirmModal } from '@/components/feedback/ConfirmModal';
 import { useDeleteAppointment } from '../queries/mutations';
 import { useToast } from '@/providers/ToastProvider';
 
+// Type assertion for FlashList to resolve environment-specific type issues
+const TypedFlashList = FlashList as any;
+
 type TabKey = 'upcoming' | 'past';
 const TAB_STATUS: Record<TabKey, string> = {
   upcoming: 'pending,confirmed,in_progress',
@@ -22,6 +24,7 @@ const TAB_STATUS: Record<TabKey, string> = {
 };
 
 export function AppointmentListScreen() {
+  const { theme } = useUnistyles();
   const router = useRouter();
   const { showToast } = useToast();
   const [tab, setTab] = useState<TabKey>('upcoming');
@@ -45,9 +48,7 @@ export function AppointmentListScreen() {
   };
 
   return (
-    <ScreenWrapper bg="#1A1A2E">
-      <StatusBar barStyle="light-content" backgroundColor="#1A1A2E" />
-
+    <ScreenWrapper bg={theme.colors.text}>
       {/* ── DARK TOP SECTION ── */}
       <View style={styles.topSection}>
         <View style={styles.headerRow}>
@@ -64,6 +65,8 @@ export function AppointmentListScreen() {
               key={t}
               onPress={() => setTab(t)}
               style={[styles.tab, tab === t && styles.activeTab]}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: tab === t }}
             >
               <Text style={[styles.tabText, tab === t && styles.activeTabText]}>
                 {t === 'upcoming' ? 'Upcoming' : 'Past'}
@@ -81,26 +84,25 @@ export function AppointmentListScreen() {
       <View style={[styles.mainCard, { overflow: 'hidden' }]}>
         {isLoading && !data ? (
           <View style={styles.loaderContainer}>
-            <ActivityIndicator size="large" color="#F56E0F" />
+            <ActivityIndicator size="large" color={theme.colors.brand} />
             <Text style={styles.loadingText}>Loading your plans...</Text>
           </View>
         ) : isError ? (
-          <ErrorScreen onRetry={refetch} variant="inline" />
+          <ErrorScreen onRetry={() => { refetch(); }} variant="inline" />
         ) : (
-          <FlashList
+          <TypedFlashList
             data={(data || []) as Appointment[]}
             renderItem={({ item }) => (
               <AppointmentCard 
-                appointment={item as Appointment} 
+                appointment={item} 
                 onCancel={() => setCancelTarget((item._id || item.id) ?? null)}
                 onReschedule={() => router.push(`/customer/schedule/edit/${item._id || item.id}` as any)}
               />
             )}
-            // @ts-expect-error - FlashList requires estimatedItemSize dynamically
             estimatedItemSize={160}
-            onRefresh={refetch}
+            onRefresh={() => { refetch(); }}
             refreshing={isLoading}
-            keyExtractor={(a: Appointment) => a._id || a.id || Math.random().toString()}
+            keyExtractor={(a) => a._id ?? a.id ?? Math.random().toString()}
             contentContainerStyle={styles.list}
             ListEmptyComponent={<EmptyState message={tab === 'upcoming' ? 'No upcoming appointments.' : 'No past appointments.'} />}
           />
@@ -113,7 +115,6 @@ export function AppointmentListScreen() {
         message="Are you sure you want to cancel this booking? This action cannot be undone."
         confirmText="Yes, Cancel"
         type="danger"
-        theme="light"
         onConfirm={handleConfirmCancel}
         onCancel={() => setCancelTarget(null)}
       />
@@ -123,8 +124,10 @@ export function AppointmentListScreen() {
         style={styles.fab} 
         onPress={() => router.push('/customer/workshops' as any)}
         activeOpacity={0.8}
+        accessibilityLabel="Book new appointment"
+        accessibilityRole="button"
       >
-        <Ionicons name="add" size={30} color="#FFFFFF" />
+        <Ionicons name="add" size={30} color={theme.colors.white} />
       </TouchableOpacity>
     </ScreenWrapper>
   );
@@ -137,19 +140,19 @@ const styles = StyleSheet.create((theme) => ({
     paddingBottom: 60,
     position: 'relative',
     overflow: 'hidden',
-    backgroundColor: '#1A1A2E'
+    backgroundColor: theme.colors.text
   },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 10, marginBottom: 24, marginTop: 12 },
   headerSub: {
     fontSize: theme.fonts.sizes.caption,
-    color: 'rgba(255,255,255,0.7)',
+    color: theme.colors.whiteAlpha70,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 1
   },
   headerTitle: {
     fontSize: theme.fonts.sizes.pageTitle,
-    color: '#FFFFFF',
+    color: theme.colors.white,
     fontWeight: '900',
     letterSpacing: -0.5,
     marginTop: 4
@@ -157,21 +160,21 @@ const styles = StyleSheet.create((theme) => ({
 
   tabContainer: { flexDirection: 'row', gap: 24, zIndex: 10 },
   tab: { paddingVertical: 8, position: 'relative' },
-  tabText: { fontSize: 14, color: 'rgba(255,255,255,0.5)', fontWeight: '700' },
-  activeTabText: { color: '#FFFFFF' },
-  activeLine: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, backgroundColor: '#F56E0F', borderRadius: 2 },
+  tabText: { fontSize: 14, color: theme.colors.whiteAlpha70, fontWeight: '700' },
+  activeTabText: { color: theme.colors.white },
+  activeLine: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, backgroundColor: theme.colors.brand, borderRadius: 2 },
   activeTab: {},
 
-  decCircle1: { position: 'absolute', width: 140, height: 140, borderRadius: 70, backgroundColor: 'rgba(245,110,15,0.12)', top: -30, right: -20 },
-  decCircle2: { position: 'absolute', width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(245,110,15,0.06)', bottom: 10, right: 90 },
+  decCircle1: { zIndex: 0, position: 'absolute', width: 140, height: 140, borderRadius: 70, backgroundColor: theme.colors.brandMuted, top: -30, right: -20 },
+  decCircle2: { zIndex: 0, position: 'absolute', width: 80, height: 80, borderRadius: 40, backgroundColor: theme.colors.brandFaint, bottom: 10, right: 90 },
 
   mainCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.background,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     marginTop: theme.spacing.cardOverlap,
     flex: 1,
-    shadowColor: '#000',
+    shadowColor: theme.colors.black,
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.1,
     shadowRadius: 20,
@@ -184,20 +187,20 @@ const styles = StyleSheet.create((theme) => ({
   list: {
     paddingHorizontal: theme.spacing.screenPadding,
     paddingTop: 24,
-    paddingBottom: 130
+    paddingBottom: theme.spacing.listBottomPadding
   },
 
   fab: {
     position: 'absolute',
-    bottom: 90,
+    bottom: theme.spacing.tabBarHeight,
     right: 20,
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#F56E0F',
+    backgroundColor: theme.colors.brand,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#F56E0F',
+    shadowColor: theme.colors.brand,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.35,
     shadowRadius: 15,

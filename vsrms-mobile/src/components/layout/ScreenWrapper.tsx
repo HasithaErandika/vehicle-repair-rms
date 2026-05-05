@@ -1,5 +1,5 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View, StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
@@ -8,11 +8,19 @@ interface ScreenWrapperProps {
   children: React.ReactNode;
   scroll?: boolean;
   bg?: string;
+  statusBarStyle?: 'light-content' | 'dark-content';
 }
 
-export function ScreenWrapper({ children, scroll = false, bg }: ScreenWrapperProps) {
+export function ScreenWrapper({ 
+  children, 
+  scroll = false, 
+  bg,
+  statusBarStyle = 'light-content'
+}: ScreenWrapperProps) {
   const insets = useSafeAreaInsets();
   const { theme } = useUnistyles();
+
+  const finalBg = bg ?? theme.colors.background;
 
   const content = (
     <View
@@ -21,10 +29,15 @@ export function ScreenWrapper({ children, scroll = false, bg }: ScreenWrapperPro
         {
           paddingTop: insets.top,
           paddingBottom: insets.bottom,
-          backgroundColor: bg ?? theme.colors.background,
+          backgroundColor: finalBg,
         },
       ]}
     >
+      <StatusBar 
+        barStyle={statusBarStyle} 
+        backgroundColor={finalBg}
+        translucent
+      />
       {children}
     </View>
   );

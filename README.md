@@ -2,7 +2,7 @@
 
 [![Status](https://img.shields.io/badge/Status-v1.0--Stable-success)](#)
 [![Stack](https://img.shields.io/badge/Stack-MERN-blue)](#)
-[![Deployment](https://img.shields.io/badge/Deployment-Render-FF3300)](#)
+[![Deployment](https://img.shields.io/badge/Deployment-DigitalOcean-FF3300)](#)
 
 VSRMS is a high-performance, full-stack mobile application designed to bridge the gap between vehicle owners and repair workshops. Built with a focus on geospatial discovery, real-time status tracking, and secure asset management.
 

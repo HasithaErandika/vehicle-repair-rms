@@ -7,6 +7,7 @@ const Appointment = require('../models/Appointment');
 const { AppError } = require('../middleware/errorHandler');
 const jwt        = require('jsonwebtoken');
 const { paginate } = require('../utils/paginate');
+const logger     = require('../utils/logger');
 
 const ASGARDEO_BASE = `https://api.asgardeo.io/t/${process.env.ASGARDEO_ORG_NAME}`;
 
@@ -312,7 +313,7 @@ const registerStaff = async (req, res, next) => {
       user: staffUser,
     });
   } catch (err) {
-    console.error('[auth/staff] error:', err.message);
+    logger.error(`[auth/staff] error: ${err.message}`);
     if (err.code === 11000) {
       return res.status(409).json({ error: 'An account with this email already exists' });
     }
