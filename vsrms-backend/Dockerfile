@@ -1,23 +1,30 @@
 # Use a lightweight Node.js LTS image
-FROM node:20-alpine
+FROM node:20-alpine AS base
 
 # Set the working directory inside the container
 WORKDIR /usr/src/app
 
-# Set production environment so rate-limits and error handling use production defaults
+# --- Dependencies Stage ---
+FROM base AS deps
+COPY package*.json ./
+RUN npm ci
+
+# --- Production Stage ---
+FROM base AS release
 ENV NODE_ENV=production
 
-# Copy package.json and package-lock.json first to leverage Docker layer caching
+# Copy only production dependencies from deps stage
+COPY --from=deps /usr/src/app/node_modules ./node_modules
 COPY package*.json ./
 
-# Install only production dependencies
-RUN npm ci --omit=dev
-
-# Copy the rest of the application code
+# Copy the application code
 COPY . .
 
-# Ensure the app binds to the dynamically assigned port (Digital Ocean injects PORT)
+# Use a non-root user for better security
+USER node
+
+# Ensure the app binds to the dynamically assigned port
 EXPOSE 5000
 
 # Start the Express server
-CMD ["npm", "start"]
+CMD ["node", "server.js"]
