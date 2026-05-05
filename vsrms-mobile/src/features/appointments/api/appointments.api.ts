@@ -27,8 +27,8 @@ export const updateAppointment = async (id: string, payload: Partial<Appointment
   return data.appointment || data;
 };
 
-export const updateAppointmentStatus = async (id: string, status: string): Promise<Appointment> => {
-  const { data } = await client.put(`/appointments/${id}/status`, { status });
+export const updateAppointmentStatus = async (id: string, status: string, technicianId?: string): Promise<Appointment> => {
+  const { data } = await client.put(`/appointments/${id}/status`, { status, technicianId });
   return data.appointment || data;
 };
 

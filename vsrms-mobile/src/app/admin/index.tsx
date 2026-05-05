@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StatusBar 
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet } from 'react-native-unistyles';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
-import { useUsers } from '@/features/auth/queries/queries';
+import { useUsers, useAdminLogs } from '@/features/auth/queries/queries';
 import { useWorkshops } from '@/features/workshops/queries/queries';
 import { useAuth } from '@/hooks';
 import { useRouter } from 'expo-router';
@@ -15,6 +15,7 @@ export default function AdminOverviewScreen() {
 
   const { data: users, isLoading: uLoad } = useUsers();
   const { data: workshops, isLoading: wLoad } = useWorkshops();
+  const { data: logs, isLoading: logsLoad } = useAdminLogs(10);
 
   const totalUsers = users?.total ?? 0;
   const totalWorkshops = workshops?.length ?? 0;
@@ -82,30 +83,59 @@ export default function AdminOverviewScreen() {
                   <Text key={`label-${i}`} style={styles.chartLabel}>{l}</Text>
                 ))}
               </View>
+              <Text style={styles.chartNote}>Sample data — real analytics coming soon</Text>
             </View>
           </View>
 
           {/* System Logs */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Event Logs</Text>
+              <Text style={styles.sectionTitle}>System Logs</Text>
             </View>
-            <View style={styles.logsBox}>
-              <View style={styles.logItem}>
-                <View style={[styles.logDot, { backgroundColor: '#10B981' }]} />
-                <View style={styles.logInfo}>
-                  <Text style={styles.logText}>New Garage: City Motors registered</Text>
-                  <Text style={styles.logTime}>2 mins ago</Text>
-                </View>
+            
+            {logsLoad ? (
+              <ActivityIndicator color="#3B82F6" style={{ marginVertical: 20 }} />
+            ) : (!logs || logs.length === 0) ? (
+              <View style={styles.emptyLogsBox}>
+                <Ionicons name="time-outline" size={28} color="#D1D5DB" />
+                <Text style={styles.emptyLogsTitle}>No activity yet</Text>
+                <Text style={styles.emptyLogsSub}>System activity tracking will appear here.</Text>
               </View>
-              <View style={[styles.logItem, { borderBottomWidth: 0 }]}>
-                <View style={[styles.logDot, { backgroundColor: '#F59E0B' }]} />
-                <View style={styles.logInfo}>
-                  <Text style={styles.logText}>Database maintenance scheduled</Text>
-                  <Text style={styles.logTime}>15 mins ago</Text>
-                </View>
+            ) : (
+              <View style={styles.logsList}>
+                {logs.map((log: any, index: number) => {
+                  let icon = 'notifications-outline';
+                  let color = '#3B82F6';
+                  let bg = '#EFF6FF';
+                  
+                  if (log.type === 'user_registered') {
+                    icon = 'person-add-outline';
+                    color = '#10B981';
+                    bg = '#ECFDF5';
+                  } else if (log.type === 'workshop_created') {
+                    icon = 'business-outline';
+                    color = '#F56E0F';
+                    bg = '#FFF7ED';
+                  } else if (log.type === 'appointment_booked') {
+                    icon = 'calendar-outline';
+                    color = '#8B5CF6';
+                    bg = '#F5F3FF';
+                  }
+
+                  return (
+                    <View key={log.id} style={styles.logItem}>
+                      <View style={[styles.logIcon, { backgroundColor: bg }]}>
+                        <Ionicons name={icon as any} size={18} color={color} />
+                      </View>
+                      <View style={styles.logContent}>
+                        <Text style={styles.logMessage}>{log.message}</Text>
+                        <Text style={styles.logTime}>{new Date(log.createdAt).toLocaleString()}</Text>
+                      </View>
+                    </View>
+                  );
+                })}
               </View>
-            </View>
+            )}
           </View>
         </ScrollView>
       </View>
@@ -174,13 +204,35 @@ const styles = StyleSheet.create((theme) => ({
   chartBars: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', width: '100%', height: 120, marginBottom: 16 },
   barContainer: { flex: 1, alignItems: 'center' },
   bar: { width: 14, borderRadius: 7 },
-  chartLabels: { flexDirection: 'row', justifyContent: 'space-between', width: '100%' },
+  chartLabels: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: 12 },
   chartLabel: { flex: 1, textAlign: 'center', fontSize: 12, color: '#9CA3AF', fontWeight: '700' },
+  chartNote: { fontSize: 11, color: '#D1D5DB', fontWeight: '600', fontStyle: 'italic' },
 
   logsBox: { backgroundColor: '#FAFAFA', borderRadius: 18, padding: 16, borderWidth: 1.5, borderColor: '#E5E7EB' },
-  logItem: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 12, borderBottomWidth: 1.5, borderBottomColor: '#F3F4F6' },
   logDot: { width: 8, height: 8, borderRadius: 4, marginTop: 6 },
   logInfo: { flex: 1 },
   logText: { fontSize: 14, fontWeight: '700', color: '#1A1A2E', lineHeight: 20 },
-  logTime: { fontSize: 12, color: '#6B7280', fontWeight: '600', marginTop: 4 }
+
+  emptyLogsBox: { backgroundColor: '#FAFAFA', borderRadius: 20, padding: 32, alignItems: 'center', borderWidth: 1.5, borderColor: '#F3F4F6', borderStyle: 'dashed', gap: 8 },
+  emptyLogsTitle: { fontSize: 15, fontWeight: '800', color: '#4B5563', marginTop: 12 },
+  emptyLogsSub: { fontSize: 13, color: '#9CA3AF', textAlign: 'center', marginTop: 4, paddingHorizontal: 20 },
+
+  logsList: { gap: 12 },
+  logItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#F3F4F6',
+    gap: 12,
+  },
+  logIcon: {
+    width: 36, height: 36, borderRadius: 10,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  logContent: { flex: 1 },
+  logMessage: { fontSize: 14, fontWeight: '600', color: '#1A1A2E', lineHeight: 20 },
+  logTime: { fontSize: 11, color: '#9CA3AF', fontWeight: '500', marginTop: 4 },
 }));

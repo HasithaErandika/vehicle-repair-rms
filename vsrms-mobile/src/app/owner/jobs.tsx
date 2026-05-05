@@ -38,25 +38,8 @@ function JobCard({ job }: { job: Appointment }) {
                 <Text style={styles.statusText}>In Progress</Text>
              </View>
           </View>
+          </View>
         </View>
-        <TouchableOpacity 
-          style={styles.completeBtn}
-          onPress={() => {
-            const vid = job.vehicleId && typeof job.vehicleId === 'object' ? (job.vehicleId as any)._id || (job.vehicleId as any).id : job.vehicleId;
-            const wid = job.workshopId && typeof job.workshopId === 'object' ? (job.workshopId as any)._id || (job.workshopId as any).id : job.workshopId;
-            
-            router.push({ 
-              pathname: '/owner/create-record', 
-              params: { 
-                appointmentId: job.id || job._id, 
-                workshopId: wid,
-                vehicleId: vid
-              } 
-            } as any);
-          }}
-        >
-           <Text style={styles.completeBtnText}>Finish</Text>
-        </TouchableOpacity>
       </View>
     </View>
   );

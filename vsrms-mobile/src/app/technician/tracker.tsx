@@ -12,16 +12,28 @@ import { useUpdateAppointmentStatus } from '@/features/appointments/queries/muta
 import { Appointment } from '@/features/appointments/types/appointments.types';
 import { AppointmentCard } from '@/features/appointments/components/AppointmentCard';
 import { useRouter } from 'expo-router';
+import { useToast } from '@/providers/ToastProvider';
 
 // local helper and TrackerCard removed in favor of shared AppointmentCard
 
 export default function StaffTrackerScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { showToast } = useToast();
   const workshopId = user?.workshopId;
 
-  const { data, isLoading, isError, refetch } = useWorkshopAppointments(workshopId, 'in_progress');
+  const { data, isLoading, isError, refetch } = useWorkshopAppointments(workshopId, 'confirmed,in_progress');
   const { mutate: updateStatus, isPending } = useUpdateAppointmentStatus();
+
+  const handleStart = (id: string) => {
+    updateStatus({ id, status: 'in_progress' }, {
+      onSuccess: () => {
+        showToast('Job started', 'success');
+        refetch();
+      },
+      onError: () => showToast('Failed to start job', 'error')
+    });
+  };
 
   const handleComplete = (id: string) => {
     router.push({ 
@@ -38,6 +50,7 @@ export default function StaffTrackerScreen() {
         <AppointmentCard 
           appointment={item} 
           isTechnician={true}
+          onStart={() => handleStart((item.id || item._id)!)}
           onFinalize={() => handleComplete((item.id || item._id)!)}
         />
       )}

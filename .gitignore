@@ -12,9 +12,27 @@ desktop.ini
 *.iml
 *.iws
 
+# ── Node ───────────────────────────────────────────────────────
+node_modules/
+npm-debug.log
+yarn-error.log
+
 # ── Secrets / Environment ───────────────────────────────────────
 .env
 .env.*
 !.env.example
 
+# ── Expo / Mobile ──────────────────────────────────────────────
+.expo/
+dist/
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+eas.json
+
+# ── Coverage ───────────────────────────────────────────────────
 coverage/

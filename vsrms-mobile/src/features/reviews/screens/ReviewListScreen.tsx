@@ -45,15 +45,10 @@ export function ReviewListScreen() {
       {/* ── DARK TOP SECTION ── */}
       <View style={styles.topSection}>
         <View style={styles.headerTextRow}>
-          <TouchableOpacity 
-            style={styles.backBtn} 
-            onPress={() => router.back()} 
-            activeOpacity={0.7}
-          >
-            <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>My Reviews</Text>
-          <View style={{ width: 44 }} /> 
+          <View>
+            <Text style={styles.headerSub}>Feedback</Text>
+            <Text style={styles.headerTitle}>My Reviews</Text>
+          </View>
         </View>
 
         {/* Decorative Circles */}
@@ -105,11 +100,12 @@ export function ReviewListScreen() {
 
 const styles = StyleSheet.create((theme) => ({
   topSection: {
-    paddingHorizontal: 24,
+    paddingHorizontal: theme.spacing.screenPadding,
     paddingTop: 16,
     paddingBottom: 68,
     position: 'relative',
     overflow: 'hidden',
+    backgroundColor: '#1A1A2E',
   },
   headerTextRow: {
     flexDirection: 'row',
@@ -118,16 +114,15 @@ const styles = StyleSheet.create((theme) => ({
     zIndex: 10,
     marginTop: 12,
   },
-  backBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  headerSub: {
+    fontSize: theme.fonts.sizes.caption,
+    color: 'rgba(255,255,255,0.7)',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: theme.fonts.sizes.pageTitle,
     fontWeight: '900',
     color: '#FFFFFF',
     letterSpacing: -0.3,
@@ -154,7 +149,7 @@ const styles = StyleSheet.create((theme) => ({
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
-    marginTop: -38,
+    marginTop: theme.spacing.cardOverlap,
     flex: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, ScrollView, KeyboardAvoidingView, Platform,
+  View, Text, TextInput, TouchableOpacity, ActivityIndicator, ScrollView,
+  KeyboardAvoidingView, Platform, StatusBar,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -129,23 +130,36 @@ export default function EditVehicleScreen() {
   };
 
   if (isLoading) return (
-    <ScreenWrapper>
-      <View style={styles.centered}>
+    <ScreenWrapper bg="#1A1A2E">
+      <StatusBar barStyle="light-content" backgroundColor="#1A1A2E" />
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator size="large" color="#F56E0F" />
       </View>
     </ScreenWrapper>
   );
 
   return (
-    <ScreenWrapper>
-      {/* HEADER */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
-          <Ionicons name="chevron-back" size={24} color="#1A1A2E" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Vehicle</Text>
-        <View style={{ width: 40 }} />
+    <ScreenWrapper bg="#1A1A2E">
+      <StatusBar barStyle="light-content" backgroundColor="#1A1A2E" />
+
+      {/* ── DARK TOP SECTION ── */}
+      <View style={styles.topSection}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+            <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+          <View>
+            <Text style={styles.headerSub}>Modify Vehicle</Text>
+            <Text style={styles.headerTitle}>Edit Details</Text>
+          </View>
+          <View style={{ width: 44 }} />
+        </View>
+        <View style={styles.decCircle1} />
+        <View style={styles.decCircle2} />
       </View>
+
+      {/* ── WHITE CARD SECTION ── */}
+      <View style={styles.mainCard}>
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
@@ -265,7 +279,8 @@ export default function EditVehicleScreen() {
           </TouchableOpacity>
 
         </ScrollView>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </View>
     </ScreenWrapper>
   );
 }
@@ -306,17 +321,35 @@ const fieldStyles = StyleSheet.create(() => ({
 
 const styles = StyleSheet.create(() => ({
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16,
-    backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#F3F4F6',
+  topSection: {
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 68,
+    position: 'relative',
+    overflow: 'hidden',
   },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 10, marginTop: 12 },
   backBtn: {
-    width: 40, height: 40, borderRadius: 12,
-    backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB',
+    width: 44, height: 44, borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center', justifyContent: 'center',
   },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: '#1A1A2E' },
+  headerSub: { fontSize: 11, fontWeight: '700', color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: 1, textAlign: 'center' },
+  headerTitle: { fontSize: 22, fontWeight: '900', color: '#FFFFFF', letterSpacing: -0.5, marginTop: 4, textAlign: 'center' },
+  decCircle1: { position: 'absolute', width: 130, height: 130, borderRadius: 65, backgroundColor: 'rgba(245,110,15,0.13)', top: -25, right: -25 },
+  decCircle2: { position: 'absolute', width: 70, height: 70, borderRadius: 35, backgroundColor: 'rgba(245,110,15,0.08)', bottom: 10, right: 90 },
+  mainCard: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    marginTop: -38,
+    flex: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 16,
+  },
   scroll: { padding: 20, paddingBottom: 60 },
 
   regBanner: {

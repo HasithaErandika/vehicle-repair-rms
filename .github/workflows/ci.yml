@@ -38,6 +38,9 @@ jobs:
       - name: Run Backend Tests
         run: npm test -- --coverage
 
+      - name: Verify Docker Build
+        run: docker build -t vsrms-backend:test .
+
       - name: Upload Coverage Report
         uses: actions/upload-artifact@v4
         with:

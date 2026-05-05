@@ -51,6 +51,11 @@ VSRMS uses Asgardeo for OIDC authentication.
    ```
    The API will be available at `http://localhost:5000/api/v1`.
 
+4. **Seed the Database (Optional):**
+   ```bash
+   npm run seed
+   ```
+
 ---
 
 ## 4. Mobile Setup (`/vsrms-mobile`)

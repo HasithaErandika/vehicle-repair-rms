@@ -35,6 +35,7 @@ export default function SettingsScreen() {
   const [showPasswordInfo, setShowPasswordInfo] = useState(false);
   const [fullName, setFullName]   = useState(user?.fullName ?? '');
   const [phone, setPhone]         = useState((user as any)?.phone ?? '');
+  const [modalErrors, setModalErrors] = useState({ fullName: '', phone: '' });
 
   const initials = (user?.fullName ?? user?.email ?? 'ME')
     .split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
@@ -45,14 +46,22 @@ export default function SettingsScreen() {
     ? new Date(user.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long' })
     : 'N/A';
 
+  const validateModal = (): boolean => {
+    const errs = { fullName: '', phone: '' };
+    if (!fullName.trim()) errs.fullName = 'Full name is required.';
+    if (phone.trim() && !/^[\d\s+\-()]{7,15}$/.test(phone.trim())) errs.phone = 'Enter a valid phone number.';
+    setModalErrors(errs);
+    return !errs.fullName && !errs.phone;
+  };
+
   const handleSave = () => {
+    if (!validateModal()) return;
     update(
       { fullName: fullName.trim() || undefined, phone: (phone.trim() || undefined) as any } as any,
       {
         onSuccess: async () => {
           setEditing(false);
-          // Sync the AuthProvider user state so the name/phone update is
-          // immediately reflected everywhere in the app (header, avatar, etc.)
+          setModalErrors({ fullName: '', phone: '' });
           await refreshUser();
         },
       },
@@ -146,23 +155,28 @@ export default function SettingsScreen() {
                   </View>
 
                   <View style={styles.inputGroup}>
-                    <Text style={styles.inputLabel}>Full Name</Text>
+                    <Text style={styles.inputLabel}>Full Name <Text style={styles.modalRequired}>*</Text></Text>
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, !!modalErrors.fullName && styles.inputModalError]}
                       value={fullName}
-                      onChangeText={setFullName}
+                      onChangeText={(t) => { setFullName(t); if (modalErrors.fullName) setModalErrors(e => ({ ...e, fullName: '' })); }}
                       placeholder="Your full name"
+                      placeholderTextColor="#9CA3AF"
+                      autoCapitalize="words"
                     />
+                    {!!modalErrors.fullName && <Text style={styles.modalErrorText}>{modalErrors.fullName}</Text>}
                   </View>
                   <View style={styles.inputGroup}>
-                    <Text style={styles.inputLabel}>Phone Number</Text>
+                    <Text style={styles.inputLabel}>Phone Number <Text style={styles.modalOptional}>(optional)</Text></Text>
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, !!modalErrors.phone && styles.inputModalError]}
                       value={phone}
-                      onChangeText={setPhone}
+                      onChangeText={(t) => { setPhone(t); if (modalErrors.phone) setModalErrors(e => ({ ...e, phone: '' })); }}
                       placeholder="+94 77 000 0000"
+                      placeholderTextColor="#9CA3AF"
                       keyboardType="phone-pad"
                     />
+                    {!!modalErrors.phone && <Text style={styles.modalErrorText}>{modalErrors.phone}</Text>}
                   </View>
 
                   <TouchableOpacity 
@@ -218,6 +232,7 @@ export default function SettingsScreen() {
         message="Are you sure you want to sign out?"
         confirmText="Sign Out"
         type="danger"
+        theme="light"
         onConfirm={signOut}
         onCancel={() => setShowSignOutConfirm(false)}
       />
@@ -227,6 +242,7 @@ export default function SettingsScreen() {
         title="Change Password"
         message="Password changes are managed through your identity provider. Please use the 'Forgot Password' option on the login screen to reset your password."
         confirmText="OK"
+        theme="light"
         onConfirm={() => setShowPasswordInfo(false)}
         onCancel={() => setShowPasswordInfo(false)}
       />
@@ -291,9 +307,13 @@ const styles = StyleSheet.create((theme) => ({
   infoCard: { backgroundColor: '#FFFFFF', borderRadius: 18, paddingHorizontal: 16, borderWidth: 1.5, borderColor: '#F3F4F6' },
 
   editCard: { backgroundColor: '#FFFFFF', borderRadius: 18, padding: 16, borderWidth: 1.5, borderColor: '#F3F4F6' },
-  inputGroup: { marginBottom: 14 },
-  inputLabel: { fontSize: 11, fontWeight: '800', color: '#6B7280', textTransform: 'uppercase', marginBottom: 6, letterSpacing: 0.3 },
-  input: { backgroundColor: '#F9FAFB', borderRadius: 12, height: 48, paddingHorizontal: 14, fontSize: 15, color: '#1A1A2E', borderWidth: 1.5, borderColor: '#E5E7EB', fontWeight: '600' },
+  inputGroup: { marginBottom: 16 },
+  inputLabel: { fontSize: 11, fontWeight: '800', color: '#6B7280', textTransform: 'uppercase', marginBottom: 8, letterSpacing: 0.3 },
+  input: { backgroundColor: '#F9FAFB', borderRadius: 14, height: 54, paddingHorizontal: 16, fontSize: 15, color: '#1A1A2E', borderWidth: 1.5, borderColor: '#E5E7EB', fontWeight: '600' },
+  inputModalError: { borderColor: '#EF4444', backgroundColor: '#FEF2F2' },
+  modalRequired: { color: '#EF4444', fontWeight: '900' },
+  modalOptional: { fontWeight: '500', color: '#9CA3AF', textTransform: 'none' as any, letterSpacing: 0 },
+  modalErrorText: { fontSize: 12, color: '#EF4444', fontWeight: '600', marginTop: 6, marginLeft: 2 },
   editActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
   cancelBtn: { flex: 1, height: 46, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: '#E5E7EB' },
   cancelBtnText: { fontSize: 14, fontWeight: '700', color: '#6B7280' },

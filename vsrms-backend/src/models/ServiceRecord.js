@@ -14,6 +14,7 @@ const serviceRecordSchema = new mongoose.Schema(
     totalCost:        { type: Number, required: true, min: 0 },
     mileageAtService: { type: Number, min: 0 },
     technicianName:   { type: String, trim: true },
+    technicianId:     { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true },
 );

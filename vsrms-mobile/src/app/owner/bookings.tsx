@@ -12,13 +12,17 @@ import { useWorkshop } from '@/features/workshops/queries/queries';
 import { Appointment } from '@/features/appointments/types/appointments.types';
 import { ErrorScreen } from '@/components/feedback/ErrorScreen';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { useWorkshopTechnicians } from '@/features/workshops/queries/queries';
+import { User } from '@/features/auth/types/auth.types';
 
 function BookingCard({
   appt,
-  onStatusChange
+  onStatusChange,
+  onStartJob,
 }: {
   appt: Appointment;
-  onStatusChange: (id: string, s: string) => void
+  onStatusChange: (id: string, s: string) => void;
+  onStartJob: (appt: Appointment, action?: 'assign' | 'start') => void;
 }) {
   const customerName = appt.userId && typeof appt.userId === 'object' ? appt.userId.fullName : 'Customer';
   const vehicleName = appt.vehicleId && typeof appt.vehicleId === 'object' ? `${appt.vehicleId.make} ${appt.vehicleId.model}` : 'Vehicle';
@@ -51,6 +55,17 @@ function BookingCard({
             <Text style={styles.metaText}>{appt.serviceType}</Text>
           </View>
         </View>
+
+        {appt.technicianId && (
+          <View style={styles.techAssignedRow}>
+            <View style={styles.techAssignedBadge}>
+              <Ionicons name="person" size={12} color="#2563EB" />
+              <Text style={styles.techAssignedText}>
+                Assigned: {typeof appt.technicianId === 'object' ? appt.technicianId.fullName : 'Technician'}
+              </Text>
+            </View>
+          </View>
+        )}
       </View>
 
       {appt.status === 'pending' && (
@@ -72,13 +87,25 @@ function BookingCard({
 
       {appt.status === 'confirmed' && (
         <View style={styles.actionContainer}>
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={() => onStatusChange((appt.id || appt._id)!, 'in_progress')}
-          >
-            <Ionicons name="play-circle" size={18} color="#FFFFFF" />
-            <Text style={styles.actionBtnText}>Start Repair Job</Text>
-          </TouchableOpacity>
+          {!appt.technicianId ? (
+            <TouchableOpacity
+              style={[styles.actionBtn, { backgroundColor: '#F56E0F' }]}
+              onPress={() => onStartJob(appt, 'assign')}
+            >
+              <Ionicons name="person-add" size={18} color="#FFFFFF" />
+              <Text style={styles.actionBtnText}>Assign Technician</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={{ flex: 1 }}>
+              <TouchableOpacity
+                style={[styles.actionBtn, { backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB' }]}
+                onPress={() => onStartJob(appt, 'assign')}
+              >
+                <Ionicons name="swap-horizontal" size={18} color="#4B5563" />
+                <Text style={[styles.actionBtnText, { color: '#4B5563' }]}>Reassign Technician</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       )}
     </View>
@@ -108,13 +135,45 @@ export default function BookingsScreen() {
     });
   }, [data]);
 
-  const handleStatusUpdate = (id: string, s: string) => {
-    updateStatus({ id, status: s });
+  const handleStatusUpdate = (id: string, s: string, technicianId?: string) => {
+    updateStatus({ id, status: s, technicianId });
   };
 
   const workshopName = (!targetWorkshopId || targetWorkshopId === 'all')
     ? 'All Workshops'
     : (workshop && typeof workshop === 'object' ? (workshop as any).name : 'Workshop');
+
+  // Technician Selection Modal state
+  const [techModalVisible, setTechModalVisible] = useState(false);
+  const [selectedApptForTech, setSelectedApptForTech] = useState<Appointment | null>(null);
+
+  // Derive the active workshopId for the technician list.
+  const activeWorkshopIdForTech = useMemo(() => {
+    if (!selectedApptForTech) return '';
+    if (typeof selectedApptForTech.workshopId === 'object' && selectedApptForTech.workshopId !== null) {
+      return (selectedApptForTech.workshopId as any)._id || (selectedApptForTech.workshopId as any).id;
+    }
+    return selectedApptForTech.workshopId as string;
+  }, [selectedApptForTech]);
+
+  const { data: technicians = [], isLoading: techLoading } = useWorkshopTechnicians(activeWorkshopIdForTech);
+
+  const [pendingAction, setPendingAction] = useState<'assign' | 'start'>('assign');
+
+  const handleStartJobClick = (appt: Appointment, action: 'assign' | 'start' = 'assign') => {
+    setSelectedApptForTech(appt);
+    setPendingAction(action);
+    setTechModalVisible(true);
+  };
+
+  const confirmStartJob = (techId: string) => {
+    if (selectedApptForTech) {
+      const nextStatus = pendingAction === 'start' ? 'in_progress' : 'confirmed';
+      handleStatusUpdate((selectedApptForTech.id || selectedApptForTech._id)!, nextStatus, techId);
+    }
+    setTechModalVisible(false);
+    setSelectedApptForTech(null);
+  };
 
   return (
     <ScreenWrapper bg="#1A1A2E">
@@ -165,7 +224,7 @@ export default function BookingsScreen() {
         ) : (
           <FlashList
             data={(data || []) as Appointment[]}
-            renderItem={({ item }) => <BookingCard appt={item as Appointment} onStatusChange={handleStatusUpdate} />}
+            renderItem={({ item }) => <BookingCard appt={item as Appointment} onStatusChange={handleStatusUpdate} onStartJob={handleStartJobClick} />}
             // @ts-expect-error - FlashList requires estimatedItemSize dynamically
             estimatedItemSize={140}
             onRefresh={refetch}
@@ -176,6 +235,52 @@ export default function BookingsScreen() {
           />
         )}
       </View>
+
+      {/* Technician Selection Modal */}
+      {techModalVisible && (
+        <View style={styles.modalBg}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Assign Technician</Text>
+              <TouchableOpacity onPress={() => setTechModalVisible(false)}>
+                <Ionicons name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.modalSub}>Select a technician to start this repair job.</Text>
+
+            {techLoading ? (
+              <ActivityIndicator color="#F56E0F" style={{ marginVertical: 20 }} />
+            ) : technicians.length === 0 ? (
+              <Text style={styles.emptyTechText}>No technicians available in this workshop.</Text>
+            ) : (
+              <View style={styles.techList}>
+                {(technicians as User[]).map(tech => {
+                  const name = tech.fullName || tech.email;
+                  const initials = name.split(/[ @._-]/).filter(Boolean).map(n => n[0]).slice(0, 2).join('').toUpperCase();
+                  
+                  return (
+                    <TouchableOpacity
+                      key={tech.id ?? tech.email}
+                      style={styles.techItem}
+                      onPress={() => confirmStartJob(tech.id!)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.techAvatar}>
+                        <Text style={styles.techAvatarText}>{initials}</Text>
+                      </View>
+                      <View style={styles.techInfo}>
+                        <Text style={styles.techName}>{tech.fullName || 'Technician'}</Text>
+                        <Text style={styles.techEmail}>{tech.email}</Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
+          </View>
+        </View>
+      )}
     </ScreenWrapper>
   );
 }
@@ -308,5 +413,39 @@ const styles = StyleSheet.create((theme) => ({
     fontWeight: '800',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+
+  modalBg: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(26,26,46,0.7)', justifyContent: 'flex-end', zIndex: 100 },
+  modalContent: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: 40 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  modalTitle: { fontSize: 20, fontWeight: '900', color: '#1A1A2E' },
+  modalSub: { fontSize: 13, color: '#6B7280', marginTop: 4, marginBottom: 20 },
+  techList: { gap: 12 },
+  techItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F9FAFB', padding: 12, borderRadius: 16, borderWidth: 1.5, borderColor: '#F3F4F6' },
+  techAvatar: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  techAvatarText: { fontSize: 14, fontWeight: '800', color: '#2563EB' },
+  techInfo: { flex: 1 },
+  techName: { fontSize: 15, fontWeight: '800', color: '#1A1A2E' },
+  techEmail: { fontSize: 12, color: '#6B7280', marginTop: 2 },
+  emptyTechText: { fontSize: 14, color: '#9CA3AF', textAlign: 'center', marginVertical: 20 },
+  techAssignedRow: {
+    marginTop: 12,
+    flexDirection: 'row',
+  },
+  techAssignedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+  },
+  techAssignedText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1E40AF',
   },
 }));

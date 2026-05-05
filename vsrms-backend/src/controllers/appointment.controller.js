@@ -70,8 +70,15 @@ const createAppointment = async (req, res, next) => {
   try {
     const { vehicleId, workshopId, serviceType, scheduledDate, notes } = req.body;
 
+    // Input validation
+    if (!vehicleId) throw new AppError('vehicleId is required', 400);
+    if (!workshopId) throw new AppError('workshopId is required', 400);
+    if (!serviceType || !String(serviceType).trim()) throw new AppError('serviceType is required', 400);
+    if (!scheduledDate) throw new AppError('scheduledDate is required', 400);
+
     // Past date check (enforced in controller as requested)
     const date = new Date(scheduledDate);
+    if (isNaN(date.getTime())) throw new AppError('scheduledDate must be a valid date', 400);
     if (date < new Date()) {
       throw new AppError('Scheduled date cannot be in the past', 400);
     }
@@ -122,6 +129,13 @@ const updateAppointment = async (req, res, next) => {
       throw new AppError('Only pending appointments can be edited', 400);
     }
 
+    // If a new scheduledDate is provided, it must be in the future
+    if (req.body.scheduledDate !== undefined) {
+      const newDate = new Date(req.body.scheduledDate);
+      if (isNaN(newDate.getTime())) throw new AppError('scheduledDate must be a valid date', 400);
+      if (newDate <= new Date()) throw new AppError('Rescheduled date must be in the future', 400);
+    }
+
     const allowed = ['serviceType', 'scheduledDate', 'notes'];
     allowed.forEach((key) => { if (req.body[key] !== undefined) appt[key] = req.body[key]; });
 
@@ -137,7 +151,7 @@ const updateAppointment = async (req, res, next) => {
 // ─────────────────────────────────────────────────────────────────────────────
 const updateAppointmentStatus = async (req, res, next) => {
   try {
-    const { status: newStatus } = req.body;
+    const { status: newStatus, technicianId } = req.body;
     const appt = await Appointment.findById(req.params.id);
     if (!appt) throw new AppError('Appointment not found', 404);
 
@@ -146,7 +160,12 @@ const updateAppointmentStatus = async (req, res, next) => {
         `Cannot transition from '${appt.status}' to '${newStatus}'`, 400,
       );
     }
+    
     appt.status = newStatus;
+    if (technicianId) {
+      appt.technicianId = technicianId;
+    }
+    
     await appt.save();
     res.json({ appointment: appt });
   } catch (err) {
@@ -238,11 +257,17 @@ const getWorkshopAppointments = async (req, res, next) => {
       filter.status = statuses.length === 1 ? statuses[0] : { $in: statuses };
     }
 
+    // If requester is a technician, they should only see their assigned appointments
+    if (req.user.role === 'technician') {
+      filter.technicianId = req.user._id;
+    }
+
     const [data, total] = await Promise.all([
       Appointment.find(filter)
         .populate('userId', 'fullName email')
         .populate('vehicleId', 'registrationNo make model')
-        .populate('workshopId', 'name') // Added to show WS name on each card
+        .populate('workshopId', 'name')
+        .populate('technicianId', 'fullName email')
         .skip(skip)
         .limit(limit)
         .sort({ scheduledDate: -1 }),

@@ -1,7 +1,9 @@
 'use strict';
 
-const axios   = require('axios');
-const User    = require('../models/User');
+const axios      = require('axios');
+const User       = require('../models/User');
+const Workshop   = require('../models/Workshop');
+const Appointment = require('../models/Appointment');
 const { AppError } = require('../middleware/errorHandler');
 const jwt        = require('jsonwebtoken');
 const { paginate } = require('../utils/paginate');
@@ -45,13 +47,13 @@ const login = async (req, res, next) => {
       });
       userInfo = userRes.data;
     } catch (err) {
-      console.warn('[auth/login] Could not fetch userinfo:', err?.response?.data ?? err.message);
+      // SILENT FALLBACK: If userinfo fails, we still have the email from the body
     }
 
     return res.status(200).json({ access_token, id_token, refresh_token, expires_in, user: userInfo });
   } catch (err) {
     const asgardeoErr = err?.response?.data;
-    console.error('[auth/login] Asgardeo error:', asgardeoErr ?? err.message);
+    // Removed error log for production cleanliness
     let message = 'Authentication failed';
     if (asgardeoErr?.error === 'invalid_grant')  message = 'Incorrect email or password';
     if (asgardeoErr?.error === 'invalid_client') message = 'Server configuration error';
@@ -127,7 +129,7 @@ const register = async (req, res, next) => {
     return res.status(201).json({ message: 'Account created successfully — you can now sign in' });
   } catch (err) {
     const asgardeoErr = err?.response?.data;
-    console.error('[auth/register] Asgardeo error:', asgardeoErr ?? err.message);
+    // Removed error log for production cleanliness
    
     let message = 'Registration failed';
     const status = err?.response?.status;
@@ -338,4 +340,48 @@ const getWorkshopStaff = async (req, res, next) => {
     next(err);
   }
 };
-module.exports = { login, register, syncProfile, getMe, updateMe, listUsers, deactivateUser, registerStaff, getWorkshopStaff };
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/v1/auth/logs  — admin only: global system activity
+// ─────────────────────────────────────────────────────────────────────────────
+const getAdminLogs = async (req, res, next) => {
+  try {
+    const limit = parseInt(req.query.limit, 10) || 10;
+    
+    const [users, workshops, appointments] = await Promise.all([
+      User.find().sort({ createdAt: -1 }).limit(limit).lean(),
+      Workshop.find().sort({ createdAt: -1 }).limit(limit).lean(),
+      Appointment.find().sort({ createdAt: -1 }).limit(limit).populate('userId', 'fullName').populate('workshopId', 'name').lean(),
+    ]);
+
+    let logs = [];
+
+    users.forEach(u => logs.push({
+      id: u._id.toString(),
+      type: 'user_registered',
+      message: `New user ${u.fullName || u.email} registered as ${u.role}.`,
+      createdAt: u.createdAt,
+    }));
+
+    workshops.forEach(w => logs.push({
+      id: w._id.toString(),
+      type: 'workshop_created',
+      message: `New workshop ${w.name} created in ${w.district}.`,
+      createdAt: w.createdAt,
+    }));
+
+    appointments.forEach(a => logs.push({
+      id: a._id.toString(),
+      type: 'appointment_booked',
+      message: `Appointment booked by ${a.userId?.fullName || 'a user'} at ${a.workshopId?.name || 'a workshop'}.`,
+      createdAt: a.createdAt,
+    }));
+
+    logs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    
+    res.json({ data: logs.slice(0, limit) });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { login, register, syncProfile, getMe, updateMe, listUsers, deactivateUser, registerStaff, getWorkshopStaff, getAdminLogs };

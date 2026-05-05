@@ -8,7 +8,7 @@ VSRMS is a high-performance, full-stack mobile application designed to bridge th
 
 ---
 
-## 🏗️ Architecture Overview
+## Architecture Overview
 
 The system follows a three-tier, enterprise-grade architecture:
 
@@ -18,7 +18,7 @@ The system follows a three-tier, enterprise-grade architecture:
 
 ---
 
-## 📦 Core Modules (M1 - M6)
+## Core Modules (M1 - M6)
 
 | Module | Scope | Ownership |
 | :--- | :--- | :--- |
@@ -31,31 +31,31 @@ The system follows a three-tier, enterprise-grade architecture:
 
 ---
 
-## 🎯 Key Features
+## Key Features
 
-- 🛰️ **Geospatial Discovery**: Find the nearest workshops based on your current GPS location.
-- 🔐 **Stateless Security**: Secure OIDC authentication via Asgardeo (WSO2) with JWT validation.
-- ☁️ **Media Pipeline**: Direct-to-cloud image uploads for vehicles and garages via Cloudflare R2.
-- 🎨 **Premium UI**: Dark-mode-ready, card-elevated interface optimized for visibility.
+- **Geospatial Discovery**: Find the nearest workshops based on your current GPS location.
+- **Stateless Security**: Secure OIDC authentication via Asgardeo (WSO2) with JWT validation.
+- **Media Pipeline**: Direct-to-cloud image uploads for vehicles and garages via Cloudflare R2.
+- **Premium UI**: Dark-mode-ready, card-elevated interface optimized for visibility.
 
 ---
 
-## 📚 Documentation Hub
+## Documentation Hub
 
 For detailed technical guides, please refer to:
 
-1.  📖 **[Quick Setup Guide](docs/setup.md)** — Get up and running in 5 minutes.
-2.  💾 **[Database Schema](docs/database_schema.md)** — Mongoose models and indexing strategy.
-3.  📐 **[Frontend Architecture](docs/frontend-architecture.md)** — Routing, state, and theme layers.
-4.  🧪 **[API Collection](vsrms-backend/README.md#api-endpoints)** — Comprehensive endpoint reference.
+1.  **[Quick Setup Guide](docs/setup.md)** — Get up and running in 5 minutes.
+2.  **[Database Schema](docs/database_schema.md)** — Mongoose models and indexing strategy.
+3.  **[Frontend Architecture](docs/frontend-architecture.md)** — Routing, state, and theme layers.
+4.  **[API Collection](vsrms-backend/README.md#api-endpoints)** — Comprehensive endpoint reference.
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ```bash
 # Clone the repository
-git clone https://github.com/hasithaerandika/vehicle-repair-rms.git
+git clone https://github.com/HasithaErandika/vehicle-repair-rms.git
 
 # Set up the API
 cd vsrms-backend && npm install
@@ -67,4 +67,4 @@ cd vsrms-mobile && npm install
 *For individual environment configuration, see the [Setup Guide](docs/setup.md).*
 
 ---
-© 2026 SE2020 Group Assignment. All rights reserved.
+

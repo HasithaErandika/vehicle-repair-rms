@@ -48,3 +48,8 @@ export const registerStaff = async (payload: RegisterStaffPayload): Promise<User
   return data.user || data;
 };
 
+export const getAdminLogs = async (limit: number = 10): Promise<{ id: string, type: string, message: string, createdAt: string }[]> => {
+  const { data } = await client.get('/auth/logs', { params: { limit } });
+  return data.data;
+};
+

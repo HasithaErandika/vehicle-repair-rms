@@ -160,7 +160,10 @@ export default function AddVehicleScreen() {
           <TouchableOpacity style={styles.backBtn} activeOpacity={0.7} onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
-          <Text style={styles.title}>Add Vehicle</Text>
+          <View>
+            <Text style={styles.headerSub}>New Vehicle</Text>
+            <Text style={styles.title}>Add Vehicle</Text>
+          </View>
           <View style={{ width: 44 }} />
         </View>
 
@@ -348,7 +351,8 @@ const styles = StyleSheet.create(() => ({
   topSection: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 68, position: 'relative', overflow: 'hidden' },
   headerTextRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 10, marginTop: 12 },
   backBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
-  title: { fontSize: 20, fontWeight: '900', color: '#FFFFFF', letterSpacing: -0.3 },
+  headerSub: { fontSize: 11, fontWeight: '700', color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: 1, textAlign: 'center' },
+  title: { fontSize: 22, fontWeight: '900', color: '#FFFFFF', letterSpacing: -0.5, marginTop: 4, textAlign: 'center' },
 
   decCircle1: { position: 'absolute', width: 130, height: 130, borderRadius: 65, backgroundColor: 'rgba(245,110,15,0.13)', top: -25, right: -25 },
   decCircle2: { position: 'absolute', width: 70, height: 70, borderRadius: 35, backgroundColor: 'rgba(245,110,15,0.08)', bottom: 10, right: 90 },

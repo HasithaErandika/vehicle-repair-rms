@@ -26,7 +26,7 @@ Business logic is grouped into self-contained vertical features:
 ### `src/services/` — Infrastructure
 - **`http.client.ts`**: Centralized Axios instance with Bearer token interceptors.
 - **`location.service.ts`**: Permissions and Geo-location wrapper.
-- **`storage.service.ts`**: Persistent state via `AsyncStorage`.
+- **`storage.service.ts`**: Persistent state via `expo-secure-store`.
 
 ---
 

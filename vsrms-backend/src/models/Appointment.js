@@ -25,6 +25,7 @@ const appointmentSchema = new mongoose.Schema(
       enum:    ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled'],
       default: 'pending',
     },
+    technicianId:  { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     notes: { type: String },
   },
   { timestamps: true },

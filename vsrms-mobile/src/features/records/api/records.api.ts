@@ -40,7 +40,7 @@ export const deleteRecord = async (id: string): Promise<{ message: string }> => 
   return data;
 };
 
-export const fetchWorkshopRecords = async (workshopId: string, params?: Record<string, any>): Promise<{ data: ServiceRecord[]; total: number; page: number; pages: number }> => {
+export const fetchWorkshopRecords = async (workshopId: string, params?: Record<string, any>): Promise<ServiceRecord[]> => {
   const { data } = await client.get(`/records/workshop/${workshopId}`, { params });
-  return data;
+  return data.data || data;
 };

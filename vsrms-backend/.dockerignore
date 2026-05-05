@@ -1,6 +1,7 @@
 node_modules
 npm-debug.log
 .env
+.env.example
 .git
 .gitignore
 .expo
@@ -10,3 +11,8 @@ jest.config.js
 coverage
 .dockerignore
 Dockerfile
+src/scripts
+test-api.js
+seed.js
+scripts
+docs

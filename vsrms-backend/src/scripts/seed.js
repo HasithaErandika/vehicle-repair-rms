@@ -20,12 +20,12 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const axios    = require('axios');
 
-const User          = require('./src/models/User');
-const Workshop      = require('./src/models/Workshop');
-const Vehicle       = require('./src/models/Vehicle');
-const Appointment   = require('./src/models/Appointment');
-const ServiceRecord = require('./src/models/ServiceRecord');
-const Review        = require('./src/models/Review');
+const User          = require('../models/User');
+const Workshop      = require('../models/Workshop');
+const Vehicle       = require('../models/Vehicle');
+const Appointment   = require('../models/Appointment');
+const ServiceRecord = require('../models/ServiceRecord');
+const Review        = require('../models/Review');
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 const days   = (n) => 86_400_000 * n;
