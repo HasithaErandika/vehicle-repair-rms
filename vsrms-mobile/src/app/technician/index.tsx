@@ -11,6 +11,9 @@ import { useWorkshop } from '@/features/workshops/queries/queries';
 import { Appointment } from '@/features/appointments/types/appointments.types';
 import client from '@/services/http.client';
 import { useEffect } from 'react';
+import { useUpdateAppointmentStatus } from '@/features/appointments/queries/mutations';
+import { useToast } from '@/providers/ToastProvider';
+import { AppointmentCard } from '@/features/appointments/components/AppointmentCard';
 
 function getVehicleLabel(a: Appointment): string {
   if (typeof a.vehicleId === 'object' && a.vehicleId !== null) {
@@ -36,10 +39,26 @@ export default function TechnicianDashboardScreen() {
     }
   }, [user, workshopId, wsError]);
 
-  const { data: pending,    isLoading: pLoad } = useWorkshopAppointments(workshopId, 'pending');
-  const { data: inProgress, isLoading: iLoad } = useWorkshopAppointments(workshopId, 'in_progress');
-  const { data: confirmed,  isLoading: cLoad } = useWorkshopAppointments(workshopId, 'confirmed');
+  const { data: pending,    isLoading: pLoad, refetch: r1 } = useWorkshopAppointments(workshopId, 'pending');
+  const { data: inProgress, isLoading: iLoad, refetch: r2 } = useWorkshopAppointments(workshopId, 'in_progress');
+  const { data: confirmed,  isLoading: cLoad, refetch: r3 } = useWorkshopAppointments(workshopId, 'confirmed');
+  const { mutate: updateStatus } = useUpdateAppointmentStatus();
+  const { showToast } = useToast();
   const anyLoading = pLoad || iLoad || cLoad;
+
+  const handleStartJob = (id: string) => {
+    updateStatus({ id, status: 'in_progress' }, {
+      onSuccess: () => {
+        showToast('Job started successfully', 'success');
+        r2(); r3();
+      },
+      onError: () => showToast('Failed to start job', 'error')
+    });
+  };
+
+  const handleCompleteJob = (id: string) => {
+    router.push({ pathname: '/technician/record', params: { appointmentId: id } } as any);
+  };
 
   const displayName = user?.fullName?.split(' ')[0] ?? 'Technician';
   const initials = (user?.fullName ?? user?.email ?? 'TN').split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
@@ -98,7 +117,7 @@ export default function TechnicianDashboardScreen() {
             <TouchableOpacity 
               style={styles.confirmedAlert} 
               activeOpacity={0.8}
-              onPress={() => router.push('/technician/appointments?status=confirmed' as any)}
+              onPress={() => router.push('/technician/tracker' as any)}
             >
               <View style={styles.alertIconBox}>
                 <Ionicons name="notifications" size={18} color="#FFFFFF" />
@@ -134,7 +153,7 @@ export default function TechnicianDashboardScreen() {
             <Text style={styles.sectionTitle}>Daily Operations</Text>
             <View style={styles.quickLinks}>
               {[
-                { icon: 'calendar-outline' as const, label: 'Schedule',   href: '/technician/appointments' },
+                { icon: 'time-outline' as const, label: 'History',   href: '/technician/history' },
                 { icon: 'construct-outline' as const, label: 'Work Tracker', href: '/technician/tracker' },
                 { icon: 'document-text-outline' as const, label: 'Add Record', href: '/technician/record' },
               ].map(a => (
@@ -166,23 +185,14 @@ export default function TechnicianDashboardScreen() {
               </View>
             ) : (
               myJobs.map((a, idx) => (
-                <TouchableOpacity key={a._id || a.id || `job-${idx}`} style={styles.taskCard} activeOpacity={0.7} onPress={() => router.push('/technician/tracker' as any)}>
-                  <View style={styles.taskHeader}>
-                     <View style={[styles.statusBadge, { backgroundColor: a.status === 'in_progress' ? 'rgba(245,110,15,0.1)' : '#ECFDF5' }]}>
-                        <Text style={[styles.statusText, { color: a.status === 'in_progress' ? '#F56E0F' : '#059669' }]}>
-                           {a.status === 'in_progress' ? 'In Progress' : 'Confirmed'}
-                        </Text>
-                     </View>
-                     <Text style={styles.taskDate}>
-                        {new Date(a.scheduledDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
-                     </Text>
-                  </View>
-                  <Text style={styles.taskTitle}>{a.serviceType}</Text>
-                  <View style={styles.vehicleRow}>
-                     <Ionicons name="car-outline" size={16} color="#9CA3AF" />
-                     <Text style={styles.vehicleText}>{getVehicleLabel(a)}</Text>
-                  </View>
-                </TouchableOpacity>
+                <View key={a._id || a.id || `job-${idx}`} style={{ marginBottom: 12 }}>
+                  <AppointmentCard 
+                    appointment={a} 
+                    isTechnician={true}
+                    onStart={() => handleStartJob((a.id || a._id)!)}
+                    onFinalize={() => handleCompleteJob((a.id || a._id)!)}
+                  />
+                </View>
               ))
             )}
           </View>

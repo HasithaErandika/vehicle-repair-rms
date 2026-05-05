@@ -22,7 +22,7 @@ function BookingCard({
 }: {
   appt: Appointment;
   onStatusChange: (id: string, s: string) => void;
-  onStartJob: (appt: Appointment) => void;
+  onStartJob: (appt: Appointment, action?: 'assign' | 'start') => void;
 }) {
   const customerName = appt.userId && typeof appt.userId === 'object' ? appt.userId.fullName : 'Customer';
   const vehicleName = appt.vehicleId && typeof appt.vehicleId === 'object' ? `${appt.vehicleId.make} ${appt.vehicleId.model}` : 'Vehicle';
@@ -55,6 +55,17 @@ function BookingCard({
             <Text style={styles.metaText}>{appt.serviceType}</Text>
           </View>
         </View>
+
+        {appt.technicianId && (
+          <View style={styles.techAssignedRow}>
+            <View style={styles.techAssignedBadge}>
+              <Ionicons name="person" size={12} color="#2563EB" />
+              <Text style={styles.techAssignedText}>
+                Assigned: {typeof appt.technicianId === 'object' ? appt.technicianId.fullName : 'Technician'}
+              </Text>
+            </View>
+          </View>
+        )}
       </View>
 
       {appt.status === 'pending' && (
@@ -76,13 +87,25 @@ function BookingCard({
 
       {appt.status === 'confirmed' && (
         <View style={styles.actionContainer}>
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={() => onStartJob(appt)}
-          >
-            <Ionicons name="play-circle" size={18} color="#FFFFFF" />
-            <Text style={styles.actionBtnText}>Start Repair Job</Text>
-          </TouchableOpacity>
+          {!appt.technicianId ? (
+            <TouchableOpacity
+              style={[styles.actionBtn, { backgroundColor: '#F56E0F' }]}
+              onPress={() => onStartJob(appt, 'assign')}
+            >
+              <Ionicons name="person-add" size={18} color="#FFFFFF" />
+              <Text style={styles.actionBtnText}>Assign Technician</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={{ flex: 1 }}>
+              <TouchableOpacity
+                style={[styles.actionBtn, { backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB' }]}
+                onPress={() => onStartJob(appt, 'assign')}
+              >
+                <Ionicons name="swap-horizontal" size={18} color="#4B5563" />
+                <Text style={[styles.actionBtnText, { color: '#4B5563' }]}>Reassign Technician</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       )}
     </View>
@@ -135,14 +158,18 @@ export default function BookingsScreen() {
 
   const { data: technicians = [], isLoading: techLoading } = useWorkshopTechnicians(activeWorkshopIdForTech);
 
-  const handleStartJobClick = (appt: Appointment) => {
+  const [pendingAction, setPendingAction] = useState<'assign' | 'start'>('assign');
+
+  const handleStartJobClick = (appt: Appointment, action: 'assign' | 'start' = 'assign') => {
     setSelectedApptForTech(appt);
+    setPendingAction(action);
     setTechModalVisible(true);
   };
 
   const confirmStartJob = (techId: string) => {
     if (selectedApptForTech) {
-      handleStatusUpdate((selectedApptForTech.id || selectedApptForTech._id)!, 'in_progress', techId);
+      const nextStatus = pendingAction === 'start' ? 'in_progress' : 'confirmed';
+      handleStatusUpdate((selectedApptForTech.id || selectedApptForTech._id)!, nextStatus, techId);
     }
     setTechModalVisible(false);
     setSelectedApptForTech(null);
@@ -401,4 +428,24 @@ const styles = StyleSheet.create((theme) => ({
   techName: { fontSize: 15, fontWeight: '800', color: '#1A1A2E' },
   techEmail: { fontSize: 12, color: '#6B7280', marginTop: 2 },
   emptyTechText: { fontSize: 14, color: '#9CA3AF', textAlign: 'center', marginVertical: 20 },
+  techAssignedRow: {
+    marginTop: 12,
+    flexDirection: 'row',
+  },
+  techAssignedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+  },
+  techAssignedText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1E40AF',
+  },
 }));

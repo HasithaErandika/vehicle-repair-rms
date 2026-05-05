@@ -5,7 +5,7 @@ import { CustomTabBar } from '@/components/navigation/CustomTabBar';
 
 const ICONS = {
   index:        Gauge,
-  appointments: CalendarClock,
+  history:      CalendarClock,
   tracker:      ClipboardCheck,
   record:       FilePlus,
   settings:     Settings2,
@@ -13,7 +13,7 @@ const ICONS = {
 
 const LABELS = {
   index:        'Overview',
-  appointments: 'Schedule',
+  history:      'History',
   tracker:      'Tracker',
   record:       'New Log',
   settings:     'Settings',
@@ -28,7 +28,7 @@ export default function StaffLayout() {
       }}
     >
       <Tabs.Screen name="index" />
-      <Tabs.Screen name="appointments" />
+      <Tabs.Screen name="history" />
       <Tabs.Screen name="tracker" />
       <Tabs.Screen name="record" />
       <Tabs.Screen name="settings" />

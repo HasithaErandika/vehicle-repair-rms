@@ -37,6 +37,7 @@ interface AppointmentCardProps {
   appointment:    Appointment;
   isTechnician?:  boolean;
   onFinalize?:    () => void;
+  onStart?:       () => void;
   onCancel?:      () => void;
   onReschedule?:  () => void;
 }
@@ -45,6 +46,7 @@ export function AppointmentCard({
   appointment, 
   isTechnician = false, 
   onFinalize,
+  onStart,
   onCancel,
   onReschedule
 }: AppointmentCardProps) {
@@ -100,11 +102,20 @@ export function AppointmentCard({
           </View>
         ) : null}
 
-        {isTechnician && onFinalize && (
+        {isTechnician && status === 'in_progress' && onFinalize && (
           <View style={styles.actionContainer}>
             <TouchableOpacity style={styles.actionBtn} onPress={onFinalize} activeOpacity={0.85}>
               <Ionicons name="checkmark-circle-outline" size={16} color="#FFFFFF" />
               <Text style={styles.actionBtnText}>Mark Complete</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {isTechnician && status === 'confirmed' && onStart && (
+          <View style={styles.actionContainer}>
+            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#3B82F6' }]} onPress={onStart} activeOpacity={0.85}>
+              <Ionicons name="play-outline" size={16} color="#FFFFFF" />
+              <Text style={styles.actionBtnText}>Start Job</Text>
             </TouchableOpacity>
           </View>
         )}

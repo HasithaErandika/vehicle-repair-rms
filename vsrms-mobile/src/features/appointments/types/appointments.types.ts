@@ -9,6 +9,7 @@ export interface Appointment {
   serviceType: string;
   scheduledDate: string;
   status: AppointmentStatus;
+  technicianId?: string | { _id: string; fullName?: string; email: string };
   notes?: string;
   createdAt?: string;
   updatedAt?: string;
