@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   ScrollView, ActivityIndicator, StatusBar,
+  KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet } from 'react-native-unistyles';
@@ -116,7 +117,12 @@ export function BookAppointmentScreen() {
 
       {/* ── WHITE CARD SECTION ── */}
       <View style={styles.mainCard}>
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1 }}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 40 : 0}
+        >
+          <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
           {/* VEHICLE */}
           <View style={styles.section}>
@@ -261,7 +267,8 @@ export function BookAppointmentScreen() {
             }
           </TouchableOpacity>
 
-        </ScrollView>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </View>
     </ScreenWrapper>
   );

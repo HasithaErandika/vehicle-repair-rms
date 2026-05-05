@@ -20,7 +20,7 @@ const EMPTY_TECH = { firstName: '', lastName: '', email: '', phone: '' };
 
 // ── Technician card ───────────────────────────────────────────────────────────
 
-function TechCard({ member, onRemove }: { member: User; onRemove: () => void }) {
+function TechCard({ member, onRemove, onPress }: { member: User; onRemove: () => void; onPress: () => void; }) {
   const name = member.fullName || member.email;
   const initials = name
     .split(/[ @._-]/)
@@ -30,7 +30,7 @@ function TechCard({ member, onRemove }: { member: User; onRemove: () => void }) 
     .join('')
     .toUpperCase();
   return (
-    <View style={styles.techCard}>
+    <TouchableOpacity style={styles.techCard} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.techAvatar}>
         <Text style={styles.techAvatarText}>{initials}</Text>
       </View>
@@ -40,12 +40,12 @@ function TechCard({ member, onRemove }: { member: User; onRemove: () => void }) 
       </View>
       <TouchableOpacity
         style={styles.removeBtn}
-        onPress={onRemove}
+        onPress={(e) => { e.stopPropagation(); onRemove(); }}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
         <Ionicons name="person-remove-outline" size={18} color="#EF4444" />
       </TouchableOpacity>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -163,6 +163,7 @@ export default function WorkshopManageScreen() {
   };
 
   const [techToRemove, setTechToRemove] = useState<{ id: string; name: string } | null>(null);
+  const [techToView, setTechToView] = useState<User | null>(null);
 
   const handleRemoveTech = (userId: string, name: string) => {
     setTechToRemove({ id: userId, name });
@@ -314,7 +315,8 @@ export default function WorkshopManageScreen() {
               <TechCard
                 key={t.id ?? t.email}
                 member={t}
-                onRemove={() => handleRemoveTech(t.id, t.fullName ?? t.email)}
+                onRemove={() => handleRemoveTech(t.id!, t.fullName ?? t.email)}
+                onPress={() => setTechToView(t)}
               />
             ))
           )}
@@ -391,6 +393,66 @@ export default function WorkshopManageScreen() {
             </View>
           </View>
         </KeyboardAvoidingView>
+      </Modal>
+
+      {/* ── Technician Details Modal ── */}
+      <Modal visible={!!techToView} animationType="fade" transparent>
+        <View style={styles.modalBg}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Technician Details</Text>
+              <TouchableOpacity onPress={() => setTechToView(null)}>
+                <Ionicons name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+
+            {techToView && (
+              <View style={styles.techDetailBody}>
+                <View style={styles.techDetailAvatarBox}>
+                  <View style={styles.techDetailAvatar}>
+                    <Text style={styles.techDetailAvatarText}>
+                      {(techToView.fullName || techToView.email).split(/[ @._-]/).map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                    </Text>
+                  </View>
+                  <Text style={styles.techDetailName}>{techToView.fullName || 'Technician'}</Text>
+                  <View style={styles.roleBadge}>
+                    <Text style={styles.roleBadgeText}>STAFF</Text>
+                  </View>
+                </View>
+
+                <View style={styles.techDetailInfoRow}>
+                  <Ionicons name="mail-outline" size={20} color="#6B7280" style={{ width: 24 }} />
+                  <Text style={styles.techDetailInfoText}>{techToView.email}</Text>
+                </View>
+
+                {(techToView as any).phone && (
+                  <View style={styles.techDetailInfoRow}>
+                    <Ionicons name="call-outline" size={20} color="#6B7280" style={{ width: 24 }} />
+                    <Text style={styles.techDetailInfoText}>{(techToView as any).phone}</Text>
+                  </View>
+                )}
+
+                <View style={styles.techDetailInfoRow}>
+                  <Ionicons name="calendar-outline" size={20} color="#6B7280" style={{ width: 24 }} />
+                  <Text style={styles.techDetailInfoText}>
+                    Joined {new Date(techToView.createdAt || Date.now()).toLocaleDateString()}
+                  </Text>
+                </View>
+
+                <TouchableOpacity 
+                  style={styles.techDetailRemoveBtn}
+                  onPress={() => {
+                    handleRemoveTech(techToView.id!, techToView.fullName || techToView.email);
+                    setTechToView(null);
+                  }}
+                >
+                  <Ionicons name="person-remove-outline" size={18} color="#DC2626" />
+                  <Text style={styles.techDetailRemoveBtnText}>Remove Technician</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </View>
       </Modal>
 
       {/* ── Edit workshop modal ── */}
@@ -530,17 +592,30 @@ const styles = StyleSheet.create((theme) => ({
   modalBg: { flex: 1, backgroundColor: 'rgba(26,26,46,0.7)', justifyContent: 'flex-end' },
   modalContent: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingTop: 12, maxHeight: '90%' },
   modalHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#E5E7EB', alignSelf: 'center', marginBottom: 20 },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   modalTitle: { fontSize: 20, fontWeight: '900', color: '#1A1A2E' },
-  modalSub: { fontSize: 12, color: '#6B7280', marginTop: 3 },
+  modalSub: { fontSize: 13, color: '#6B7280', marginBottom: 20 },
+  inputGroup: { marginBottom: 16 },
+  inputLabel: { fontSize: 13, fontWeight: '800', color: '#4B5563', textTransform: 'uppercase', marginBottom: 8, letterSpacing: 0.5 },
+  input: { backgroundColor: '#F9FAFB', borderWidth: 1.5, borderColor: '#F3F4F6', borderRadius: 14, padding: 14, fontSize: 15, color: '#1A1A2E', fontWeight: '600' },
+  textArea: { height: 100 },
   nameRow: { flexDirection: 'row', gap: 12 },
-  inputGroup: { marginBottom: 14 },
-  inputLabel: { fontSize: 11, fontWeight: '800', color: '#6B7280', textTransform: 'uppercase', marginBottom: 6, marginLeft: 2 },
-  input: { backgroundColor: '#F9FAFB', borderRadius: 12, height: 48, paddingHorizontal: 14, fontSize: 15, color: '#1A1A2E', borderWidth: 1.5, borderColor: '#F3F4F6' },
-  infoBox: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', backgroundColor: '#EFF6FF', borderRadius: 12, padding: 12, marginBottom: 18, borderWidth: 1, borderColor: '#BFDBFE' },
-  infoText: { flex: 1, fontSize: 12, color: '#2563EB', fontWeight: '600', lineHeight: 18 },
-  errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FEF2F2', padding: 12, borderRadius: 12, borderWidth: 1.5, borderColor: '#FECACA', marginBottom: 16 },
+  errorBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FEF2F2', padding: 12, borderRadius: 12, gap: 8, marginBottom: 16 },
   errorText: { flex: 1, fontSize: 13, color: '#DC2626', fontWeight: '700' },
+  infoBox: { flexDirection: 'row', backgroundColor: '#EFF6FF', padding: 16, borderRadius: 14, marginBottom: 20, gap: 12 },
+  infoText: { flex: 1, fontSize: 13, color: '#1E3A8A', lineHeight: 20 },
   saveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#F56E0F', borderRadius: 14, height: 54, marginBottom: 12, shadowColor: '#F56E0F', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6 },
   saveBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
+
+  techDetailBody: { marginTop: 16 },
+  techDetailAvatarBox: { alignItems: 'center', marginBottom: 24 },
+  techDetailAvatar: { width: 80, height: 80, borderRadius: 24, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  techDetailAvatarText: { fontSize: 28, fontWeight: '900', color: '#2563EB' },
+  techDetailName: { fontSize: 22, fontWeight: '900', color: '#1A1A2E', marginBottom: 6 },
+  roleBadge: { backgroundColor: '#F3F4F6', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  roleBadgeText: { fontSize: 11, fontWeight: '800', color: '#4B5563', letterSpacing: 1 },
+  techDetailInfoRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+  techDetailInfoText: { fontSize: 15, color: '#4B5563', fontWeight: '500', marginLeft: 8 },
+  techDetailRemoveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FEF2F2', padding: 16, borderRadius: 16, gap: 10, marginTop: 32 },
+  techDetailRemoveBtnText: { color: '#DC2626', fontSize: 15, fontWeight: '800' },
 }));

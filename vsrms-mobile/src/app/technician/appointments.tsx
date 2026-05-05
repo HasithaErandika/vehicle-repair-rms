@@ -20,7 +20,7 @@ function ApptCard({
 }: {
   appt: Appointment;
   onStart: (id: string) => void;
-  onFinalize: (id: string) => void;
+  onFinalize: (appt: Appointment) => void;
 }) {
   const customerName = appt.userId && typeof appt.userId === 'object' ? appt.userId.fullName : 'Customer';
   const vehicleName = appt.vehicleId && typeof appt.vehicleId === 'object' ? `${appt.vehicleId.make} ${appt.vehicleId.model}` : 'Vehicle';
@@ -49,7 +49,7 @@ function ApptCard({
       )}
 
       {appt.status === 'in_progress' && (
-        <TouchableOpacity style={styles.finalizeBtn} onPress={() => onFinalize((appt.id || appt._id)!)}>
+        <TouchableOpacity style={styles.finalizeBtn} onPress={() => onFinalize(appt)}>
           <Ionicons name="checkmark-done-circle-outline" size={18} color="#FFFFFF" />
           <Text style={styles.finalizeText}>Finalize Job</Text>
         </TouchableOpacity>
@@ -89,10 +89,20 @@ export default function TechnicianAppointmentsScreen() {
     updateStatus({ id, status: 'in_progress' });
   };
 
-  const handleFinalize = (id: string) => {
+  const handleFinalize = (appt: Appointment) => {
+    let vid = '';
+    if (typeof appt.vehicleId === 'object' && appt.vehicleId !== null) {
+      vid = (appt.vehicleId as any)._id || (appt.vehicleId as any).id;
+    } else {
+      vid = appt.vehicleId as string;
+    }
+    
     router.push({ 
       pathname: '/technician/record', 
-      params: { appointmentId: id } 
+      params: { 
+        appointmentId: appt.id || appt._id,
+        vehicleId: vid
+      } 
     } as any);
   };
 

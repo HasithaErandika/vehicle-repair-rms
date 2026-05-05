@@ -295,7 +295,7 @@ const styles = StyleSheet.create((theme) => ({
   uploadingOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(26,26,46,0.6)', alignItems: 'center', justifyContent: 'center' },
 
   changePhotoBtn: {
-    position: 'absolute', bottom: 40, right: 24,
+    position: 'absolute', bottom: 40, right: 24, zIndex: 20, elevation: 10,
     flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20,
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)',

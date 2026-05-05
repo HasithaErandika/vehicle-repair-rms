@@ -24,7 +24,8 @@ export function useUpdateAppointmentStatus() {
   const { showToast } = useToast();
 
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) => updateAppointmentStatus(id, status),
+    mutationFn: ({ id, status, technicianId }: { id: string; status: string; technicianId?: string }) =>
+      updateAppointmentStatus(id, status, technicianId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: appointmentKeys.all() });
       showToast('Status updated', 'success');
