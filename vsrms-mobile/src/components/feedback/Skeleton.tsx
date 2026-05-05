@@ -4,6 +4,7 @@ import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 export function Skeleton({ width, height, borderRadius = 8 }: { width: number | string; height: number; borderRadius?: number }) {
   const opacity = useRef(new Animated.Value(0.4)).current;
+  const { theme } = useUnistyles();
 
   useEffect(() => {
     Animated.loop(
@@ -20,7 +21,7 @@ export function Skeleton({ width, height, borderRadius = 8 }: { width: number | 
         width: width as any,
         height,
         borderRadius,
-        backgroundColor: '#E5E7EB',
+        backgroundColor: theme.colors.border,
         opacity,
       }}
     />

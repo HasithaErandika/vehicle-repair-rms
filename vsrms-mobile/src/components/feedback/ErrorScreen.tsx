@@ -23,8 +23,14 @@ export function ErrorScreen({
       </View>
       <Text style={styles.title}>Unable to load</Text>
       <Text style={styles.message}>{message}</Text>
-      <TouchableOpacity style={styles.button} onPress={onRetry} activeOpacity={0.85}>
-        <RefreshCw size={16} color="#FFFFFF" strokeWidth={3} />
+      <TouchableOpacity 
+        style={styles.button} 
+        onPress={() => onRetry()} 
+        activeOpacity={0.85}
+        accessibilityLabel="Retry loading data"
+        accessibilityRole="button"
+      >
+        <RefreshCw size={16} color={theme.colors.white} strokeWidth={3} />
         <Text style={styles.buttonText}>Try Again</Text>
       </TouchableOpacity>
     </View>
@@ -52,17 +58,17 @@ const styles = StyleSheet.create((theme) => ({
     justifyContent: 'center',
     marginBottom: 20,
     borderWidth: 1.5, 
-    borderColor: 'rgba(239, 68, 68, 0.2)',
+    borderColor: theme.colors.error + '33', // Use 20% opacity of error color
   },
   title: {
-    fontSize: theme.fonts.sizes.xl, // 20
+    fontSize: theme.fonts.sizes.title,
     fontWeight: '900', 
     color: theme.colors.text,
     marginBottom: 8, 
     letterSpacing: -0.5,
   },
   message: {
-    fontSize: theme.fonts.sizes.sm, 
+    fontSize: theme.fonts.sizes.body, 
     color: theme.colors.muted, 
     textAlign: 'center',
     lineHeight: 20, 
@@ -84,7 +90,7 @@ const styles = StyleSheet.create((theme) => ({
     elevation: 4,
   },
   buttonText: { 
-    color: '#FFFFFF', 
+    color: theme.colors.white, 
     fontWeight: '800', 
     fontSize: 14,
     textTransform: 'uppercase',

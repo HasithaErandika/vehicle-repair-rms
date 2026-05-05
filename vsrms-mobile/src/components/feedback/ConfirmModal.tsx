@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, Pressable } from 'react-native';
-import { BlurView } from 'expo-blur';
+import { View, Text, Modal, TouchableOpacity, Pressable, Platform } from 'react-native';
 import Animated, { FadeIn, FadeInDown, FadeOut } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 interface ConfirmModalProps {
   visible: boolean;
@@ -11,7 +11,6 @@ interface ConfirmModalProps {
   confirmText?: string;
   cancelText?: string;
   type?: 'danger' | 'info';
-  theme?: 'dark' | 'light';
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -23,16 +22,14 @@ export function ConfirmModal({
   confirmText = 'Confirm',
   cancelText = 'Cancel',
   type = 'info',
-  theme = 'light',
   onConfirm,
   onCancel
 }: ConfirmModalProps) {
+  const { theme } = useUnistyles();
   if (!visible) return null;
 
-  const isLight = theme === 'light';
-
   return (
-    <Modal transparent visible={visible} animationType="none">
+    <Modal transparent visible={visible} animationType="none" statusBarTranslucent>
       <View style={styles.overlay}>
         <Animated.View 
           entering={FadeIn} 
@@ -46,32 +43,32 @@ export function ConfirmModal({
           entering={FadeInDown.springify().damping(15)} 
           style={styles.modalWrapper}
         >
-          <View style={[styles.modalContent, isLight && styles.modalContentLight]}>
+          <View style={styles.modalContent}>
             <View style={[
               styles.iconCircle, 
-              { backgroundColor: type === 'danger' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(245, 110, 15, 0.1)' }
+              { backgroundColor: type === 'danger' ? theme.colors.errorBackground : theme.colors.brandSoft }
             ]}>
               <Ionicons 
                 name={type === 'danger' ? 'alert-circle-outline' : 'information-circle-outline'} 
                 size={32} 
-                color={type === 'danger' ? '#EF4444' : '#F56E0F'} 
+                color={type === 'danger' ? theme.colors.error : theme.colors.brand} 
               />
             </View>
 
-            <Text style={[styles.title, isLight && styles.titleLight]}>{title}</Text>
-            <Text style={[styles.message, isLight && styles.messageLight]}>{message}</Text>
+            <Text style={styles.title}>{title}</Text>
+            <Text style={styles.message}>{message}</Text>
 
             <View style={styles.actions}>
               <TouchableOpacity 
-                style={[styles.cancelBtn, isLight && styles.cancelBtnLight]} 
+                style={styles.cancelBtn} 
                 onPress={onCancel} 
                 activeOpacity={0.7}
               >
-                <Text style={[styles.cancelText, isLight && styles.cancelTextLight]}>{cancelText}</Text>
+                <Text style={styles.cancelText}>{cancelText}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
-                style={[styles.confirmBtn, { backgroundColor: type === 'danger' ? '#EF4444' : '#F56E0F' }]} 
+                style={[styles.confirmBtn, { backgroundColor: type === 'danger' ? theme.colors.error : theme.colors.brand }]} 
                 onPress={onConfirm} 
                 activeOpacity={0.8}
               >
@@ -85,16 +82,16 @@ export function ConfirmModal({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create((theme) => ({
   overlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
+    padding: theme.spacing.screenPadding,
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
   },
   modalWrapper: {
     width: '100%',
@@ -105,14 +102,10 @@ const styles = StyleSheet.create({
     padding: 24,
     alignItems: 'center',
     overflow: 'hidden',
-    backgroundColor: '#1A1A2E',
+    backgroundColor: theme.colors.background,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  modalContentLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#F3F4F6',
-    shadowColor: '#000',
+    borderColor: theme.colors.borderLight,
+    shadowColor: theme.colors.black,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.1,
     shadowRadius: 20,
@@ -129,22 +122,16 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: theme.colors.text,
     textAlign: 'center',
     marginBottom: 12,
   },
-  titleLight: {
-    color: '#1A1A2E',
-  },
   message: {
     fontSize: 14,
-    color: '#9CA3AF',
+    color: theme.colors.muted,
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 28,
-  },
-  messageLight: {
-    color: '#6B7280',
   },
   actions: {
     flexDirection: 'row',
@@ -157,21 +144,14 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: theme.colors.surfaceAlt,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  cancelBtnLight: {
-    backgroundColor: '#F9FAFB',
-    borderColor: '#E5E7EB',
+    borderColor: theme.colors.border,
   },
   cancelText: {
-    color: '#D1D5DB',
+    color: theme.colors.muted,
     fontSize: 15,
     fontWeight: '700',
-  },
-  cancelTextLight: {
-    color: '#6B7280',
   },
   confirmBtn: {
     flex: 1,
@@ -179,15 +159,15 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
+    shadowColor: theme.colors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
   confirmText: {
-    color: '#FFFFFF',
+    color: theme.colors.white,
     fontSize: 15,
     fontWeight: '800',
   },
-});
+}));

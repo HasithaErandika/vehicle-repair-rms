@@ -8,9 +8,10 @@ interface BadgeProps {
 }
 
 export function Badge({ label, variant = 'primary' }: BadgeProps) {
+  const textStyle = styles[`${variant}Text` as keyof typeof styles] as any;
   return (
     <View style={[styles.badge, styles[variant]]}>
-      <Text style={[styles.text, styles[`${variant}Text`]]}>{label}</Text>
+      <Text style={[styles.text, textStyle]}>{label}</Text>
     </View>
   );
 }
@@ -24,13 +25,13 @@ const styles = StyleSheet.create((theme) => ({
   },
   primary: { backgroundColor: theme.colors.brandSoft },
   success: { backgroundColor: theme.colors.successBackground },
-  warning: { backgroundColor: '#FEF3C7' },
+  warning: { backgroundColor: theme.colors.warningBackground },
   error: { backgroundColor: theme.colors.errorBackground },
-  muted: { backgroundColor: theme.colors.background },
+  muted: { backgroundColor: theme.colors.borderLight },
   text: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
   primaryText: { color: theme.colors.brand },
   successText: { color: theme.colors.successText },
-  warningText: { color: '#D97706' },
-  errorText: { color: theme.colors.error },
+  warningText: { color: theme.colors.warningText },
+  errorText: { color: theme.colors.errorText },
   mutedText: { color: theme.colors.muted },
 }));

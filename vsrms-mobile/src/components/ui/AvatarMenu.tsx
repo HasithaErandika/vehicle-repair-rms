@@ -22,7 +22,7 @@ export function AvatarMenu({ initials, onSettings, onSignOut }: AvatarMenuProps)
       >
         <Text style={styles.avatarText}>{initials}</Text>
         <View style={styles.badge}>
-          <Ionicons name="chevron-down" size={8} color="#FFFFFF" />
+          <Ionicons name="chevron-down" size={8} color={theme.colors.white} />
         </View>
       </TouchableOpacity>
 
@@ -54,11 +54,11 @@ export function AvatarMenu({ initials, onSettings, onSignOut }: AvatarMenuProps)
               activeOpacity={0.7}
               onPress={() => { setVisible(false); onSettings(); }}
             >
-              <View style={[styles.iconBox, { backgroundColor: '#EFF6FF' }]}>
-                <Ionicons name="settings-sharp" size={16} color="#2563EB" />
+              <View style={[styles.iconBox, { backgroundColor: theme.colors.infoBackground }]}>
+                <Ionicons name="settings-sharp" size={16} color={theme.colors.infoText} />
               </View>
               <Text style={styles.menuText}>Settings</Text>
-              <Ionicons name="chevron-forward" size={14} color="#D1D5DB" />
+              <Ionicons name="chevron-forward" size={14} color={theme.colors.mutedLight} />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -66,11 +66,11 @@ export function AvatarMenu({ initials, onSettings, onSignOut }: AvatarMenuProps)
               activeOpacity={0.7}
               onPress={() => { setVisible(false); onSignOut(); }}
             >
-              <View style={[styles.iconBox, { backgroundColor: '#FEF2F2' }]}>
-                <Ionicons name="log-out-sharp" size={16} color="#EF4444" />
+              <View style={[styles.iconBox, { backgroundColor: theme.colors.errorBackground }]}>
+                <Ionicons name="log-out-sharp" size={16} color={theme.colors.error} />
               </View>
-              <Text style={[styles.menuText, { color: '#EF4444' }]}>Sign Out</Text>
-              <Ionicons name="chevron-forward" size={14} color="#D1D5DB" />
+              <Text style={[styles.menuText, { color: theme.colors.error }]}>Sign Out</Text>
+              <Ionicons name="chevron-forward" size={14} color={theme.colors.mutedLight} />
             </TouchableOpacity>
           </View>
         </Pressable>
@@ -84,52 +84,52 @@ const styles = StyleSheet.create((theme) => ({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: 'rgba(245,110,15,0.15)',
+    backgroundColor: theme.colors.brandSoft,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: '#F56E0F',
+    borderColor: theme.colors.brand,
     position: 'relative',
   },
   avatarText: { 
     fontSize: 16, 
     fontWeight: '900', 
-    color: '#F56E0F',
+    color: theme.colors.brand,
   },
   badge: {
     position: 'absolute',
     bottom: -4,
     right: -4,
-    backgroundColor: '#F56E0F',
+    backgroundColor: theme.colors.brand,
     width: 16,
     height: 16,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: '#1A1A2E',
+    borderColor: theme.colors.text, // Using text color for border as it's dark
   },
 
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(26,26,46,0.6)',
+    backgroundColor: 'rgba(26,26,46,0.6)', // Glass effect backdrop
     justifyContent: 'flex-start',
     alignItems: 'flex-end',
     paddingTop: Platform.OS === 'ios' ? 60 : 50,
     paddingRight: 20,
   },
   menuContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.background,
     borderRadius: 24,
     width: 220,
     padding: 8,
-    shadowColor: '#000',
+    shadowColor: theme.colors.black,
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.15,
     shadowRadius: 24,
     elevation: 24,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: theme.colors.borderLight,
   },
   menuHeader: {
     flexDirection: 'row',
@@ -142,31 +142,31 @@ const styles = StyleSheet.create((theme) => ({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: '#FFF7ED',
+    backgroundColor: theme.colors.warningBackground, // Soft orange background
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: '#F56E0F',
+    borderColor: theme.colors.brand,
   },
   headerAvatarText: {
-    color: '#F56E0F',
+    color: theme.colors.brand,
     fontWeight: '900',
     fontSize: 14,
   },
   headerTitle: {
     fontSize: 15,
     fontWeight: '800',
-    color: '#1A1A2E',
+    color: theme.colors.text,
   },
   headerSub: {
     fontSize: 11,
-    color: '#9CA3AF',
+    color: theme.colors.mutedLight,
     fontWeight: '600',
     marginTop: 1,
   },
   menuDivider: {
     height: 1.5,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: theme.colors.surface,
     marginHorizontal: 8,
     marginBottom: 8,
   },
@@ -189,6 +189,6 @@ const styles = StyleSheet.create((theme) => ({
     flex: 1,
     fontSize: 14,
     fontWeight: '700',
-    color: '#374151',
+    color: theme.colors.textDim,
   },
 }));

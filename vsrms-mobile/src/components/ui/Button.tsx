@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
-import { StyleSheet } from 'react-native-unistyles';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 interface ButtonProps {
   title: string;
@@ -10,6 +10,7 @@ interface ButtonProps {
   disabled?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
+  accessibilityLabel?: string;
 }
 
 export function Button({
@@ -19,26 +20,33 @@ export function Button({
   loading,
   disabled,
   style,
-  textStyle
+  textStyle,
+  accessibilityLabel,
 }: ButtonProps) {
+  const { theme } = useUnistyles();
+  const dynamicTextStyle = styles[`${variant}Text` as keyof typeof styles] as any;
+
   return (
     <TouchableOpacity
       style={[
         styles.button,
         styles[variant],
-        disabled && styles.disabled,
+        (disabled || loading) && styles.disabled,
         style
       ]}
-      onPress={onPress}
+      onPress={() => onPress()}
       disabled={disabled || loading}
       activeOpacity={0.7}
+      accessibilityLabel={accessibilityLabel || title}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: disabled || loading, busy: loading }}
     >
       {loading ? (
-        <ActivityIndicator color={(variant === 'outline' || variant === 'ghost') ? '#F56E0F' : '#fff'} />
+        <ActivityIndicator color={(variant === 'outline' || variant === 'ghost') ? theme.colors.brand : theme.colors.white} />
       ) : (
         <Text style={[
           styles.text,
-          styles[`${variant}Text` as any] as any,
+          dynamicTextStyle,
           textStyle
         ]}>
           {title}
@@ -64,9 +72,9 @@ const styles = StyleSheet.create((theme) => ({
   danger: { backgroundColor: theme.colors.error },
   disabled: { opacity: 0.5 },
   text: { fontSize: theme.fonts.sizes.md, fontWeight: '800' },
-  primaryText: { color: '#fff' },
+  primaryText: { color: theme.colors.white },
   secondaryText: { color: theme.colors.text },
   outlineText: { color: theme.colors.brand },
   ghostText: { color: theme.colors.brand },
-  dangerText: { color: '#fff' },
+  dangerText: { color: theme.colors.white },
 }));

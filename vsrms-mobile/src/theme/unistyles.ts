@@ -1,7 +1,5 @@
 import { StyleSheet } from 'react-native-unistyles';
-import { breakpoints } from './breakpoints';
-import { colors, spacing, radii } from './tokens';
-import { typography } from './typography';
+import { breakpoints, colors, spacing, radii, typography } from './tokens';
 
 export const lightTheme = {
   colors,
