@@ -12,6 +12,7 @@ const mongoSanitize = require('express-mongo-sanitize');
 const connectDB = require('./src/config/db');
 const { globalErrorHandler } = require('./src/middleware/errorHandler');
 const { apiLimiter } = require('./src/middleware/rateLimiter');
+const logger = require('./src/utils/logger');
 
 const authRoutes = require('./src/routes/auth.route');
 const vehicleRoutes = require('./src/routes/vehicle.route');
@@ -87,14 +88,14 @@ if (require.main === module) {
 
   connectDB().then(() => {
     const server = app.listen(PORT, () =>
-      console.log(` VSRMS API running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`),
+      logger.info(`VSRMS API running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`),
     );
 
     // ── Graceful shutdown (DigitalOcean sends SIGTERM before stopping containers)
     const shutdown = (signal) => {
-      console.log(`[server] ${signal} received — closing HTTP server gracefully`);
+      logger.info(`[server] ${signal} received — closing HTTP server gracefully`);
       server.close(() => {
-        console.log('[server] HTTP server closed. Exiting.');
+        logger.info('[server] HTTP server closed. Exiting.');
         process.exit(0);
       });
       // Force-exit if connections don't close within 10 s

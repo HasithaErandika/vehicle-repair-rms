@@ -62,6 +62,22 @@ const createRecord = async (req, res, next) => {
   try {
     const { vehicleId, appointmentId, serviceDate, workDone, partsReplaced, totalCost, mileageAtService, technicianName } = req.body;
 
+    // ── Input validation ────────────────────────────────────────────────────
+    if (!vehicleId) throw new AppError('vehicleId is required', 400);
+    if (!serviceDate) throw new AppError('serviceDate is required', 400);
+    if (isNaN(new Date(serviceDate).getTime())) throw new AppError('serviceDate must be a valid date (YYYY-MM-DD)', 400);
+    if (!workDone || !String(workDone).trim()) throw new AppError('workDone description is required', 400);
+    if (String(workDone).trim().length < 5) throw new AppError('workDone must be at least 5 characters', 400);
+    if (totalCost !== undefined && totalCost !== null) {
+      const cost = parseFloat(totalCost);
+      if (isNaN(cost) || cost < 0) throw new AppError('totalCost must be a non-negative number', 400);
+    }
+    if (mileageAtService !== undefined && mileageAtService !== null) {
+      const m = parseInt(mileageAtService, 10);
+      if (isNaN(m) || m < 0) throw new AppError('mileageAtService must be a non-negative integer', 400);
+    }
+    // ──────────────────────────────────────────────────────────────────────
+
     // Verify the vehicle exists (staff can create for any vehicle)
     const vehicle = await Vehicle.findOne({ _id: vehicleId, deletedAt: null });
     if (!vehicle) throw new AppError('Vehicle not found', 404);
@@ -70,7 +86,7 @@ const createRecord = async (req, res, next) => {
       vehicleId,
       appointmentId,
       serviceDate,
-      workDone,
+      workDone: String(workDone).trim(),
       partsReplaced: partsReplaced || [],
       totalCost,
       mileageAtService,
