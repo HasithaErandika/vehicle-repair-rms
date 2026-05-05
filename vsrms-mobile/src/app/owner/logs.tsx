@@ -138,7 +138,7 @@ export default function OwnerLogsScreen() {
           </View>
         ) : (
           <FlashList
-            data={(data?.data ?? []) as any}
+            data={data || []}
             renderItem={({ item }) => <RecordRow record={item as any} />}
             // @ts-ignore
             estimatedItemSize={180}

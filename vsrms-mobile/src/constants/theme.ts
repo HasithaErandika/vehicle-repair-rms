@@ -1,20 +1,5 @@
 import { colors, spacing, radii } from '../theme/tokens';
 
-export const Colors = {
-  light: {
-    primary:      colors.brand,
-    primaryMuted: colors.brandSoft,
-    background:   colors.background,
-    surface:      colors.surface,
-    text:         colors.text,
-    textMuted:    colors.muted,
-    border:       colors.border,
-    error:        colors.error,
-    success:      colors.success,
-    warning:      colors.warning,
-  },
-};
-
 export const Spacing = {
   none:  spacing.none,
   one:   spacing.xs,
@@ -23,16 +8,6 @@ export const Spacing = {
   four:  spacing.lg,
   five:  spacing.xl,
   six:   spacing.xxl,
-};
-
-export const CustomBorders = {
-  radius: {
-    sm:   radii.sm,
-    md:   radii.md,
-    lg:   radii.lg,
-    xl:   radii.xl,
-    full: radii.full,
-  },
 };
 
 export const Shadows = {

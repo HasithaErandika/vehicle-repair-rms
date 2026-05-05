@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, ActivityIndicator, StatusBar, TouchableOpacity } from 'react-native';
+import { View, Text, ActivityIndicator, StatusBar } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,9 +13,8 @@ import { ErrorScreen } from '@/components/feedback/ErrorScreen';
 import { EmptyState } from '@/components/ui/EmptyState';
 
 function JobCard({ job }: { job: Appointment }) {
-  const router = useRouter();
-  const customerName = job.userId && typeof job.userId === 'object' ? job.userId.fullName : 'Customer';
-  const vehicleName = job.vehicleId && typeof job.vehicleId === 'object' ? `${job.vehicleId.make} ${job.vehicleId.model}` : 'Vehicle';
+  const customerName = job.userId && typeof job.userId === 'object' ? (job.userId as any).fullName : 'Customer';
+  const vehicleName = job.vehicleId && typeof job.vehicleId === 'object' ? `${(job.vehicleId as any).make} ${(job.vehicleId as any).model}` : 'Vehicle';
 
   return (
     <View style={styles.card}>
@@ -30,14 +29,13 @@ function JobCard({ job }: { job: Appointment }) {
           <Text style={styles.jobTitle}>{customerName}</Text>
           <Text style={styles.jobSub}>{vehicleName}</Text>
           <View style={styles.tagRow}>
-             <View style={styles.serviceTag}>
-                <Text style={styles.serviceTagText}>{job.serviceType}</Text>
-             </View>
-             <View style={styles.statusBadge}>
-                <View style={styles.statusDot} />
-                <Text style={styles.statusText}>In Progress</Text>
-             </View>
-          </View>
+            <View style={styles.serviceTag}>
+              <Text style={styles.serviceTagText}>{job.serviceType}</Text>
+            </View>
+            <View style={styles.statusBadge}>
+              <View style={styles.statusDot} />
+              <Text style={styles.statusText}>In Progress</Text>
+            </View>
           </View>
         </View>
       </View>
@@ -46,14 +44,10 @@ function JobCard({ job }: { job: Appointment }) {
 }
 
 export default function OwnerJobsScreen() {
-  const router = useRouter();
   const { workshopId: paramWorkshopId } = useLocalSearchParams<{ workshopId: string }>();
-  const { user } = useAuth();
-  
-    const targetWorkshopId = useMemo(() => paramWorkshopId || 'all', [paramWorkshopId]);
-    
-    const { data: workshop } = useWorkshop(targetWorkshopId && targetWorkshopId !== 'all' ? targetWorkshopId : '');
-    const { data, isLoading, isError, refetch } = useWorkshopAppointments(targetWorkshopId, 'in_progress');
+  const targetWorkshopId = useMemo(() => paramWorkshopId || 'all', [paramWorkshopId]);
+  const { data: workshop } = useWorkshop(targetWorkshopId && targetWorkshopId !== 'all' ? targetWorkshopId : '');
+  const { data, isLoading, isError, refetch } = useWorkshopAppointments(targetWorkshopId, 'in_progress');
 
   // Deduplicate by id — guards against stale cache returning same appointment twice
   const appointments = useMemo(() => {
@@ -66,23 +60,23 @@ export default function OwnerJobsScreen() {
     });
   }, [data]);
   
-    const workshopName = (!targetWorkshopId || targetWorkshopId === 'all') 
-      ? 'All Active Jobs' 
-      : (workshop && typeof workshop === 'object' ? (workshop as any).name : 'Active Jobs');
-  
-    return (
-      <ScreenWrapper bg="#1A1A2E">
-        <StatusBar barStyle="light-content" backgroundColor="#1A1A2E" />
-  
-        {/* ── DARK TOP SECTION ── */}
-        <View style={styles.topSection}>
-          <View style={styles.headerRow}>
-            <View>
-              <Text style={styles.headerSub}>Operations</Text>
-              <Text style={styles.headerTitle} numberOfLines={1}>{workshopName}</Text>
-            </View>
+  const workshopName = (!targetWorkshopId || targetWorkshopId === 'all') 
+    ? 'All Active Jobs' 
+    : (workshop && typeof workshop === 'object' ? (workshop as any).name : 'Active Jobs');
+
+  return (
+    <ScreenWrapper bg="#1A1A2E">
+      <StatusBar barStyle="light-content" backgroundColor="#1A1A2E" />
+
+      {/* ── DARK TOP SECTION ── */}
+      <View style={styles.topSection}>
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.headerSub}>Operations</Text>
+            <Text style={styles.headerTitle} numberOfLines={1}>{workshopName}</Text>
+          </View>
           <View style={styles.badge}>
-             <Ionicons name="flash-outline" size={22} color="#FFFFFF" />
+            <Ionicons name="flash-outline" size={22} color="#FFFFFF" />
           </View>
         </View>
 
@@ -98,15 +92,15 @@ export default function OwnerJobsScreen() {
           <ErrorScreen onRetry={refetch} variant="inline" />
         ) : (
           <FlashList
-             data={appointments as Appointment[]}
-             renderItem={({ item }) => <JobCard job={item as Appointment} />}
-             // @ts-expect-error - FlashList requires estimatedItemSize dynamically
-             estimatedItemSize={120}
-             onRefresh={refetch}
-             refreshing={isLoading}
-             keyExtractor={(a: Appointment) => (a as any).id || (a as any)._id || Math.random().toString()}
-             contentContainerStyle={styles.list}
-             ListEmptyComponent={<EmptyState message="No active jobs in the workshop currently." />}
+            data={appointments as Appointment[]}
+            renderItem={({ item }) => <JobCard job={item as Appointment} />}
+            // @ts-ignore
+            estimatedItemSize={120}
+            onRefresh={refetch}
+            refreshing={isLoading}
+            keyExtractor={(a: Appointment) => (a as any).id || (a as any)._id || Math.random().toString()}
+            contentContainerStyle={styles.list}
+            ListEmptyComponent={<EmptyState message="No active jobs in the workshop currently." />}
           />
         )}
       </View>
@@ -183,21 +177,4 @@ const styles = StyleSheet.create((theme) => ({
   statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#FFF7ED', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   statusDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#F56E0F' },
   statusText: { fontSize: 10, fontWeight: '800', color: '#F56E0F', textTransform: 'uppercase' },
-
-  completeBtn: {
-    backgroundColor: '#F56E0F',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 12,
-    shadowColor: '#F56E0F',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4
-  },
-  completeBtnText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '800',
-  },
 }));

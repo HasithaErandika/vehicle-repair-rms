@@ -77,7 +77,7 @@ function extractAuthenticatorId(data: any): string {
 
   const chosen = basicAuth ?? authenticators[0];
 
-  console.log('[Asgardeo] Using authenticator:', chosen.authenticator, '/', chosen.authenticatorId);
+
   return chosen.authenticatorId;
 }
 
@@ -114,7 +114,7 @@ export async function initiateAuthFlow(): Promise<AuthFlowInit> {
     prompt:                'login',
   });
 
-  console.log('[Asgardeo] authorize request redirect_uri:', ASGARDEO_CONFIG.redirectUri);
+
 
   const res = await fetch(ASGARDEO_ENDPOINTS.authorize, {
     method:  'POST',
@@ -126,7 +126,7 @@ export async function initiateAuthFlow(): Promise<AuthFlowInit> {
   });
 
   const data = await safeJson(res);
-  console.log('[Asgardeo] authorize response:', JSON.stringify(data, null, 2));
+
 
   if (!res.ok) {
     const friendly = friendlyAsgardeoError(data);
@@ -168,7 +168,7 @@ export async function submitCredentials(
   });
 
   const data = await safeJson(res);
-  console.log('[Asgardeo] authn response:', JSON.stringify(data, null, 2));
+
 
   if (!res.ok || data?.flowStatus !== 'SUCCESS_COMPLETED') {
     const msg = data?.authData?.error_description
@@ -203,7 +203,7 @@ export async function exchangeCodeForToken(
   });
 
   const data = await safeJson(res);
-  console.log('[Asgardeo] token response:', JSON.stringify(data));
+
 
   if (!res.ok || !data.access_token) {
     throw new Error(data?.error_description ?? 'Token exchange failed');
