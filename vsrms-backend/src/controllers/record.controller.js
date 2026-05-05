@@ -90,7 +90,8 @@ const createRecord = async (req, res, next) => {
       partsReplaced: partsReplaced || [],
       totalCost,
       mileageAtService,
-      technicianName,
+      technicianName: technicianName || (req.user.role === 'technician' ? req.user.fullName : undefined),
+      technicianId: req.user.role === 'technician' ? req.user._id : (req.body.technicianId || undefined),
     });
 
     // If linked to an appointment, advance it to 'completed' via the state machine
@@ -180,6 +181,9 @@ const getWorkshopRecords = async (req, res, next) => {
     const appointmentIds = appointments.map(a => a._id);
 
     const filter = { appointmentId: { $in: appointmentIds } };
+    if (role === 'technician') {
+      filter.technicianId = req.user._id;
+    }
     const [data, total] = await Promise.all([
       ServiceRecord.find(filter)
         .populate('vehicleId', 'make model registrationNo vehicleType')

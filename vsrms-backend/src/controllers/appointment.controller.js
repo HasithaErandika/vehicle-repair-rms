@@ -257,11 +257,17 @@ const getWorkshopAppointments = async (req, res, next) => {
       filter.status = statuses.length === 1 ? statuses[0] : { $in: statuses };
     }
 
+    // If requester is a technician, they should only see their assigned appointments
+    if (req.user.role === 'technician') {
+      filter.technicianId = req.user._id;
+    }
+
     const [data, total] = await Promise.all([
       Appointment.find(filter)
         .populate('userId', 'fullName email')
         .populate('vehicleId', 'registrationNo make model')
-        .populate('workshopId', 'name') // Added to show WS name on each card
+        .populate('workshopId', 'name')
+        .populate('technicianId', 'fullName email')
         .skip(skip)
         .limit(limit)
         .sort({ scheduledDate: -1 }),

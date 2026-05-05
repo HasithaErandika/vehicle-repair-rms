@@ -51,9 +51,8 @@ const protect = async (req, res, next) => {
     options.audience = process.env.ASGARDEO_AUDIENCE;
   }
 
-  jwt.verify(token, getKey, options, async (err, decoded) => {
+    jwt.verify(token, getKey, options, async (err, decoded) => {
     if (err) {
-      console.error('[auth] JWT verification failed:', err.message);
       return res.status(401).json({ error: 'Invalid or expired token' });
     }
 

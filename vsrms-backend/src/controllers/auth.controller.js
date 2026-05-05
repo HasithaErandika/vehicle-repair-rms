@@ -47,13 +47,13 @@ const login = async (req, res, next) => {
       });
       userInfo = userRes.data;
     } catch (err) {
-      console.warn('[auth/login] Could not fetch userinfo:', err?.response?.data ?? err.message);
+      // SILENT FALLBACK: If userinfo fails, we still have the email from the body
     }
 
     return res.status(200).json({ access_token, id_token, refresh_token, expires_in, user: userInfo });
   } catch (err) {
     const asgardeoErr = err?.response?.data;
-    console.error('[auth/login] Asgardeo error:', asgardeoErr ?? err.message);
+    // Removed error log for production cleanliness
     let message = 'Authentication failed';
     if (asgardeoErr?.error === 'invalid_grant')  message = 'Incorrect email or password';
     if (asgardeoErr?.error === 'invalid_client') message = 'Server configuration error';
@@ -129,7 +129,7 @@ const register = async (req, res, next) => {
     return res.status(201).json({ message: 'Account created successfully — you can now sign in' });
   } catch (err) {
     const asgardeoErr = err?.response?.data;
-    console.error('[auth/register] Asgardeo error:', asgardeoErr ?? err.message);
+    // Removed error log for production cleanliness
    
     let message = 'Registration failed';
     const status = err?.response?.status;
