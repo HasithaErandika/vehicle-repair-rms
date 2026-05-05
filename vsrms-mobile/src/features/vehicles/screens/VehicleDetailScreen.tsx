@@ -217,7 +217,7 @@ export function VehicleDetailScreen({ id }: { id: string }) {
           ) : (
             <View style={styles.timeline}>
               {(records as ServiceRecord[]).map((rec, idx) => (
-                <Animated.View key={rec._id} style={styles.timelineItem} entering={FadeInDown.delay(idx * 150).springify().damping(16)}>
+                <Animated.View key={rec._id || `record-${idx}`} style={styles.timelineItem} entering={FadeInDown.delay(idx * 150).springify().damping(16)}>
                   <View style={styles.timelineLeft}>
                     <View style={styles.timelineDot} />
                     {idx < records.length - 1 && <View style={styles.timelineLine} />}

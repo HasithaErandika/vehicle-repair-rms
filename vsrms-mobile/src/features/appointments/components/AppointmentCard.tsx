@@ -37,9 +37,17 @@ interface AppointmentCardProps {
   appointment:    Appointment;
   isTechnician?:  boolean;
   onFinalize?:    () => void;
+  onCancel?:      () => void;
+  onReschedule?:  () => void;
 }
 
-export function AppointmentCard({ appointment, isTechnician = false, onFinalize }: AppointmentCardProps) {
+export function AppointmentCard({ 
+  appointment, 
+  isTechnician = false, 
+  onFinalize,
+  onCancel,
+  onReschedule
+}: AppointmentCardProps) {
   const router = useRouter();
   const status = appointment.status ?? 'pending';
   const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.pending;
@@ -98,6 +106,31 @@ export function AppointmentCard({ appointment, isTechnician = false, onFinalize 
               <Ionicons name="checkmark-circle-outline" size={16} color="#FFFFFF" />
               <Text style={styles.actionBtnText}>Mark Complete</Text>
             </TouchableOpacity>
+          </View>
+        )}
+
+        {!isTechnician && (status === 'pending' || status === 'confirmed') && (onCancel || onReschedule) && (
+          <View style={styles.actionContainer}>
+            {onReschedule && (
+              <TouchableOpacity 
+                style={[styles.actionBtn, { backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB' }]} 
+                onPress={(e) => { e.stopPropagation(); onReschedule(); }} 
+                activeOpacity={0.7}
+              >
+                <Ionicons name="calendar-outline" size={16} color="#4B5563" />
+                <Text style={[styles.actionBtnText, { color: '#4B5563' }]}>Reschedule</Text>
+              </TouchableOpacity>
+            )}
+            {onCancel && (
+              <TouchableOpacity 
+                style={[styles.actionBtn, { backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA' }]} 
+                onPress={(e) => { e.stopPropagation(); onCancel(); }} 
+                activeOpacity={0.7}
+              >
+                <Ionicons name="close-circle-outline" size={16} color="#EF4444" />
+                <Text style={[styles.actionBtnText, { color: '#EF4444' }]}>Cancel</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
       </View>

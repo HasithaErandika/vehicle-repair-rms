@@ -63,7 +63,7 @@ export function AppointmentDetailScreen() {
     return <ErrorScreen onRetry={refetch} />;
   }
 
-  const isPending = appointment.status === 'pending';
+  const canModify = appointment.status === 'pending' || appointment.status === 'confirmed';
 
   return (
     <ScreenWrapper bg="#1A1A2E">
@@ -148,7 +148,7 @@ export function AppointmentDetailScreen() {
           </View>
 
           {/* Actions */}
-          {isPending && (
+          {canModify && (
             <View style={styles.actions}>
               <Button
                 title="Reschedule Booking"
@@ -175,6 +175,7 @@ export function AppointmentDetailScreen() {
         confirmText="Yes, Cancel"
         cancelText="No, Keep it"
         type="danger"
+        theme="light"
         onConfirm={onConfirmCancel}
         onCancel={() => setShowCancelModal(false)}
       />

@@ -232,6 +232,7 @@ export default function SettingsScreen() {
         message="Are you sure you want to sign out?"
         confirmText="Sign Out"
         type="danger"
+        theme="light"
         onConfirm={signOut}
         onCancel={() => setShowSignOutConfirm(false)}
       />
@@ -241,6 +242,7 @@ export default function SettingsScreen() {
         title="Change Password"
         message="Password changes are managed through your identity provider. Please use the 'Forgot Password' option on the login screen to reset your password."
         confirmText="OK"
+        theme="light"
         onConfirm={() => setShowPasswordInfo(false)}
         onCancel={() => setShowPasswordInfo(false)}
       />

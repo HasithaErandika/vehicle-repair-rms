@@ -11,6 +11,9 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Appointment } from '../types/appointments.types';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { ConfirmModal } from '@/components/feedback/ConfirmModal';
+import { useDeleteAppointment } from '../queries/mutations';
+import { useToast } from '@/providers/ToastProvider';
 
 type TabKey = 'upcoming' | 'past';
 const TAB_STATUS: Record<TabKey, string> = {
@@ -20,8 +23,26 @@ const TAB_STATUS: Record<TabKey, string> = {
 
 export function AppointmentListScreen() {
   const router = useRouter();
+  const { showToast } = useToast();
   const [tab, setTab] = useState<TabKey>('upcoming');
   const { data, isLoading, isError, refetch } = useMyAppointments(TAB_STATUS[tab]);
+  const { mutate: cancelAppointment } = useDeleteAppointment();
+
+  const [cancelTarget, setCancelTarget] = useState<string | null>(null);
+
+  const handleConfirmCancel = () => {
+    if (!cancelTarget) return;
+    cancelAppointment(cancelTarget, {
+      onSuccess: () => {
+        showToast('Appointment cancelled', 'success');
+        setCancelTarget(null);
+        refetch();
+      },
+      onError: () => {
+        showToast('Failed to cancel', 'error');
+      },
+    });
+  };
 
   return (
     <ScreenWrapper bg="#1A1A2E">
@@ -68,7 +89,13 @@ export function AppointmentListScreen() {
         ) : (
           <FlashList
             data={(data || []) as Appointment[]}
-            renderItem={({ item }) => <AppointmentCard appointment={item as Appointment} />}
+            renderItem={({ item }) => (
+              <AppointmentCard 
+                appointment={item as Appointment} 
+                onCancel={() => setCancelTarget((item._id || item.id) ?? null)}
+                onReschedule={() => router.push(`/customer/schedule/edit/${item._id || item.id}` as any)}
+              />
+            )}
             // @ts-expect-error - FlashList requires estimatedItemSize dynamically
             estimatedItemSize={160}
             onRefresh={refetch}
@@ -79,6 +106,17 @@ export function AppointmentListScreen() {
           />
         )}
       </View>
+
+      <ConfirmModal
+        visible={!!cancelTarget}
+        title="Cancel Appointment"
+        message="Are you sure you want to cancel this booking? This action cannot be undone."
+        confirmText="Yes, Cancel"
+        type="danger"
+        theme="light"
+        onConfirm={handleConfirmCancel}
+        onCancel={() => setCancelTarget(null)}
+      />
 
       {/* FAB - Book Appointment */}
       <TouchableOpacity 
